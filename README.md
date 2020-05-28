@@ -1,2 +1,2 @@
 # wasaby-requirejs-loader
-Колбешин Ф. А.
+Мальцев А. А.
