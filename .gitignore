@@ -1,0 +1,9 @@
+node_modules
+.idea
+.DS_Store
+.vscode
+.nyc_output
+eslint-report.log
+xunit-result.xml
+xunit.log
+coverage/
