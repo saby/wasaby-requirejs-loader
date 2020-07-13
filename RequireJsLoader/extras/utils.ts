@@ -1,11 +1,11 @@
-import {IRequire, IDefineFunction} from '../require';
-import {IContents, IWsConfig} from '../../../_declarations';
+import {IRequireExt} from '../require.ext';
+import {IContents, IWsConfig} from '../wasaby';
 
 export interface IPatchedGlobal {
     contents: IContents;
-    define: IDefineFunction;
-    require: IRequire;
-    requirejs: IRequire;
+    define: RequireDefine;
+    require: Require;
+    requirejs: IRequireExt;
     wsConfig: IWsConfig;
 }
 
@@ -17,7 +17,7 @@ export const global = (function(): IPatchedGlobal {
     return this || (0, eval)('this');
 }());
 
-export function getInstance(): IRequire {
+export function getInstance(): IRequireExt {
     return global.requirejs;
 }
 

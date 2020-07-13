@@ -1,6 +1,6 @@
-import {IHashMap, IRequire, IDefineFunction} from '../require';
+import {IRequireExt} from '../require.ext';
 import {global, getInterfaceModuleName} from './utils';
-import {IContents} from '../../../_declarations';
+import {IContents} from '../wasaby';
 
 interface IDependenciesMap {
     [propName: string]: string[];
@@ -9,7 +9,7 @@ interface IDependenciesMap {
 const needCheckCircularDependencies = global.wsConfig && Boolean(
     global.wsConfig.IS_OVERALL_DEBUG || global.wsConfig.DEBUGGING_MODULES
 );
-const moduleDependencies: IHashMap<string[]> = {};
+const moduleDependencies: Record<string, string[]> = {};
 
 /**
  * Checks if there is a circular dependency for given module.
@@ -82,7 +82,7 @@ export function checkCircularDependencies(name: string, dependencies: string[]):
  * @param name Defined module name
  * @param {String[]} deps Defined module dependencies
  */
-export function addForeignServiceDependencies(require: IRequire, modules: object, name: string, deps: string[]): void {
+export function addForeignServiceDependencies(require: IRequireExt, modules: object, name: string, deps: string[]): void {
     if (typeof name === 'string' && deps instanceof Array) {
         const context = require.s.contexts._;
         const paths = context.config.paths || {};
@@ -100,7 +100,7 @@ export function addForeignServiceDependencies(require: IRequire, modules: object
         }).filter((depModuleName: string): boolean => {
             // Process only modules that are unknown
             return depModuleName && !(depModuleName in paths);
-        }).reduce((memo: IHashMap<string>, depModuleName: string): IHashMap<string> => {
+        }).reduce((memo: Record<string, string>, depModuleName: string): Record<string, string> => {
             // Resolve module path relative to the requesting module
             if (moduleConfig === undefined) {
                 moduleName = getInterfaceModuleName(name, true);
@@ -156,7 +156,7 @@ let lastDefinedModule: number = 0;
  * @param contents Application config
  * @return Wrapped function
  */
-function getPatchedDefine(require: IRequire, original: IDefineFunction, contents: IContents): IDefineFunction {
+function getPatchedDefine(require: IRequireExt, original: RequireDefine, contents: IContents): RequireDefine {
     const modules = contents && contents.modules;
 
     function patchedDefine(name: string, deps?: string[], callback?: Function): void {
@@ -175,7 +175,7 @@ function getPatchedDefine(require: IRequire, original: IDefineFunction, contents
     }
     patchedDefine.amd = original.amd;
 
-    return patchedDefine;
+    return patchedDefine as RequireDefine;
 }
 
 export function getLastDefinedModule(): number {
