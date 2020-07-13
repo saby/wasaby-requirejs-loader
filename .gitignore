@@ -1,9 +1,15 @@
-node_modules
-.idea
+# Various software service directories
 .DS_Store
-.vscode
-.nyc_output
-eslint-report.log
-xunit-result.xml
-xunit.log
-coverage/
+.idea
+.project
+.settings
+
+# Development mode artifacts
+/application
+/build-ui
+/builderConfig.json
+/package-lock.json
+/node_modules
+/tsconfig.json
+/tslib.js
+/tslint.json

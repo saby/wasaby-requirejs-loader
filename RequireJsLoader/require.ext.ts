@@ -1,3 +1,5 @@
+// Extensions for @types/requirejs
+
 export type ContextEnableFunction = (depMap: IRequireModule) => void;
 
 interface IRequireConfig {
