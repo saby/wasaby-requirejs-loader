@@ -3,19 +3,30 @@
   "version": "20.5000.0",
   "description": "Мальцев А. А.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm run build:install && npm run build:typescript && npm run build:app",
+    "build:install": "wasaby-cli --tasks=initStore",
+    "build:typescript": "saby-typescript --install --mode=development",
+    "build:app": "wasaby-cli --tasks=build --watcher",
+    "compile": "saby-typescript --compiler --watch",
+    "start": "wasaby-cli --tasks=startTest --server",
+    "test": "wasaby-cli --tasks=startTest --node --report=console",
+    "test:coverage": "wasaby-cli --tasks=startTest --node --coverage",
+    "lint": "saby-typescript --lint -q Types/**/*.ts"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/saby/wasaby-requirejs-loader.git"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/saby/wasaby-requirejs-loader/issues"
   },
   "homepage": "https://github.com/saby/wasaby-requirejs-loader#readme",
+  "files": [
+    "RequireJsLoader/*"
+  ],
   "devDependencies": {
-    "@types/requirejs": "^2.1.32"
+    "wasaby-cli": "git+https://platform-git.sbis.ru/saby/wasaby-cli.git#rc-20.5000"
   }
 }
