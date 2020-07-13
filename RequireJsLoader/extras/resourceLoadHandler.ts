@@ -1,5 +1,3 @@
-import {IRequire} from '../require';
-
 interface ISerializableFunction extends Function {
     toJSON: Function;
 }
@@ -7,7 +5,7 @@ interface ISerializableFunction extends Function {
 /**
  * Does some stuff with loaded modules: makes functions serializable for example
  */
-export default function resourceLoadHandler(require: IRequire, force?: boolean): () => void {
+export default function resourceLoadHandler(require: Require, force?: boolean): () => void {
     // https://github.com/requirejs/requirejs/wiki/Internal-API:-onResourceLoad
     const originalOnResourceLoad = require.onResourceLoad;
 
@@ -48,7 +46,8 @@ export default function resourceLoadHandler(require: IRequire, force?: boolean):
                     try {
                         makeSerializable(depth, obj[prop], moduleName, prefix + prop);
                     } catch (err) {
-                        import('Env/Env').then(({IoC}) => {
+                        const envModule = 'Env/Env';
+                        import(envModule).then(({IoC}) => {
                             IoC.resolve('ILogger').error(
                                 `resourceLoadHandler: something went wrong during '${prefix + prop}' property serialization in module '${moduleName}'`,
                                 err.message,

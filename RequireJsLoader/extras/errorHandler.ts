@@ -1,4 +1,4 @@
-import {IRequire, IRequireContext, IRequireError, IRequireModule} from '../require';
+import {IRequireContext, IRequireModule, IRequireExt} from '../require.ext';
 import {global, getInstance} from './utils';
 
 interface IErrLoad {
@@ -26,15 +26,15 @@ function getParents(id: string, context: IRequireContext): string[] {
 /**
  * Undefines failed modules on error to force RequireJS try again to load them and generate that error
  */
-export function undefineByError(err: IRequireError, require: IRequire): void {
+export function undefineByError(err: RequireError | Error, require: IRequireExt): void {
     if (arguments.length < 2) {
         require = getInstance();
     }
-    if (err.originalError) {
-        undefineByError(err.originalError, require);
+    if ((err as RequireError).originalError) {
+        undefineByError((err as RequireError).originalError, require);
     }
-    if (require && err.requireModules) {
-        err.requireModules.forEach((moduleName) => {
+    if (require && (err as RequireError).requireModules) {
+        (err as RequireError).requireModules.forEach((moduleName) => {
             require.undef(moduleName);
         });
     }
@@ -68,8 +68,8 @@ function undefineFailedAncestorsInner(
  * Applies error to all ancestors of given module
  */
 function undefineFailedAncestors(
-    err: IRequireError,
-    require: IRequire,
+    err: RequireError,
+    require: IRequireExt,
     context: IRequireContext
 ): void {
     const ids = err.requireModules;
@@ -106,7 +106,7 @@ const REQUIRE_TIMEOUT_TYPE = 'timeout';
 /**
  * Shows alert message in browser in case of module loading error
  */
-const showAlertOnTimeoutInBrowser: IErrLoad = (err: IRequireError) => {
+const showAlertOnTimeoutInBrowser: IErrLoad = (err: RequireError) => {
     if (!err) {
         return;
     }
@@ -140,7 +140,7 @@ const showAlertOnTimeoutInBrowser: IErrLoad = (err: IRequireError) => {
 /**
  * Registers RequireJS errors hooks
  */
-export default function errorHandler(require: IRequire, force?: boolean): () => void {
+export default function errorHandler(require: IRequireExt, force?: boolean): () => void {
     const defaultHandler = require.onError;
     const defaultContext = require.s && require.s.contexts._;
     let defaultGet;
@@ -151,7 +151,7 @@ export default function errorHandler(require: IRequire, force?: boolean): () => 
         if (defaultContext) {
             // Capture errors processed by module event handlers
             defaultEmit = defaultContext.Module.prototype.emit;
-            defaultContext.Module.prototype.emit = function(name: string, evt: IRequireError): void {
+            defaultContext.Module.prototype.emit = function(name: string, evt: RequireError): void {
                 defaultEmit.call(this, name, evt);
                 if (name === 'error') {
                     undefineFailedAncestors(evt, require, defaultContext);

@@ -1,2 +1,2 @@
 # wasaby-requirejs-loader
-Мальцев А. А.
+RequireJS-based modules loader.
