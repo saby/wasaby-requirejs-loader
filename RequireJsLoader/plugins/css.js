@@ -1,0 +1,70 @@
+define('css', ['UI/theme/controller', 'native-css', 'Core/pathResolver', 'Env/Env'], function(controller, cssAPI, pathResolver, Env) {
+   'use strict';
+
+   var global = (function() {
+      return this || (0, eval)('this') || {};
+   }());
+   var isControl = /^(Resources\/)?(SBIS3\.CONTROLS)\//;
+   var loadCss = (global.wsConfig || {}).loadCss === undefined ? true : global.wsConfig.loadCss;
+
+   /**
+    * Определяем, является ли запрашиваемый стиль стилем из контролов ядра.
+    * На страницах carry, presto, booking не должны применяться стили групп
+    * Controls, SBIS3.CONTROLS, а также супербандлы(поскольку они включают в себя
+    * вышеописанные стили)
+    */
+   function itIsControl(name) {
+      return name.match(isControl);
+   }
+
+   /**
+    * Старые страницы хранят имя темы в wsConfig.themeName
+    * Достаём из конфигурации тему. Если конфигурация отсутствует или
+    * отсутствует свойство themeName, значит считаем, что работаем с онлайном и
+    * позволяем грузить онлайновские контролы.
+    * @param name
+    * @returns {string}
+    */
+   function resolveSuffix(name) {
+      return global.wsConfig && global.wsConfig.themeName && itIsControl(name);
+   }
+
+
+   var _ignoredModules = global._ignoredModules;
+   return {
+      load: function(name, require, load, conf) {
+         var onload = function () { load(true); }
+         var onerror = function (e) {
+            Env.IoC.resolve('ILogger').error(e.message);
+            load(null);
+         }
+         if (_ignoredModules) {
+            for (var i=0;i<_ignoredModules.length;i++) {
+               if (_ignoredModules[i].test(name)) {
+                  onload();
+                  return;
+               }
+            }
+         }
+
+         if (!loadCss || conf.testing || resolveSuffix(name)) {
+            onload();
+            return;
+         }
+         if (require.isBrowser === false) {
+            // не удалил, т.к sbis\core\core-common\sbis-js-engine\implementation\core\convert.cpp:281
+            // выбрасывает ошибку приведения типов, вызываем onload на СП синхронно
+            onload();
+            /** requirejs кэширует запрошенные модули на сп, при повторном запросе загрузки не произойдет */
+            return;
+         }
+         var tc = controller.getThemeController();
+         if (name.indexOf('theme?') !== -1) {
+            /** через css! плагин скачиваются устаревшие немультитемные csss */
+            tc.get(name.replace('theme?', ''), global.themeName, controller.THEME_TYPE.SINGLE).then(onload, onerror);
+            return;
+         }
+         tc.get(name, controller.EMPTY_THEME, controller.THEME_TYPE.SINGLE).then(onload, onerror);
+      }
+   };
+});
