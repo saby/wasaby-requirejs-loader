@@ -1,8 +1,7 @@
-define('RequireJsLoader/plugins/optional', function() {
+define('optional', ['Env/Env'], function(Env) {
    'use strict';
 
    var global = (function(){ return this || (0,eval)('this'); }());
-
    var PLATFORM_MAP = {
       WS: 'WS.Core',
       Core: 'WS.Core',
@@ -56,11 +55,10 @@ define('RequireJsLoader/plugins/optional', function() {
    return {
       load: function (name, require, onLoad) {
          // Check if modules list is available and release mode is on
-         var contents = global.contents;
          if (
-            contents &&
-            contents.buildMode === 'release' &&
-            contents.modules
+            (Env && Env.constants) &&
+            Env.constants.buildMode === 'release' &&
+            Env.constants.modules
          ) {
             var moduleName = name.split('/')[0];
             var plugins = moduleName.split(/[!?]/);
@@ -77,7 +75,7 @@ define('RequireJsLoader/plugins/optional', function() {
                plugins.indexOf('remote') === -1
             ) {
                // Fast check via modules list
-               if (!(moduleName in contents.modules)) {
+               if (!(moduleName in Env.constants.modules)) {
                   onLoad(null);
                   return;
                }

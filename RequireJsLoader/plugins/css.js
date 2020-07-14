@@ -1,7 +1,4 @@
-define('RequireJsLoader/plugins/css', [
-   'optional!UI/theme/controller',
-   'optional!Env/Env'
-], function(controller, Env) {
+define('css', ['UI/theme/controller', 'native-css', 'Core/pathResolver', 'Env/Env'], function(controller, cssAPI, pathResolver, Env) {
    'use strict';
 
    var global = (function() {
@@ -36,18 +33,13 @@ define('RequireJsLoader/plugins/css', [
    var _ignoredModules = global._ignoredModules;
    return {
       load: function(name, require, load, conf) {
-         var onload = function() {
-            load(true);
-         };
-
-         var onerror = function(err) {
-            const logger = Env && Env.IoC.resolve('ILogger') || console;
-            logger.error(err.message);
+         var onload = function () { load(true); }
+         var onerror = function (e) {
+            Env.IoC.resolve('ILogger').error(e.message);
             load(null);
-         };
-
+         }
          if (_ignoredModules) {
-            for (var i = 0; i < _ignoredModules.length; i++) {
+            for (var i=0;i<_ignoredModules.length;i++) {
                if (_ignoredModules[i].test(name)) {
                   onload();
                   return;
@@ -59,7 +51,6 @@ define('RequireJsLoader/plugins/css', [
             onload();
             return;
          }
-
          if (require.isBrowser === false) {
             // не удалил, т.к sbis\core\core-common\sbis-js-engine\implementation\core\convert.cpp:281
             // выбрасывает ошибку приведения типов, вызываем onload на СП синхронно
@@ -67,12 +58,6 @@ define('RequireJsLoader/plugins/css', [
             /** requirejs кэширует запрошенные модули на сп, при повторном запросе загрузки не произойдет */
             return;
          }
-
-         if (!controller) {
-            load.error(new ReferenceError('Module "UI" is required to work with plugin "css!".'));
-            return;
-         }
-
          var tc = controller.getThemeController();
          if (name.indexOf('theme?') !== -1) {
             /** через css! плагин скачиваются устаревшие немультитемные csss */

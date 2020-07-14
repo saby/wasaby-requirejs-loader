@@ -3,15 +3,7 @@
  * - html!SBIS3.CORE.HTMLChunk - подключит шаблон
  * - html!encode=true?SBIS3.CORE.HTMLChunk - подключит шаблон, в котором все {{=it....}} будет делать эскейпинг текста
  */
-define('RequireJsLoader/plugins/html', [
-   'RequireJsLoader/plugins/text',
-   'optional!Core/js-template-doT',
-   'optional!Env/Env'
-], function(
-   text,
-   doT,
-   Env
-) {
+define('html', ['Core/pathResolver', 'Core/js-template-doT', 'Env/Env', 'text'], function(pathResolver, doT, Env, text) {
    'use strict';
 
    var isServerSide = typeof window === 'undefined' && !(process && process.versions);
@@ -30,6 +22,7 @@ define('RequireJsLoader/plugins/html', [
    }
 
    function mkTemplate(f, name) {
+
       var fname = name.replace(/[^a-z0-9]/gi, '_');
 
       // Это обертка для улучшения логов. Создается именованая функция с понятным названием чтобы из стэка можно было понять битый шаблон
@@ -44,10 +37,10 @@ define('RequireJsLoader/plugins/html', [
 
    return {
       load: function(name, require, load, conf) {
-         var options = name.split('?');
-         var doEncode = false;
-         var optStr;
-         var config;
+         var
+            options = name.split('?'),
+            doEncode = false,
+            optStr, config;
 
          if (options.length > 1) {
             optStr = options.shift();
@@ -57,57 +50,48 @@ define('RequireJsLoader/plugins/html', [
             name = options[0];
          }
 
-         var onError = function(err) {
-            err.message = 'Error while loading template ' + name + '\n' + err.message + '\n' + err.stack;
-            load.error(err);
+         var onError = function(e) {
+            e.message = 'Error while loading template ' + name + '\n' + e.message + '\n' + e.stack;
+            load.error(e);
          };
 
-         var onLoad = function(html) {
+         var onLoad = function (html) {
             if (html && html.indexOf('define') == 0) {
                load.fromTextFixed ? load.fromTextFixed(html) : load.fromText(html);
-               return;
-            }
+            } else {
+               //Если у нас не скомпилена html, например /debug/
 
-            if (!doT) {
-               onError(new ReferenceError('Module "WS.Core" is required to work with plugin "html!".'));
-               return;
-            }
-
-            //Если у нас не скомпилена html, например /debug/
-            config = doT.getSettings();
-            config.strip = false;
-            if (doEncode) {
-               config.encode = config.interpolate;
-            }
-            try {
-               load(mkTemplate(doT.template(html, config, undefined, undefined, name), name));
-            } catch (err) {
-               onError(err);
+               config = doT.getSettings();
+               config.strip = false;
+               if (doEncode) {
+                  config.encode = config.interpolate;
+               }
+               try {
+                  load(mkTemplate(doT.template(html, config, undefined, undefined, name), name));
+               } catch (e) {
+                  onError(e);
+               }
             }
          };
 
-         onLoad.error = function(err) {
-            onError(err);
+         onLoad.error = function(e) {
+            onError(e);
          };
 
          try {
-            var path = name + '.xhtml';
+            var path = pathResolver(name, 'html');
 
             // для Сервиса Представлений необходимы именно сбилженные шаблоны(для здоровья локализации)
             // Также проверяем наличие process - на Серверном скрипте должны просится шаблоны без .min
-            if (isServerSide && Env && Env.constants.buildMode === 'release' && Env.constants.isServerSide) {
+            if (isServerSide && Env.constants.buildMode === 'release' && Env.constants.isServerSide) {
                path = path.replace(/(\.min)?\.xhtml$/, '.min.xhtml');
             }
 
-            if (Env && Env.modules && Env.modules.I18n) {
-               require(['i18n!' + path.split('/')[0]], function() {
-                  text.load(path, require, onLoad, conf);
-               });
-            } else {
+            require(['i18n!' + path.split('/')[0]], function() {
                text.load(path, require, onLoad, conf);
-            }
-         } catch (err) {
-            onError(err)
+            });
+         } catch (e) {
+            onError(e)
          }
       }
    }

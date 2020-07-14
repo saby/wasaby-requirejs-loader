@@ -1,4 +1,4 @@
-define('RequireJsLoader/plugins/is-api', function() {
+define('is-api', function() {
    'use strict';
 
    var api = {};

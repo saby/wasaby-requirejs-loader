@@ -1,4 +1,4 @@
-define('RequireJsLoader/plugins/cdn', ['optional!Env/Env'], function(Env) {
+define('cdn', ['Env/Env'], function(Env) {
    'use strict';
 
    function removeLeadingSlash(path) {
@@ -13,19 +13,18 @@ define('RequireJsLoader/plugins/cdn', ['optional!Env/Env'], function(Env) {
 
    return {
       load: function(name, require, onLoad) {
-         if (typeof window === 'undefined') {
+         if (typeof window !== 'undefined') {
+            var temp = name.split('!'),
+                plugin = temp[1] ? temp[0] + '!' : '',
+                path = temp[1] || temp[0],
+                cdnRoot = Env.constants.cdnRoot || '/cdn/';
+
+            require([plugin + cdnRoot + removeLeadingSlash(path)], onLoad, function(err) {
+               onLoad.error(err);
+            });
+         } else {
             onLoad('');
-            return;
          }
-
-         var temp = name.split('!');
-         var plugin = temp[1] ? temp[0] + '!' : '';
-         var path = temp[1] || temp[0];
-         var cdnRoot = Env && Env.constants.cdnRoot || '/cdn/';
-
-         require([plugin + cdnRoot + removeLeadingSlash(path)], onLoad, function(err) {
-            onLoad.error(err);
-         });
       }
    }
 });
