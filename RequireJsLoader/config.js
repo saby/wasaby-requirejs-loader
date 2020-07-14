@@ -546,16 +546,15 @@
 
    /**
     * Patches nameToUrl method of specified context as decorator with URL post processing
-    * @param {Object} context RequireJS context to patch
+    * @param {Object} require RequireJS root instance
     * @param {Object} handlers Patch config
     */
-   function patchContext(context, handlers) {
+   function patchContext(require, handlers) {
+      var context = require.s.contexts._;
       if (context.isPatchedByWs) {
          return;
       }
-
       context.isPatchedByWs = true;
-      var originalNameToUrl = context.nameToUrl;
 
       context.nameToUrl = (function(parent) {
          var HAS_PROTOCOL = /^([a-z]+:)?\/\//;
@@ -604,11 +603,9 @@
 
             return url;
          };
-      })(originalNameToUrl);
+      })(context.nameToUrl);
 
-      var originalLoad;
       if (handlers.checkModule) {
-         originalLoad = context.load;
          context.load = (function(parent) {
             /**
              * Does the request to load a module.
@@ -620,20 +617,8 @@
                handlers.checkModule(url);
                return parent(id, url);
             };
-         })(originalLoad);
+         })(context.load);
       }
-
-      return function() {
-         if (context.isPatchedByWs) {
-            context.nameToUrl = originalNameToUrl;
-            delete context.isPatchedByWs;
-         }
-
-         if (originalLoad) {
-            context.load = originalLoad;
-            originalLoad = null;
-         }
-      };
    }
 
    /**
@@ -656,41 +641,55 @@
     * @return {Object}
     */
    function createConfig(appPath, wsPath, resourcesPath, options) {
-      // Normalize wsConfig
       var wsConfig = global.wsConfig;
+
       wsConfig.APP_PATH = appPath;
       wsConfig.RESOURCES_PATH = resourcesPath;
+      wsConfig.BUILD_MODE = BUILD_MODE;
+      wsConfig.IS_OVERALL_DEBUG = IS_OVERALL_DEBUG;
+      wsConfig.DEBUGGING_MODULES = DEBUGGING_MODULES;
+      wsConfig.IS_SERVER_SCRIPT = IS_SERVER_SCRIPT;
+
+      // Translate the set of functions to the global config but prevent them to be enumerable and therefore serializable
+      Object.defineProperties(wsConfig, {
+         getModulesPrefixes: {configurable: true, value: requireHandlers.getModulesPrefixes},
+         getWithVersion: {configurable: true, value: requireHandlers.getWithVersion},
+         getWithDomain: {configurable: true, value: requireHandlers.getWithDomain},
+         getWithSuffix: {configurable: true, value: requireHandlers.getWithSuffix},
+      });
 
       options = options || global.contents;
+
       // Build config
       var config = {
          baseUrl: appPath,
          map: {
             '*': {
-               // Plugins
-               'browser': 'RequireJsLoader/plugins/browser',
-               'cdn': 'RequireJsLoader/plugins/cdn',
-               'css': 'RequireJsLoader/plugins/css',
-               'datasource': 'RequireJsLoader/plugins/datasource',
-               'json': 'RequireJsLoader/plugins/json',
-               'html': 'RequireJsLoader/plugins/html',
-               'i18n': 'I18n/i18n',
-               'is': 'RequireJsLoader/plugins/is',
-               'is-api': 'RequireJsLoader/plugins/is-api',
-               'native-css': 'RequireJsLoader/plugins/native-css',
-               'normalize': 'RequireJsLoader/plugins/normalize',
-               'optional': 'RequireJsLoader/plugins/optional',
-               'order': 'RequireJsLoader/plugins/order',
-               'preload': 'RequireJsLoader/plugins/preload',
-               'remote': 'RequireJsLoader/plugins/remote',
-               'template': 'RequireJsLoader/plugins/template',
-               'text': 'RequireJsLoader/plugins/text',
-               'tmpl': 'RequireJsLoader/plugins/tmpl',
-               'wml': 'RequireJsLoader/plugins/wml',
-               'xml': 'RequireJsLoader/plugins/xml'
-               }
+               'i18n': 'I18n/i18n'
+            }
          },
          paths: {
+            // Plugins
+            'browser': 'RequireJsLoader/plugins/browser',
+            'cdn': 'RequireJsLoader/plugins/cdn',
+            'css': 'RequireJsLoader/plugins/css',
+            'datasource': 'RequireJsLoader/plugins/datasource',
+            'json': 'RequireJsLoader/plugins/json',
+            'html': 'RequireJsLoader/plugins/html',
+            'is': 'RequireJsLoader/plugins/is',
+            'is-api': 'RequireJsLoader/plugins/is-api',
+            'native-css': 'RequireJsLoader/plugins/native-css',
+            'normalize': 'RequireJsLoader/plugins/normalize',
+            'optional': 'RequireJsLoader/plugins/optional',
+            'order': 'RequireJsLoader/plugins/order',
+            'preload': 'RequireJsLoader/plugins/preload',
+            'remote': 'RequireJsLoader/plugins/remote',
+            'template': 'RequireJsLoader/plugins/template',
+            'text': 'RequireJsLoader/plugins/text',
+            'tmpl': 'RequireJsLoader/plugins/tmpl',
+            'wml': 'RequireJsLoader/plugins/wml',
+            'xml': 'RequireJsLoader/plugins/xml',
+
             // tlib.js location to use it as AMD dependency in compiled code
             'tslib': pathJoin(wsPath, 'ext/tslib'),
 
@@ -745,8 +744,8 @@
       return config;
    }
 
-   // Applies startup config for RequireJS
-   function applyConfig(require, wsConfig, context) {
+   // Setup startup config for RequireJS
+   function setupConfig(require, wsConfig) {
       // Application path
       var appPath = wsConfig && wsConfig.appRoot || '/';
 
@@ -766,62 +765,35 @@
          wsPath,
          resourcesPath
       );
-      if (context) {
-         config.context = context;
-      }
-
-      return require.config(config);
+      require.config(config);
    }
 
-   // Initiates application environment
-   function prepareEnvironment() {
-      var require = global.requirejs;
+   var require = global.requirejs;
 
-      // Mark root RequireJS instance in purpose of Wasaby Dev Tools
-      require.isWasaby = true;
+   // Mark root RequireJS instance in purpose of Wasaby Dev Tools
+   require.isWasaby = true;
 
-      // Patch define() function
-      if (global.define) {
-         global.define = patchDefine(require, global.define);
-      }
-
-      // Set resource load handler
-      require.onResourceLoad = createResourceLoader(require.onResourceLoad);
-
-      // Patch default context
-      patchContext(require.s.contexts._, IS_SERVER_SCRIPT ? {
-         checkModule: requireHandlers.checkModule,
-         getWithVersion: requireHandlers.getWithVersion
-      } : requireHandlers);
+   // Patch define() function
+   if (global.define) {
+      global.define = patchDefine(require, global.define);
    }
 
-   // Normalize wsConfig
-   global.wsConfig.BUILD_MODE = BUILD_MODE;
-   global.wsConfig.IS_OVERALL_DEBUG = IS_OVERALL_DEBUG;
-   global.wsConfig.DEBUGGING_MODULES = DEBUGGING_MODULES;
-   global.wsConfig.IS_SERVER_SCRIPT = IS_SERVER_SCRIPT;
+   // Set resource load handler
+   require.onResourceLoad = createResourceLoader(require.onResourceLoad);
 
-   // Build URL handlers
    var requireHandlers = buildHandlers(global.wsConfig);
 
-   if (typeof global.define === 'function') {
-      global.define('RequireJsLoader/config', function() {
-         return {
-            prepareEnvironment: prepareEnvironment,
-            applyConfig: applyConfig,
-            createConfig: createConfig,
-            patchContext: patchContext,
-            handlers: requireHandlers,
-         }
-      });
-   }
+   // Patch default context
+   patchContext(require, IS_SERVER_SCRIPT ? {
+      checkModule: requireHandlers.checkModule,
+      getWithVersion: requireHandlers.getWithVersion
+   } : requireHandlers);
 
-   prepareEnvironment();
-   if (typeof module === 'object' && module.exports) {
-      // Return config constructor in CommonJS environment
+   if (IS_SERVER_SCRIPT) {
+      // Just return config constructor on server
       module.exports = createConfig;
-   } else if (!IS_SERVER_SCRIPT) {
-      // Initialize RequireJS in browser environment
-      applyConfig(require, global.wsConfig);
+   } else {
+      // Initialize RequireJS in browser
+      setupConfig(require, global.wsConfig);
    }
 })();

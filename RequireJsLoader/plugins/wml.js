@@ -1,26 +1,23 @@
 /**
  * Плагин для подключения шаблонов в виде функций.
  */
-define('RequireJsLoader/plugins/wml', [
-   'RequireJsLoader/plugins/text',
-   'RequireJsLoader/extras/patchDefine',
-   'optional!View/config',
-   'optional!Env/Env'
+define('wml', [
+   'text',
+   'WS.Core/ext/requirejs/extras/patchDefine',
+   'View/config',
+   'Core/pathResolver',
+   'Env/Env'
 ], function(
    text,
    patchDefine,
    config,
+   pathResolver,
    Env
 ) {
    'use strict';
 
    var global = (function(){ return this || (0,eval)('this'); }());
    var isServerSide = typeof window === 'undefined' && !(process && process.versions);
-
-   function logError(tag, err) {
-      const logger = Env && Env.IoC.resolve('ILogger') || console;
-      logger.error(tag, err.message, err);
-   }
 
    function showAlertOnTimeoutInBrowser(err) {
       if (!err) { return false; }
@@ -39,7 +36,7 @@ define('RequireJsLoader/plugins/wml', [
    }
 
    function createLostFunction(err, ext) {
-      logError(ext + '!', err.message, err);
+      Env.IoC.resolve('ILogger').error(ext+'!', err.message, err);
       var wrapper = function () {
          return '<div>' + err.message + '</div>';
       };
@@ -61,16 +58,16 @@ define('RequireJsLoader/plugins/wml', [
             try {
                var timeoutAlert = showAlertOnTimeoutInBrowser(err);
                if (!timeoutAlert) {
-                  logError('Template', err.message, err);
+                  Env.IoC.resolve('ILogger').error('Template', err.message, err);
                }
             } catch (err) {
-               logError('Template', err.message, err);
+               Env.IoC.resolve('ILogger').error('Template', err.message, err);
             }
             load.error(err);
          }, ext);
       } catch (err) {
          err.message = 'Error while parsing template "' + name + '": ' + err.message;
-         logError('Template', err.message, err);
+         Env.IoC.resolve('ILogger').error('Template', err.message, err);
          load.error(err);
          load = undefined;
       }
@@ -92,13 +89,13 @@ define('RequireJsLoader/plugins/wml', [
                      callback(name, html, builder.Tmpl, conf, load, ext);
                   } catch (err) {
                      err.message = 'Error while parsing template "' + name + '": ' + err.message;
-                     logError('Template', err.message, err);
+                     Env.IoC.resolve('ILogger').error('Template', err.message, err);
                      load.error(err);
                   }
                });
             } catch (err) {
                err.message = 'Error while loading builder for template "' + name + '": ' + err.message;
-               logError('Template', err.message, err);
+               Env.IoC.resolve('ILogger').error('Template', err.message, err);
                load.error(err);
             }
          }
@@ -107,7 +104,7 @@ define('RequireJsLoader/plugins/wml', [
       loader.error = function (err) {
          err.message = 'Error while loading template "' + name + '": ' + err.message;
          showAlertOnTimeoutInBrowser(err);
-         logError('Template', err.message, err);
+         Env.IoC.resolve('ILogger').error('Template', err.message, err);
          load.error(err);
       };
 
@@ -117,15 +114,15 @@ define('RequireJsLoader/plugins/wml', [
    var wmlObj = {
       loadBase: function (name, require, load, ext, deps, callback){
          try {
-            var path = name + '.' + ext;
-            var conf = {
-               config: config,
-               fileName: path
-            };
+            var path = pathResolver(name, ext, true),
+               conf = {
+                  config: config,
+                  fileName: path
+               };
 
             // для Сервиса Представлений необходимы именно сбилженные шаблоны(для здоровья локализации)
             // Также проверяем наличие process - на Серверном скрипте должны просится шаблоны без .min
-            if (isServerSide && Env && Env.constants.buildMode === 'release' && Env.constants.isServerSide) {
+            if (isServerSide && Env.constants.buildMode === 'release' && Env.constants.isServerSide) {
                path = path.replace(/(\.min)?\.tmpl$/, '.min.tmpl');
                path = path.replace(/(\.min)?\.wml/, '.min.wml');
             }
@@ -139,7 +136,7 @@ define('RequireJsLoader/plugins/wml', [
             );
          } catch(err) {
             err.message = 'Error while resolving template "' + name + '": ' + err.message;
-            logError('Template', err.message, err);
+            Env.IoC.resolve('ILogger').error('Template', err.message, err);
             load.error(err);
          }
       },

@@ -69,17 +69,7 @@
  *
  */
 
-define('RequireJsLoader/plugins/is', [
-   'module',
-   'require',
-   'RequireJsLoader/plugins/is-api',
-   'optional!Env/Env'
-], function(
-   module,
-   require,
-   api,
-   Env
-) {
+define('is', ['module', 'is-api', 'require', 'Env/Env'], function(module, api, require, Env) {
    'use strict';
 
    var is = {};
@@ -110,7 +100,7 @@ define('RequireJsLoader/plugins/is', [
 
    /*ПЛАГИН для тестов по веткам без режима совместимости, будет удален без предупреждения
    * в документацию не добавляется, используется в одном контроле*/
-   is.features.compatibleLayer = Env && Env.constants.compat;
+   is.features.compatibleLayer = Env.constants.compat;
 
    is.lookup = function(feature, complete) {
 

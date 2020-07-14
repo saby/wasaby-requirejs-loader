@@ -1,6 +1,5 @@
 define('RequireJsLoader/getResourceUrl', [
-   'RequireJsLoader/config'
-], function(config) {
+], function() {
    /**
     * Возвращает обработанный URL ресураса с указанием домена и версии.
     *
@@ -15,13 +14,12 @@ define('RequireJsLoader/getResourceUrl', [
     * @public
     * @author Мальцев А.А.
     */
-
-   var handlers = config.handlers;
+   var global = this || (0, eval)('this');// eslint-disable-line no-eval
 
    return function getResourceUrl(url) {
-      return handlers.getWithDomain(
-         handlers.getWithSuffix(
-            handlers.getWithVersion(url)
+      return global.wsConfig.getWithDomain(
+         global.wsConfig.getWithSuffix(
+            global.wsConfig.getWithVersion(url)
          )
       );
    };

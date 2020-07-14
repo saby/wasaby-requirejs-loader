@@ -1,6 +1,6 @@
 /* global define, describe, it, assert */
 define([
-   'RequireJsLoader/plugins/optional'
+   'optional'
 ], function(
    optional
 ) {

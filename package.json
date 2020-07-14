@@ -13,16 +13,6 @@
     "test:coverage": "wasaby-cli --tasks=startTest --node --coverage",
     "lint": "saby-typescript --lint -q Types/**/*.ts"
   },
-  "saby-units": {
-    "moduleType": "amd",
-    "root": "application",
-    "report": "application/artifacts/xunit-report.xml",
-    "htmlCoverageReport": "./artifacts/coverage/index.html",
-    "jsonCoverageReport": "./artifacts/coverage.json",
-    "tests": [
-       "RequireJsLoaderUnit"
-    ]
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/saby/wasaby-requirejs-loader.git"
