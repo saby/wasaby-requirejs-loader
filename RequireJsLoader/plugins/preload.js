@@ -1,7 +1,7 @@
 /**
  * Created by Shilovda on 08.07.2015.
  */
-define('RequireJsLoader/plugins/preload', function() {
+define('preload', function() {
    'use strict';
 
    function noop() {
