@@ -1,104 +1,97 @@
 define([
-   'require'
+   'require',
+   'module',
+   'RequireJsLoader/config'
 ], function (
-   require
+   require,
+   module,
+   {createConfig}
 ) {
    describe('require()', function() {
-      var checkDone = function(callback, done) {
-         try {
-            callback();
-            done();
-         } catch (e) {
-            done(e);
-         }
-      };
+      var defaultContext = requirejs.s.contexts._;
+      var appPath = defaultContext.config.baseUrl;
+      var config = createConfig(appPath);
+      config.context = 'RequireJsLoaderUnit/require';
+      var contextRequire = requirejs.config(config);
 
-      var shouldSkip = function(testCase) {
+      function shouldSkip(testCase) {
          if (typeof window === 'undefined') {
             testCase.skip();
             return true;
          }
-      };
+      }
 
-      it('should define module', function (done) {
-         require(['WSTests/Demo/ModuleA'], function(given) {
-            checkDone(function() {
-               assert.equal(given, 'ModuleA.js');
-            }, done);
-         }, done);
-      });
+      function asyncRequire(names, loader) {
+         return new Promise((resolve, reject) => {
+            (loader || require)(names, (...results) => {
+               resolve(results);
+            }, reject);
+         });
+      }
 
-      describe('html!', function () {
-         it('should define module', function (done) {
-            require(['html!WSTests/Demo/ModuleA'], function(given) {
-               checkDone(function() {
-                  assert.equal(given, 'ModuleA.xhtml');
-               }, done);
-            }, done);
+      it('should return defined module body', () => {
+         define('RequireJsLoaderUnit/require/foo', () => 'RequireJsLoaderUnit/require/foo.js');
+
+         after(() => {
+            requirejs.undef('RequireJsLoaderUnit/require/foo');
          });
 
-         it('should define module without plugin if module with plugin has been required before', function (done) {
+         return asyncRequire(['RequireJsLoaderUnit/require/foo']).then(([result]) => {
+            assert.equal(result, 'RequireJsLoaderUnit/require/foo.js');
+         });
+      });
+
+      describe('using html! plugin', () => {
+         after(() => {
+            requirejs.undef('html!RequireJsLoaderUnit/fixtures/ModuleA');
+            requirejs.undef('RequireJsLoaderUnit/fixtures/ModuleA');
+         });
+
+         it('should return defined module body', function () {
+            return asyncRequire(['html!RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([result]) => {
+               assert.equal(result, 'RequireJsLoaderUnit/fixtures/ModuleA.xhtml');
+            });
+         });
+
+         it('should return module without plugin if module with plugin has been required before', function() {
             if (shouldSkip(this)) {
                return;
             }
 
-            require(['html!WSTests/Demo/ModuleB'], function(given) {
-               checkDone(function() {
-                  assert.equal(given, 'ModuleB.xhtml');
-               }, function(e) {
-                  if (e) {
-                     done(e);
-                  }
-                  require(['WSTests/Demo/ModuleB'], function(given) {
-                     checkDone(function() {
-                        assert.equal(given, 'ModuleB.js');
-                     }, done);
-                  }, done);
-               });
-               }, done);
-
+            return asyncRequire(['html!RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([pluginResult]) => {
+               assert.equal(pluginResult, 'RequireJsLoaderUnit/fixtures/ModuleA.xhtml');
+            }).then(() => {
+               return asyncRequire(['RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([noPluginResult]) => {
+                  assert.equal(noPluginResult, 'RequireJsLoaderUnit/fixtures/ModuleA/foo.js');
+               })
+            });
          });
       });
 
-      describe('tmpl!', function () {
-         it('should define module', function (done) {
-            require(['wml!WSTests/Demo/ModuleC'], function(given) {
-               checkDone(function() {
-                  assert.equal(given, 'ModuleC.wml');
-               }, done);
-            }, done);
+      describe('using tmpl! plugin', () => {
+         after(() => {
+            requirejs.undef('tmpl!RequireJsLoaderUnit/fixtures/ModuleA');
+            requirejs.undef('RequireJsLoaderUnit/fixtures/ModuleA');
          });
 
-         it('should define module without plugin if module with plugin has been required before', function (done) {
+         it('should return defined module body', function () {
+            return asyncRequire(['tmpl!RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([result]) => {
+               assert.equal(result, 'RequireJsLoaderUnit/fixtures/ModuleA.tmpl');
+            });
+         });
+
+         it('should return module without plugin if module with plugin has been required before', function() {
             if (shouldSkip(this)) {
                return;
             }
 
-            require(['wml!WSTests/Demo/ModuleD'], function(given) {
-               checkDone(function() {
-                  assert.equal(given, 'ModuleD.wml');
-               }, function(e) {
-                  if (e) {
-                     done(e);
-                  }
-                  require(['WSTests/Demo/ModuleD'], function(given) {
-                     checkDone(function() {
-                        assert.equal(given, 'ModuleD.js');
-                     }, done);
-                  }, done);
-               });
-
-            }, done);
-         });
-      });
-
-      describe('js!', function () {
-         it('should define module', function (done) {
-            require(['WSTests/Demo/ModuleE'], function(given) {
-               checkDone(function() {
-                  assert.equal(given, 'ModuleE.js');
-               }, done);
-            }, done);
+            return asyncRequire(['tmpl!RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([pluginResult]) => {
+               assert.equal(pluginResult, 'RequireJsLoaderUnit/fixtures/ModuleA.tmpl');
+            }).then(() => {
+               return asyncRequire(['RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([noPluginResult]) => {
+                  assert.equal(noPluginResult, 'RequireJsLoaderUnit/fixtures/ModuleA.js');
+               })
+            });
          });
       });
    });

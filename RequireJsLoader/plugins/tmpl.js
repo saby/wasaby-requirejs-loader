@@ -1,18 +1,14 @@
 /**
  * Плагин для подключения шаблонов в виде функций.
  */
-define('tmpl', [
-   'View/config',
-   'Core/pathResolver',
-   'Env/Env',
-   'View/Executor/TClosure',
-   'wml'
+define('RequireJsLoader/plugins/tmpl', [
+   'RequireJsLoader/plugins/wml',
+   'optional!View/Executor/TClosure',
+   'optional!Env/Env'
 ], function(
-   config,
-   pathResolver,
-   Env,
+   wml,
    tClosure,
-   wml
+   Env
 ) {
    'use strict';
 
@@ -74,12 +70,15 @@ define('tmpl', [
 
    return {
       load: function (name, require, load) {
-         wml.loadBase(name, require, load, 'tmpl', [
+         var deps = [
             'View/Builder',
             'is!compatibleLayer?Lib/Control/Control.compatible',
-            'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible',
-            'i18n!' + name.split('/')[0]
-         ], createTemplate);
+            'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible'
+         ];
+         if (Env && Env.modules && Env.modules.I18n) {
+            deps.push('i18n!' + name.split('/')[0]);
+         }
+         wml.loadBase(name, require, load, 'tmpl', deps, createTemplate);
       }
    };
 });

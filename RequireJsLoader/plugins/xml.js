@@ -1,20 +1,20 @@
-define('xml', ['text', 'Core/pathResolver'], function(text, pathResolver) {
+define('RequireJsLoader/plugins/xml', ['RequireJsLoader/plugins/text'], function(text) {
    'use strict';
 
    return {
       load: function(name, require, load, conf) {
          try {
-            var path = pathResolver(name, 'xml', true);
+            var url = name + '.xml';
 
             var onLoad = function(xml) {
                load(xml);
             };
 
-            onLoad.error = function(e) {
-               load.error(e);
+            onLoad.error = function(err) {
+               load.error(err);
             };
 
-            text.load(path, require, onLoad, conf);
+            text.load(url, require, onLoad, conf);
          } catch (err) {
             load.error(err);
          }
