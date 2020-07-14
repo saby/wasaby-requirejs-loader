@@ -5,7 +5,7 @@
 /* jslint regexp: true */
 /* global require, XMLHttpRequest, define, window, process, Packages, java, location, Components, FileUtils */
 
-define('text', ['module'], function (module) {
+define('RequireJsLoader/plugins/text', ['module'], function (module) {
     'use strict';
 
     var text, fs, Cc, Ci, xpcIsWindows;
