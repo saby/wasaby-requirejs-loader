@@ -30,7 +30,7 @@
  *
  */
 
-define('normalize', ['require', 'module'], function(require) {
+define('RequireJsLoader/plugins/normalize', ['require', 'module'], function(require) {
   // regular expression for removing double slashes
   // eg http://www.example.com//my///url/here -> http://www.example.com/my/url/here
   var slashes = /([^:])\/+/g
