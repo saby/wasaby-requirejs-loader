@@ -1,4 +1,4 @@
-define('browser', function() {
+define('RequireJsLoader/plugins/browser', function() {
    'use strict';
 
    return {

@@ -11,7 +11,7 @@
 //maps the namespaced requirejs API to non-namespaced local variables.
 /*requirejs namespace: true */
 
-define('order', function() {
+define('RequireJsLoader/plugins/order', function() {
    'use strict';
 
    //Sadly necessary browser inference due to differences in the way
