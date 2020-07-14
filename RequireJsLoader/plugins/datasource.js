@@ -1,10 +1,10 @@
-define('datasource', ['Core/pathResolver', 'Env/Env', 'text'], function(pathResolver) {
+define('RequireJsLoader/plugins/datasource', ['RequireJsLoader/plugins/text'], function() {
    'use strict';
 
    return {
       load: function(name, require, onLoad) {
          try {
-            var path = pathResolver(name, 'dpack');
+            var path = name + '.dpack';
             require(['text!' + path], function(json) {
                var parsedData = {};
                try {
