@@ -1,8 +1,10 @@
 /* global define, describe, it, assert */
 define([
-   'RequireJsLoader/getResourceUrl'
+   'RequireJsLoader/getResourceUrl',
+   'RequireJsLoader/config'
 ], function(
-   getResourceUrl
+   getResourceUrl,
+   config
 ) {
    'use strict';
 
@@ -20,7 +22,7 @@ define([
 
       beforeEach(function() {
          global.contents = {};
-         global.wsConfig.getModulesPrefixes.invalidate();
+         config.handlers.getModulesPrefixes.invalidate();
       });
 
       afterEach(function() {
