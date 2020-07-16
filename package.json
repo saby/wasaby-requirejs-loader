@@ -20,7 +20,7 @@
     "htmlCoverageReport": "./artifacts/coverage/index.html",
     "jsonCoverageReport": "./artifacts/coverage.json",
     "tests": [
-       "RequireJsLoaderUnit"
+      "RequireJsLoaderUnit"
     ]
   },
   "repository": {
@@ -38,5 +38,8 @@
   ],
   "devDependencies": {
     "wasaby-cli": "git+https://platform-git.sbis.ru/saby/wasaby-cli.git#rc-20.5000"
+  },
+  "dependencies": {
+    "@types/node": "^14.0.23"
   }
 }
