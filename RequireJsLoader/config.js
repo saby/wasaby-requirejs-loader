@@ -700,6 +700,7 @@
             // Compatibility with old modules from WS
             'WS': removeTrailingSlash(wsPath),
             'WS.Core': wsPath,
+            'Core': pathJoin(wsPath, 'core'),
             'Lib': pathJoin(wsPath, 'lib'),
             'Ext': pathJoin(wsPath, 'lib/Ext'),
             'Deprecated': pathJoin(resourcesPath, 'WS.Deprecated'),
@@ -708,7 +709,6 @@
             'bootup' : pathJoin(wsPath, 'res/js/bootup'),
             'bootup-min' : pathJoin(wsPath, 'res/js/bootup-min'),
             'old-bootup' : pathJoin(wsPath, 'res/js/old-bootup'),
-            'Core': pathJoin(wsPath, 'core'),
 
             // jQuery must die
             'jquery': '/cdn/JQuery/jquery/3.3.1/jquery-min'
@@ -774,7 +774,7 @@
    }
 
    // Initiates application environment
-   function prepareEnvironment() {
+   function prepareEnvironment(handlers) {
       var require = global.requirejs;
 
       // Mark root RequireJS instance in purpose of Wasaby Dev Tools
@@ -790,9 +790,9 @@
 
       // Patch default context
       patchContext(require.s.contexts._, IS_SERVER_SCRIPT ? {
-         checkModule: requireHandlers.checkModule,
-         getWithVersion: requireHandlers.getWithVersion
-      } : requireHandlers);
+         checkModule: handlers.checkModule,
+         getWithVersion: handlers.getWithVersion
+      } : handlers);
    }
 
    // Normalize wsConfig
@@ -802,7 +802,7 @@
    global.wsConfig.IS_SERVER_SCRIPT = IS_SERVER_SCRIPT;
 
    // Build URL handlers
-   var requireHandlers = buildHandlers(global.wsConfig);
+   var handlers = buildHandlers(global.wsConfig);
 
    if (typeof global.define === 'function') {
       global.define('RequireJsLoader/config', function() {
@@ -811,12 +811,12 @@
             applyConfig: applyConfig,
             createConfig: createConfig,
             patchContext: patchContext,
-            handlers: requireHandlers,
+            handlers: handlers,
          }
       });
    }
 
-   prepareEnvironment();
+   prepareEnvironment(handlers);
    if (typeof module === 'object' && module.exports) {
       // Return config constructor in CommonJS environment
       module.exports = createConfig;
