@@ -1,11 +1,14 @@
 // Extensions for @types/requirejs
 
 export type ContextEnableFunction = (depMap: IRequireModule) => void;
+export type OnResourceLoadCallback = (context: IRequireContext, map: IRequireMapExt, depArray: RequireMap[]) => void;
 
-interface IRequireConfig {
-    paths?: Record<string, string>;
-    waitSeconds?: number;
+export interface IRequireConfig extends RequireConfig {
 }
+
+export interface IRequireMapExt extends RequireMap {
+    id: string;
+ }
 
 export interface IRequireModule {
     id: string;
@@ -22,9 +25,13 @@ interface IRequireModuleHolderConstructor {
 
 export interface IRequireContext {
     config: IRequireConfig;
+    defined: Record<string, unknown>;
     enable: ContextEnableFunction;
+    load: (id: string, url: string) => void;
     Module: IRequireModuleHolderConstructor;
+    nameToUrl: (name: string, ext?: string, skipExt?: boolean) => string;
     onError: (err: RequireError, errback?: Function) => void;
+    isPatchedByWs: boolean;
     require: Require;
     registry: Record<string, any>;
 }
@@ -35,5 +42,6 @@ interface IRequireApi {
 
 export interface IRequireExt extends Require {
     get: (context: IRequireContext, deps: string, relMap: IRequireModule, localRequire: Function) => any;
+    isWasaby?: boolean;
     s: IRequireApi;
 }

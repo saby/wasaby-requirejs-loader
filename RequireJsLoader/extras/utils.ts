@@ -1,16 +1,5 @@
 import {IRequireExt} from '../require.ext';
-import {IContents, IWsConfig} from '../wasaby';
-
-export interface IPatchedGlobal {
-    contents: IContents;
-    define: RequireDefine;
-    require: Require;
-    requirejs: IRequireExt;
-    wsConfig: IWsConfig;
-}
-
-export interface IPatchedWindow extends Window, IPatchedGlobal {
-}
+import {IPatchedGlobal} from '../wasaby';
 
 export const global = (function(): IPatchedGlobal {
     // tslint:disable-next-line:ban-comma-operator
