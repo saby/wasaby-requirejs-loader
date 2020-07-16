@@ -14,13 +14,6 @@ define([
       config.context = 'RequireJsLoaderUnit/require';
       var contextRequire = requirejs.config(config);
 
-      function shouldSkip(testCase) {
-         if (typeof window === 'undefined') {
-            testCase.skip();
-            return true;
-         }
-      }
-
       function asyncRequire(names, loader) {
          return new Promise((resolve, reject) => {
             (loader || require)(names, (...results) => {
@@ -41,52 +34,21 @@ define([
          });
       });
 
-      describe('using html! plugin', () => {
+      describe('using json! plugin', () => {
          after(() => {
-            requirejs.undef('html!RequireJsLoaderUnit/fixtures/ModuleA');
+            requirejs.undef('json!RequireJsLoaderUnit/fixtures/ModuleA');
             requirejs.undef('RequireJsLoaderUnit/fixtures/ModuleA');
          });
 
          it('should return defined module body', function () {
-            return asyncRequire(['html!RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([result]) => {
-               assert.equal(result, 'RequireJsLoaderUnit/fixtures/ModuleA.xhtml');
+            return asyncRequire(['json!RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([result]) => {
+               assert.deepEqual(result, ['RequireJsLoaderUnit/fixtures/ModuleA.json']);
             });
          });
 
          it('should return module without plugin if module with plugin has been required before', function() {
-            if (shouldSkip(this)) {
-               return;
-            }
-
-            return asyncRequire(['html!RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([pluginResult]) => {
-               assert.equal(pluginResult, 'RequireJsLoaderUnit/fixtures/ModuleA.xhtml');
-            }).then(() => {
-               return asyncRequire(['RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([noPluginResult]) => {
-                  assert.equal(noPluginResult, 'RequireJsLoaderUnit/fixtures/ModuleA/foo.js');
-               })
-            });
-         });
-      });
-
-      describe('using tmpl! plugin', () => {
-         after(() => {
-            requirejs.undef('tmpl!RequireJsLoaderUnit/fixtures/ModuleA');
-            requirejs.undef('RequireJsLoaderUnit/fixtures/ModuleA');
-         });
-
-         it('should return defined module body', function () {
-            return asyncRequire(['tmpl!RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([result]) => {
-               assert.equal(result, 'RequireJsLoaderUnit/fixtures/ModuleA.tmpl');
-            });
-         });
-
-         it('should return module without plugin if module with plugin has been required before', function() {
-            if (shouldSkip(this)) {
-               return;
-            }
-
-            return asyncRequire(['tmpl!RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([pluginResult]) => {
-               assert.equal(pluginResult, 'RequireJsLoaderUnit/fixtures/ModuleA.tmpl');
+            return asyncRequire(['json!RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([pluginResult]) => {
+               assert.deepEqual(pluginResult, ['RequireJsLoaderUnit/fixtures/ModuleA.json']);
             }).then(() => {
                return asyncRequire(['RequireJsLoaderUnit/fixtures/ModuleA'], contextRequire).then(([noPluginResult]) => {
                   assert.equal(noPluginResult, 'RequireJsLoaderUnit/fixtures/ModuleA.js');

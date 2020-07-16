@@ -155,7 +155,7 @@
       function patchedDefine(name, deps, callback) {
          var toAdd = needDependencyFor(name, [
             // Force load polyfills
-            IS_SERVER_SCRIPT ? '' : 'Core/polyfill',
+            IS_SERVER_SCRIPT ? '' : (global.contents && global.contents.modules && global.contents.modules['WS.Core'] ? 'Core/polyfill' : ''),
             // Force load extra patches for RequireJS
             'RequireJsLoader/extras/autoload'
          ], [
