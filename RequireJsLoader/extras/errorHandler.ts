@@ -7,8 +7,11 @@ interface IErrLoad {
     isFired?: boolean;
 }
 
+// Delay to limit the frequency of modules undefining
 const delayForUndefine = 5000;
+// The map which holds the last time when certain module has been undefined
 let lastUndefinedModules: Map<string, number>;
+// The set of modules id which have failed with error but haven't been undefined due to frequency limitation
 let skippedModules: Set<string>;
 
 /**
@@ -41,7 +44,7 @@ export function undefineByError(err: RequireError | Error, require: IRequireExt)
 }
 
 /**
- * Undefines whole tree branches started from given modules list
+ * Undefines whole tree branch started from given modules list
  */
 function undefineFailedAncestorsInner(
     id: string,
@@ -65,31 +68,39 @@ function undefineFailedAncestorsInner(
 }
 
 /**
- * Applies error to all ancestors of given module
+ * * Undefines modules caused an error and whole branch of other modules which recursively depend on failed modules.
+ * It's necessary in SSR environment when standalone process maintains many client requests. The goals are:
+ * 1. To reproduce errors on each request (ideally) to see them in logs (otherwise we have to search for first error(s) since process has started).
+ * 2. To revive failed modules within alive process when they fail because of temporary network problems. It's good to back to normal when those problems will had gone.
  */
 function undefineFailedAncestors(
     err: RequireError,
     require: IRequireExt,
     context: IRequireContext
 ): void {
-    const ids = err.requireModules;
-    if (!ids || !ids.length) {
-        return;
-    }
-
+    // Init the map with modules last undefine time
     lastUndefinedModules = lastUndefinedModules || new Map<string, number>();
+    // Init the set of modules id which failed with error but were skipped from undefine
     skippedModules = skippedModules || new Set<string>();
 
+    // Init set of failed modules with those which were skipped last time
     const failedModules = new Set<string>(skippedModules);
-    for (let i = 0; i < ids.length; i++) {
-        failedModules.add(ids[i]);
+
+    // Add modules from error to the set of failed
+    const requireModules = err && err.requireModules;
+    if (requireModules) {
+        for (let i = 0; i < requireModules.length; i++) {
+            failedModules.add(requireModules[i]);
+        }
     }
 
+    // Undefine set of failed modules
     const now = Date.now();
     failedModules.forEach((id) => {
-        // Here we can have multiple calls for the same modules set so let add some limitation on purpose of performance
+        // Add some limitation on purpose of performance
         const lastCheck = lastUndefinedModules.get(id) || 0;
         if (now - lastCheck < delayForUndefine) {
+            // Skip this time and do it later
             skippedModules.add(id);
         } else {
             skippedModules.delete(id);
@@ -98,7 +109,10 @@ function undefineFailedAncestors(
         }
     });
 
-    undefineByError(err, require);
+    // In case of error also undefine failed modules in general manner
+    if (requireModules) {
+        undefineByError(err, require);
+    }
 }
 
 const REQUIRE_TIMEOUT_TYPE = 'timeout';
@@ -149,11 +163,11 @@ export default function errorHandler(require: IRequireExt, force?: boolean): () 
     if (force || typeof window === 'undefined') {
         // Translate error from failed module to all its ancestors
         if (defaultContext) {
-            // Capture errors processed by module event handlers
+            // Capture errors processed by module event handlers include dynamic modules require([...names]) calls
             defaultEmit = defaultContext.Module.prototype.emit;
             defaultContext.Module.prototype.emit = function(name: string, evt: RequireError): void {
                 defaultEmit.call(this, name, evt);
-                if (name === 'error') {
+                if (name === 'error' || name === 'defined') {
                     undefineFailedAncestors(evt, require, defaultContext);
                 }
             };
@@ -179,7 +193,7 @@ export default function errorHandler(require: IRequireExt, force?: boolean): () 
 
             }
 
-            // Capture unhandled errors
+            // Deal with unhandled errors
             require.onError = (err, errback) => {
                 undefineFailedAncestors(err, require, defaultContext);
 
