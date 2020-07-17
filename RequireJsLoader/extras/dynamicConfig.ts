@@ -1,4 +1,4 @@
-import {IPatchedWindow} from './utils';
+import {IPatchedWindow} from '../wasaby';
 
 /**
  * Invokes given callback on page visibility change

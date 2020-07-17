@@ -4,7 +4,6 @@ export type BuildMode = 'release' | 'debug';
 
 export interface IPatchedGlobal {
     bundles: string[];
-    console: typeof console;
     contents: IContents;
     define: RequireDefine;
     require: Require;

@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import {BuildMode, IStaticResourcesConfig, IWsConfig, IContents, IPatchedGlobal} from './wasaby';
 import {IRequireExt, IRequireContext, IRequireMapExt, OnResourceLoadCallback} from './require.ext';
 
@@ -865,7 +864,9 @@ import {IRequireExt, IRequireContext, IRequireMapExt, OnResourceLoadCallback} fr
    }
 
    // Export config constructor in CommonJS environment
+   // @ts-ignore
    if (typeof module === 'object') {
+      // @ts-ignore
       module.exports = createConfig;
    }
 
