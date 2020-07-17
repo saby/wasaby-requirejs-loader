@@ -37,7 +37,6 @@
     "RequireJsLoader/*"
   ],
   "devDependencies": {
-    "@types/node": "^14.0.23",
     "wasaby-cli": "git+https://platform-git.sbis.ru/saby/wasaby-cli.git#rc-20.5000"
   }
 }
