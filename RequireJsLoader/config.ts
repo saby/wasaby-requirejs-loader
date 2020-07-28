@@ -239,36 +239,38 @@ define('RequireJsLoader/config', (() => {
         ): void {
             if (!map.prefix) {
                 let exports: Record<string, unknown> | Function = context.defined[map.id] as Record<string, unknown>;
-                // Lookup for ES6 default export if available
-                if (exports && exports.__esModule && exports.default) {
-                    exports = exports.default;
-                }
-
-                if (typeof exports === 'function') {
-                    // Give _moduleName to each class and BTW mark private classes
-                    const proto = exports.prototype;
-                    if (!proto.hasOwnProperty('_moduleName')) {
-                        proto._moduleName = map.name;
-                        if (map.name.indexOf('/_') !== -1) {
-                            proto._isPrivateModule = true;
-                        }
+                if (exports && !exports._packedLibrary) {
+                    // Lookup for ES6 default export if available
+                    if (exports && exports.__esModule && exports.default) {
+                        exports = exports.default;
                     }
-                } else if (
-                    // Give _moduleName to each private or unnamed class in public library
-                    exports
-                    && typeof exports === 'object'
-                    && Object.getPrototypeOf(exports) === Object.prototype
-                    && map.name.indexOf('/_') === -1
-                ) {
-                    Object.keys(exports).forEach((name) => {
-                        const module = exports[name];
-                        if (typeof module === 'function') {
-                            const proto = module.prototype;
-                            if (proto && (proto._isPrivateModule || !proto.hasOwnProperty('_moduleName'))) {
-                                proto._moduleName = map.name + ':' + name;
+
+                    if (typeof exports === 'function') {
+                        // Give _moduleName to each class and BTW mark private classes
+                        const proto = exports.prototype;
+                        if (!proto.hasOwnProperty('_moduleName')) {
+                            proto._moduleName = map.name;
+                            if (map.name.indexOf('/_') !== -1) {
+                                proto._isPrivateModule = true;
                             }
                         }
-                    });
+                    } else if (
+                        // Give _moduleName to each private or unnamed class in public library
+                        exports
+                        && typeof exports === 'object'
+                        && Object.getPrototypeOf(exports) === Object.prototype
+                        && map.name.indexOf('/_') === -1
+                    ) {
+                        Object.keys(exports).forEach((name) => {
+                            const module = exports[name];
+                            if (typeof module === 'function') {
+                                const proto = module.prototype;
+                                if (proto && (proto._isPrivateModule || !proto.hasOwnProperty('_moduleName'))) {
+                                    proto._moduleName = map.name + ':' + name;
+                                }
+                            }
+                        });
+                    }
                 }
             }
 
