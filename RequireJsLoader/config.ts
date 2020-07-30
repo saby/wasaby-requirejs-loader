@@ -732,8 +732,10 @@ define('RequireJsLoader/config', (() => {
         // Build config
         const config: RequireConfig = {
             baseUrl: appPath,
-            '*': {
-                'i18n': 'I18n/i18n'
+            map: {
+                '*': {
+                    'i18n': 'I18n/i18n'
+                }
             },
             paths: {
                 // Plugins
