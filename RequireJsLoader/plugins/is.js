@@ -69,10 +69,10 @@
  *
  */
 
-define('RequireJsLoader/plugins/is', [
+define('is', [
    'module',
    'require',
-   'RequireJsLoader/plugins/is-api',
+   'is-api',
    'optional!Env/Env'
 ], function(
    module,

@@ -3,8 +3,8 @@
  * - html!SBIS3.CORE.HTMLChunk - подключит шаблон
  * - html!encode=true?SBIS3.CORE.HTMLChunk - подключит шаблон, в котором все {{=it....}} будет делать эскейпинг текста
  */
-define('RequireJsLoader/plugins/html', [
-   'RequireJsLoader/plugins/text',
+define('html', [
+   'text',
    'optional!Core/js-template-doT',
    'optional!Env/Env'
 ], function(

@@ -1,4 +1,4 @@
-define('RequireJsLoader/plugins/css', [
+define('css', [
    'optional!UI/theme/controller',
    'optional!Env/Env'
 ], function(controller, Env) {

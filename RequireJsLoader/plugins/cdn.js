@@ -1,4 +1,4 @@
-define('RequireJsLoader/plugins/cdn', ['optional!Env/Env'], function(Env) {
+define('cdn', ['optional!Env/Env'], function(Env) {
    'use strict';
 
    function removeLeadingSlash(path) {

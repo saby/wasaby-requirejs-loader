@@ -732,32 +732,28 @@ define('RequireJsLoader/config', (() => {
         // Build config
         const config: RequireConfig = {
             baseUrl: appPath,
-            map: {
-                '*': {
-                    // Plugins
-                    browser: 'RequireJsLoader/plugins/browser',
-                    cdn: 'RequireJsLoader/plugins/cdn',
-                    css: 'RequireJsLoader/plugins/css',
-                    datasource: 'RequireJsLoader/plugins/datasource',
-                    json: 'RequireJsLoader/plugins/json',
-                    html: 'RequireJsLoader/plugins/html',
-                    i18n: 'I18n/i18n',
-                    is: 'RequireJsLoader/plugins/is',
-                    'is-api': 'RequireJsLoader/plugins/is-api',
-                    'native-css': 'RequireJsLoader/plugins/native-css',
-                    normalize: 'RequireJsLoader/plugins/normalize',
-                    optional: 'RequireJsLoader/plugins/optional',
-                    order: 'RequireJsLoader/plugins/order',
-                    preload: 'RequireJsLoader/plugins/preload',
-                    remote: 'RequireJsLoader/plugins/remote',
-                    template: 'RequireJsLoader/plugins/template',
-                    text: 'RequireJsLoader/plugins/text',
-                    tmpl: 'RequireJsLoader/plugins/tmpl',
-                    wml: 'RequireJsLoader/plugins/wml',
-                    xml: 'RequireJsLoader/plugins/xml'
-                }
-            },
             paths: {
+                // Plugins
+                browser: 'RequireJsLoader/plugins/browser',
+                cdn: 'RequireJsLoader/plugins/cdn',
+                css: 'RequireJsLoader/plugins/css',
+                datasource: 'RequireJsLoader/plugins/datasource',
+                json: 'RequireJsLoader/plugins/json',
+                html: 'RequireJsLoader/plugins/html',
+                i18n: 'I18n/i18n',
+                is: 'RequireJsLoader/plugins/is',
+                'is-api': 'RequireJsLoader/plugins/is-api',
+                'native-css': 'RequireJsLoader/plugins/native-css',
+                normalize: 'RequireJsLoader/plugins/normalize',
+                optional: 'RequireJsLoader/plugins/optional',
+                order: 'RequireJsLoader/plugins/order',
+                preload: 'RequireJsLoader/plugins/preload',
+                remote: 'RequireJsLoader/plugins/remote',
+                template: 'RequireJsLoader/plugins/template',
+                text: 'RequireJsLoader/plugins/text',
+                tmpl: 'RequireJsLoader/plugins/tmpl',
+                wml: 'RequireJsLoader/plugins/wml',
+                xml: 'RequireJsLoader/plugins/xml',
                 // jQuery must die
                 jquery: '/cdn/JQuery/jquery/3.3.1/jquery-min'
 
