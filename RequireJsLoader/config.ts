@@ -732,6 +732,9 @@ define('RequireJsLoader/config', (() => {
         // Build config
         const config: RequireConfig = {
             baseUrl: appPath,
+            '*': {
+                'i18n': 'I18n/i18n'
+            },
             paths: {
                 // Plugins
                 browser: 'RequireJsLoader/plugins/browser',
@@ -740,7 +743,6 @@ define('RequireJsLoader/config', (() => {
                 datasource: 'RequireJsLoader/plugins/datasource',
                 json: 'RequireJsLoader/plugins/json',
                 html: 'RequireJsLoader/plugins/html',
-                i18n: 'I18n/i18n',
                 is: 'RequireJsLoader/plugins/is',
                 'is-api': 'RequireJsLoader/plugins/is-api',
                 'native-css': 'RequireJsLoader/plugins/native-css',
