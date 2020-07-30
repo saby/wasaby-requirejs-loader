@@ -873,6 +873,13 @@ define('RequireJsLoader/config', (() => {
     // Prepare environment with patches
     prepareEnvironment(requirejs as RequireJsLoader.IRequireExt, handlers);
 
+    Object.defineProperties(GLOBAL.wsConfig, {
+        getModulesPrefixes: {configurable: true, value: handlers.getModulesPrefixes},
+        getWithVersion: {configurable: true, value: handlers.getWithVersion},
+        getWithDomain: {configurable: true, value: handlers.getWithDomain},
+        getWithSuffix: {configurable: true, value: handlers.getWithSuffix},
+    });
+
     // Initialize RequireJS
     applyConfig(requirejs, GLOBAL.wsConfig);
 
