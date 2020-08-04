@@ -1,4 +1,4 @@
-@Library('pipeline@hub/git_hub')') _
+@Library('pipeline@hub/git_hub') _
 
 def version = '20.6000'
 
