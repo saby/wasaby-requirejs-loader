@@ -1,9 +1,9 @@
-@Library('pipeline') _
+@Library('pipeline@hub/git_hub')') _
 
-def version = '20.5100'
+def version = '20.6000'
 
 node ('controls') {
-    checkout_pipeline("rc-${version}")
+    checkout_pipeline("20.6000/hub/git_hub")
     run_branch = load '/home/sbis/jenkins_pipeline/platforma/branch/run_branch'
     run_branch.execute('wasaby_requirejs_loader', version)
 }
