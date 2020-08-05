@@ -30,7 +30,7 @@
  *
  */
 
-define('RequireJsLoader/plugins/native-css', [], function() {
+define('native-css', [], function() {
 //>>excludeStart('excludeRequireCss', pragmas.excludeRequireCss)
   if (
         typeof window           === typeof void 0

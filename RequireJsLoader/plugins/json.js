@@ -1,4 +1,4 @@
-define('RequireJsLoader/plugins/json', ['RequireJsLoader/plugins/text'], function(text) {
+define('json', ['text'], function(text) {
    'use strict';
 
    return {

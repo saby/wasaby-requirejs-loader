@@ -1,8 +1,8 @@
 /**
  * Плагин для подключения шаблонов в виде функций.
  */
-define('RequireJsLoader/plugins/wml', [
-   'RequireJsLoader/plugins/text',
+define('wml', [
+   'text',
    'RequireJsLoader/extras/patchDefine',
    'optional!View/config',
    'optional!Env/Env'

@@ -1,4 +1,4 @@
-define('RequireJsLoader/plugins/optional', function() {
+define('optional', function() {
    'use strict';
 
    var global = (function(){ return this || (0,eval)('this'); }());

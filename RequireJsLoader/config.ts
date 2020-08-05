@@ -734,30 +734,30 @@ define('RequireJsLoader/config', (() => {
             baseUrl: appPath,
             map: {
                 '*': {
-                    // Plugins
-                    browser: 'RequireJsLoader/plugins/browser',
-                    cdn: 'RequireJsLoader/plugins/cdn',
-                    css: 'RequireJsLoader/plugins/css',
-                    datasource: 'RequireJsLoader/plugins/datasource',
-                    json: 'RequireJsLoader/plugins/json',
-                    html: 'RequireJsLoader/plugins/html',
-                    i18n: 'I18n/i18n',
-                    is: 'RequireJsLoader/plugins/is',
-                    'is-api': 'RequireJsLoader/plugins/is-api',
-                    'native-css': 'RequireJsLoader/plugins/native-css',
-                    normalize: 'RequireJsLoader/plugins/normalize',
-                    optional: 'RequireJsLoader/plugins/optional',
-                    order: 'RequireJsLoader/plugins/order',
-                    preload: 'RequireJsLoader/plugins/preload',
-                    remote: 'RequireJsLoader/plugins/remote',
-                    template: 'RequireJsLoader/plugins/template',
-                    text: 'RequireJsLoader/plugins/text',
-                    tmpl: 'RequireJsLoader/plugins/tmpl',
-                    wml: 'RequireJsLoader/plugins/wml',
-                    xml: 'RequireJsLoader/plugins/xml'
+                    'i18n': 'I18n/i18n'
                 }
             },
             paths: {
+                // Plugins
+                browser: 'RequireJsLoader/plugins/browser',
+                cdn: 'RequireJsLoader/plugins/cdn',
+                css: 'RequireJsLoader/plugins/css',
+                datasource: 'RequireJsLoader/plugins/datasource',
+                json: 'RequireJsLoader/plugins/json',
+                html: 'RequireJsLoader/plugins/html',
+                is: 'RequireJsLoader/plugins/is',
+                'is-api': 'RequireJsLoader/plugins/is-api',
+                'native-css': 'RequireJsLoader/plugins/native-css',
+                normalize: 'RequireJsLoader/plugins/normalize',
+                optional: 'RequireJsLoader/plugins/optional',
+                order: 'RequireJsLoader/plugins/order',
+                preload: 'RequireJsLoader/plugins/preload',
+                remote: 'RequireJsLoader/plugins/remote',
+                template: 'RequireJsLoader/plugins/template',
+                text: 'RequireJsLoader/plugins/text',
+                tmpl: 'RequireJsLoader/plugins/tmpl',
+                wml: 'RequireJsLoader/plugins/wml',
+                xml: 'RequireJsLoader/plugins/xml',
                 // jQuery must die
                 jquery: '/cdn/JQuery/jquery/3.3.1/jquery-min'
 
@@ -872,6 +872,13 @@ define('RequireJsLoader/config', (() => {
 
     // Prepare environment with patches
     prepareEnvironment(requirejs as RequireJsLoader.IRequireExt, handlers);
+
+    Object.defineProperties(GLOBAL.wsConfig, {
+        getModulesPrefixes: {configurable: true, value: handlers.getModulesPrefixes},
+        getWithVersion: {configurable: true, value: handlers.getWithVersion},
+        getWithDomain: {configurable: true, value: handlers.getWithDomain},
+        getWithSuffix: {configurable: true, value: handlers.getWithSuffix},
+    });
 
     // Initialize RequireJS
     applyConfig(requirejs, GLOBAL.wsConfig);

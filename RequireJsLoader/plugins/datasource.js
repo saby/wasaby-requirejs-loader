@@ -1,4 +1,4 @@
-define('RequireJsLoader/plugins/datasource', ['RequireJsLoader/plugins/text'], function() {
+define('datasource', ['text'], function() {
    'use strict';
 
    return {

@@ -1,8 +1,8 @@
 /**
  * Плагин для подключения шаблонов в виде функций.
  */
-define('RequireJsLoader/plugins/tmpl', [
-   'RequireJsLoader/plugins/wml',
+define('tmpl', [
+   'wml',
    'optional!View/Executor/TClosure',
    'optional!Env/Env'
 ], function(

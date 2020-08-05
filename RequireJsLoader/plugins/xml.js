@@ -1,4 +1,4 @@
-define('RequireJsLoader/plugins/xml', ['RequireJsLoader/plugins/text'], function(text) {
+define('xml', ['text'], function(text) {
    'use strict';
 
    return {
