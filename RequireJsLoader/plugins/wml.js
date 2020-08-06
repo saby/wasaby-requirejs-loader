@@ -4,15 +4,17 @@
 define('wml', [
    'text',
    'RequireJsLoader/extras/patchDefine',
-   'optional!View/config',
+   'optional!UI/Builder',
    'optional!Env/Env'
 ], function(
    text,
    patchDefine,
-   config,
+   Builder,
    Env
 ) {
    'use strict';
+
+   var config = Builder && Builder.Config;
 
    var global = (function(){ return this || (0,eval)('this'); }());
    var isServerSide = typeof window === 'undefined' && !(process && process.versions);
