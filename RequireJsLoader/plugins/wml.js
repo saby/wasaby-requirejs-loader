@@ -144,7 +144,7 @@ define('wml', [
          }
       },
       load: function (name, require, load) {
-         wmlObj.loadBase(name, require, load, 'wml', ['View/Builder'], createTemplate);
+         wmlObj.loadBase(name, require, load, 'wml', ['UI/Builder'], createTemplate);
       },
       createLostFunction: createLostFunction,
       createLoader: createLoader

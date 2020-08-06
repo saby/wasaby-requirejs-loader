@@ -71,7 +71,7 @@ define('tmpl', [
    return {
       load: function (name, require, load) {
          var deps = [
-            'View/Builder',
+            'UI/Builder',
             'is!compatibleLayer?Lib/Control/Control.compatible',
             'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible'
          ];
