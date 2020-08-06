@@ -53,6 +53,25 @@ define('RequireJsLoader/config', (() => {
         }
     }
 
+    /*
+    Поллифил Object.assing.
+    В IE нет Object.assing, данный модуль грузится самым первым на страницу до полифила.
+    Пришлось для быстрого решения проблемы написать полифил прям внутри модуля.
+    */
+    function assign(original: object, donor: object): object {
+        if (!Object.assign) {
+            for (const name in donor) {
+                if (donor.hasOwnProperty(name)) {
+                    original[name] = donor[name];
+                }
+            }
+
+            return original;
+        }
+
+        return Object.assign(original, donor);
+    }
+
     /**
      * На страницах OnlineSbisRu/CompatibleTemplate зависимости пакуются в rt-пакеты и собираются DepsCollector(saby/UI)
      * Поэтому в глобальной переменной храним имена запакованных в rt-пакет модулей
@@ -768,7 +787,7 @@ define('RequireJsLoader/config', (() => {
 
         // If WS.Core in application
         if (wsPath) {
-            Object.assign(config.paths, {
+            assign(config.paths, {
                 // tlib.js location to use it as AMD dependency in compiled code
                 tslib: pathJoin(wsPath, 'ext/tslib'),
 
@@ -791,7 +810,7 @@ define('RequireJsLoader/config', (() => {
 
         // Check and handle some options
         if (options) {
-            Object.assign(config, options);
+            assign(config, options);
             if (options.modules) {
                 for (const name in options.modules) {
                     if (options.modules.hasOwnProperty(name)) {
