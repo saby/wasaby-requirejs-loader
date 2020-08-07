@@ -3,14 +3,16 @@
  */
 define('tmpl', [
    'wml',
-   'optional!View/Executor/TClosure',
+   'optional!UI/Executor',
    'optional!Env/Env'
 ], function(
    wml,
-   tClosure,
+   Executor,
    Env
 ) {
    'use strict';
+
+   var tClosure = Executor.TClosure;
 
    function resolverControls(path) {
       return 'tmpl!' + path;
