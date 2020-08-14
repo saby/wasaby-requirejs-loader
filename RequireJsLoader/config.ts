@@ -504,6 +504,10 @@ define('RequireJsLoader/config', (() => {
 
         // Injects domain signature to the URL if necessary
         function getWithDomain(url: string): string {
+            if (!url) {
+                return url;
+            }
+
             const domain = getDomain(url);
             const staticConfig = getStaticConfig();
 

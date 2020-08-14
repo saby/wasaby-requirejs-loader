@@ -16,12 +16,7 @@
   "saby-units": {
     "moduleType": "amd",
     "root": "application",
-    "report": "application/artifacts/xunit-report.xml",
-    "htmlCoverageReport": "./artifacts/coverage/index.html",
-    "jsonCoverageReport": "./artifacts/coverage.json",
-    "tests": [
-      "RequireJsLoaderUnit"
-    ]
+    "tests": ["RequireJsLoaderUnit"]
   },
   "repository": {
     "type": "git",
