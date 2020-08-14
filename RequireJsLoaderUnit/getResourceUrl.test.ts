@@ -199,6 +199,12 @@ describe('RequireJsLoader/getResourceUrl', () => {
       assert.isNull(getResourceUrl(null));
    });
 
+   it('should deal with not a string if domain name specified', () => {
+      global.wsConfig.staticDomains = {domains: ['foo.bar']};
+      assert.isUndefined(getResourceUrl(undefined));
+      assert.isNull(getResourceUrl(null));
+   });
+
    it('should add product name to the URL with file from resource root', () => {
       global.wsConfig.resourceRoot = '/assets/';
       global.wsConfig.product = 'foo';
