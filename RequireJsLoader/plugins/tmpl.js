@@ -75,11 +75,9 @@ define('tmpl', [
          var deps = [
             'UI/Builder',
             'is!compatibleLayer?Lib/Control/Control.compatible',
-            'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible'
+            'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible',
+            'i18n!' + name.split('/')[0]
          ];
-         if (Env && Env.modules && Env.modules.I18n) {
-            deps.push('i18n!' + name.split('/')[0]);
-         }
          wml.loadBase(name, require, load, 'tmpl', deps, createTemplate);
       }
    };

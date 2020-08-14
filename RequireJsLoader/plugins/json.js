@@ -4,7 +4,7 @@ define('json', ['text'], function(text) {
    return {
       load: function(name, require, load, conf) {
          try {
-            var path = name + '.json';
+            var path = name.endsWith('.json') ? name : name + '.json';
 
             var onLoad = function(json) {
                var parsedData = {};
