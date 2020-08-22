@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<ui_module for_cdn="0" id="7e8aabad-d60f-4c48-aa74-f29d78fd8be2" name="RequireJsLoader" required="0" package="Платформа" responsible="Мальцев А.А." version="1.00">
+<ui_module for_cdn="0" id="7e8aabad-d60f-4c48-aa74-f29d78fd8be2" name="RequireJsLoader" required="1" package="Платформа" responsible="Мальцев А.А." version="1.00">
 
   <description/>
 
