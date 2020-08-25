@@ -6,9 +6,14 @@ interface IDependenciesMap {
     [propName: string]: string[];
 }
 
+/**
+ * Need to check circular dependencies only when debug mode is on
+ */
 const needCheckCircularDependencies = global.wsConfig && Boolean(
-    global.wsConfig.IS_OVERALL_DEBUG || global.wsConfig.DEBUGGING_MODULES
+    global.wsConfig.IS_OVERALL_DEBUG ||
+    (global.wsConfig.DEBUGGING_MODULES && global.wsConfig.DEBUGGING_MODULES.length)
 );
+
 const moduleDependencies: Record<string, string[]> = {};
 
 /**
