@@ -6,6 +6,12 @@ define('json', ['text'], function(text) {
          try {
             var path = name.endsWith('.json') ? name : name + '.json';
 
+            // we need to remove leading slash if it exists.
+            // otherwise "text" wouldn't be able to download file
+            // properly in local tests
+            if (path.startsWith('/')) {
+               path = path.replace('/', '');
+            }
             var onLoad = function(json) {
                var parsedData = {};
                try {
