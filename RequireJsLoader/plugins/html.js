@@ -99,13 +99,9 @@ define('html', [
                path = path.replace(/(\.min)?\.xhtml$/, '.min.xhtml');
             }
 
-            if (Env && Env.modules && Env.modules.I18n) {
-               require(['i18n!' + path.split('/')[0]], function() {
-                  text.load(path, require, onLoad, conf);
-               });
-            } else {
+            require(['i18n!' + path.split('/')[0]], function() {
                text.load(path, require, onLoad, conf);
-            }
+            });
          } catch (err) {
             onError(err)
          }
