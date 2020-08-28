@@ -222,6 +222,7 @@ define('RequireJsLoader/config', (() => {
                 'RequireJsLoader/extras/errorHandler',
                 'RequireJsLoader/extras/resourceLoadHandler',
                 'RequireJsLoader/extras/patchDefine',
+                'RequireJsLoader/extras/undefineAncestors',
                 'RequireJsLoader/extras/utils'
             ]);
 
