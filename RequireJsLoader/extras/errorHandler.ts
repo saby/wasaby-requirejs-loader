@@ -1,4 +1,5 @@
 import {IRequireContext, IRequireModule, IRequireExt} from '../require.ext';
+import undefineAncestors from './undefineAncestors';
 import {global, getInstance} from './utils';
 
 interface IErrLoad {
@@ -13,18 +14,6 @@ const delayForUndefine = 5000;
 let lastUndefinedModules: Map<string, number>;
 // The set of modules id which have failed with error but haven't been undefined due to frequency limitation
 let skippedModules: Set<string>;
-
-/**
- * Returns module ids which depend on module with given id
- */
-function getParents(id: string, context: IRequireContext): string[] {
-    const registry = context.registry;
-    return Object.keys(registry).filter((name) => {
-        const module = registry[name];
-        const depMaps = module.depMaps;
-        return depMaps && depMaps.some((depModule) => depModule.id === id);
-    });
-}
 
 /**
  * Undefines failed modules on error to force RequireJS try again to load them and generate that error
@@ -43,29 +32,6 @@ export function undefineByError(err: RequireError | Error, require: IRequireExt)
     }
 }
 
-/**
- * Undefines whole tree branch started from given modules list
- */
-function undefineFailedAncestorsInner(
-    id: string,
-    context: IRequireContext,
-    processed: Set<string>
-): void {
-    if (processed.has(id)) {
-        return;
-    }
-    processed.add(id);
-
-    getParents(id, context).forEach((parentId) => {
-        undefineFailedAncestorsInner(
-            parentId,
-            context,
-            processed
-        );
-    });
-
-    context.require.undef(id);
-}
 
 /**
  * * Undefines modules caused an error and whole branch of other modules which recursively depend on failed modules.
@@ -105,7 +71,7 @@ function undefineFailedAncestors(
         } else {
             skippedModules.delete(id);
             lastUndefinedModules.set(id, now);
-            undefineFailedAncestorsInner(id, context, new Set<string>());
+            undefineAncestors(id, context, new Set<string>());
         }
     });
 
