@@ -25,7 +25,7 @@ export function undefineByError(err: RequireError | Error, require: IRequireExt)
     if ((err as RequireError).originalError) {
         undefineByError((err as RequireError).originalError, require);
     }
-    if (require && (err as RequireError).requireModules) {
+    if (require && (err as RequireError).requireModules instanceof Array) {
         (err as RequireError).requireModules.forEach((moduleName) => {
             require.undef(moduleName);
         });
