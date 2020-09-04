@@ -167,8 +167,10 @@ export default function errorHandler(require: IRequireExt, force?: boolean): () 
             defaultEmit = defaultContext.Module.prototype.emit;
             defaultContext.Module.prototype.emit = function(name: string, evt: RequireError): void {
                 defaultEmit.call(this, name, evt);
-                if (name === 'error' || name === 'defined') {
+                if (name === 'error') {
                     undefineFailedAncestors(evt, require, defaultContext);
+                } else if (name === 'defined') {
+                    undefineFailedAncestors(null, require, defaultContext);
                 }
             };
 
