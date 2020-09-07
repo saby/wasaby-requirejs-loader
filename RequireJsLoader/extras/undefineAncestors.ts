@@ -1,5 +1,30 @@
 import {IRequireContext} from '../require.ext';
 
+interface IIoC {
+    resolve<T>(name: string): T;
+}
+
+interface ILogger {
+    log(tag: string, message: string): void;
+}
+
+// Module which supplies logger
+const logSupplierModule = 'Env/Env';
+
+function log(message: string): void {
+    import(logSupplierModule).then(({IoC}: {IoC: IIoC}) => {
+        IoC.resolve<ILogger>('ILogger').log('RequireJsLoader/extras/errorHandler', message);
+    });
+}
+
+/**
+ * Undefines module with given name
+ */
+export function undefine(require: Require, name: string): void {
+    require.undef(name);
+    log(`Module has been undefined "${name}".`);
+}
+
 /**
  * Returns module ids which depend on module with given id
  */
@@ -33,5 +58,5 @@ export default function undefineAncestors(
         );
     });
 
-    context.require.undef(id);
+    undefine(context.require, id);
 }

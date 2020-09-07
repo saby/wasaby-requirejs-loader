@@ -1,9 +1,9 @@
 import {IRequireContext, IRequireModule, IRequireExt} from '../require.ext';
-import undefineAncestors from './undefineAncestors';
+import undefineAncestors, {undefine} from './undefineAncestors';
 import {global, getInstance} from './utils';
 
 interface IErrLoad {
-    (err: any): void;
+    (err: Error): void;
     defaultHandler?: Function;
     isFired?: boolean;
 }
@@ -18,20 +18,16 @@ let skippedModules: Set<string>;
 /**
  * Undefines failed modules on error to force RequireJS try again to load them and generate that error
  */
-export function undefineByError(err: RequireError | Error, require: IRequireExt): void {
-    if (arguments.length < 2) {
-        require = getInstance();
-    }
+export function undefineByError(err: RequireError | Error, require: IRequireExt = getInstance()): void {
     if ((err as RequireError).originalError) {
         undefineByError((err as RequireError).originalError, require);
     }
     if (require && (err as RequireError).requireModules instanceof Array) {
         (err as RequireError).requireModules.forEach((moduleName) => {
-            require.undef(moduleName);
+            undefine(require, moduleName);
         });
     }
 }
-
 
 /**
  * * Undefines modules caused an error and whole branch of other modules which recursively depend on failed modules.
@@ -148,7 +144,7 @@ export default function errorHandler(require: IRequireExt, force?: boolean): () 
                     deps: string,
                     relMap: IRequireModule,
                     localRequire: Function
-                ): any {
+                ): unknown {
                     const result = defaultGet.call(this, context, deps, relMap, localRequire);
                     if (typeof deps === 'string') {
                         const module = context.registry[deps];
