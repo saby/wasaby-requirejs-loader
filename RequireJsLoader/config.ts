@@ -2,20 +2,21 @@
  * Configures RequireJS on Wasaby environment.
  * This code should be executed before any other module load that's why it's a self-invoking function.
  */
+
+interface IGetModulePrefixes {
+    (): string[][];
+    invalidate(): void;
+}
+
+interface IHandlers {
+    getModulesPrefixes: IGetModulePrefixes;
+    checkModule: (url: string) => void;
+    getWithDomain: (url: string) => string;
+    getWithSuffix: (url: string) => string;
+    getWithVersion: (url: string) => string;
+}
+
 define('RequireJsLoader/config', (() => {
-    interface IGetModulePrefixes {
-        (): string[][];
-        invalidate(): void;
-    }
-
-    interface IHandlers {
-        getModulesPrefixes: IGetModulePrefixes;
-        checkModule: (url: string) => void;
-        getWithDomain: (url: string) => string;
-        getWithSuffix: (url: string) => string;
-        getWithVersion: (url: string) => string;
-    }
-
     // Superglobal root
     const GLOBAL: RequireJsLoader.IPatchedGlobal = (function(): RequireJsLoader.IPatchedGlobal {
         // tslint:disable-next-line:ban-comma-operator
@@ -919,3 +920,8 @@ define('RequireJsLoader/config', (() => {
         handlers
     });
 })());
+
+// Pretend to be a regular module
+declare const handlers: IHandlers;
+
+export {handlers};

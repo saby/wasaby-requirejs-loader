@@ -2,9 +2,16 @@ import {IRequireContext, IRequireModule, IRequireExt} from '../require.ext';
 import {global, getInstance} from './utils';
 
 interface IErrLoad {
-    (err: any): void;
+    (err: Error): void;
     defaultHandler?: Function;
     isFired?: boolean;
+}
+
+interface IIoC {
+    resolve<T>(name: string): T;
+}
+interface ILogger {
+    log(tag: string, message: string): void;
 }
 
 // Delay to limit the frequency of modules undefining
@@ -13,6 +20,15 @@ const delayForUndefine = 5000;
 let lastUndefinedModules: Map<string, number>;
 // The set of modules id which have failed with error but haven't been undefined due to frequency limitation
 let skippedModules: Set<string>;
+
+// Module which supplies logger
+const logSupplierModule = 'Env/Env';
+
+function log(message: string): void {
+    import(logSupplierModule).then(({IoC}: {IoC: IIoC}) => {
+        IoC.resolve<ILogger>('ILogger').log('RequireJsLoader/extras/errorHandler', message);
+    });
+}
 
 /**
  * Returns module ids which depend on module with given id
@@ -27,18 +43,23 @@ function getParents(id: string, context: IRequireContext): string[] {
 }
 
 /**
+ * Undefines module with given name
+ */
+function undefine(require: Require, name: string): void {
+    require.undef(name);
+    log(`Module has been undefined "${name}".`);
+}
+
+/**
  * Undefines failed modules on error to force RequireJS try again to load them and generate that error
  */
-export function undefineByError(err: RequireError | Error, require: IRequireExt): void {
-    if (arguments.length < 2) {
-        require = getInstance();
-    }
+export function undefineByError(err: RequireError | Error, require: IRequireExt = getInstance()): void {
     if ((err as RequireError).originalError) {
         undefineByError((err as RequireError).originalError, require);
     }
     if (require && (err as RequireError).requireModules instanceof Array) {
         (err as RequireError).requireModules.forEach((moduleName) => {
-            require.undef(moduleName);
+            undefine(require, moduleName);
         });
     }
 }
@@ -64,7 +85,7 @@ function undefineFailedAncestorsInner(
         );
     });
 
-    context.require.undef(id);
+    undefine(context.require, id);
 }
 
 /**
@@ -182,7 +203,7 @@ export default function errorHandler(require: IRequireExt, force?: boolean): () 
                     deps: string,
                     relMap: IRequireModule,
                     localRequire: Function
-                ): any {
+                ): unknown {
                     const result = defaultGet.call(this, context, deps, relMap, localRequire);
                     if (typeof deps === 'string') {
                         const module = context.registry[deps];
