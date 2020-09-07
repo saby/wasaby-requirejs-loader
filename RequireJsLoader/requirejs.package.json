@@ -8,5 +8,5 @@
 
     "RequireJsLoader/extras/*"
   ],
-  "output": "plugins.package.js"
+  "extendsTo": "online-superbundle.package.js"
 }]
