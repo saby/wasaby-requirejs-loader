@@ -41,6 +41,13 @@ function undefineFailedModules(context: IRequireContext, logger: ILogger): void 
 
     // Lookup for any module failed with error
     const hasError = registryNames.some((moduleName) => {
+        if (
+            moduleName === 'wsmodPacker' ||
+            moduleName.startsWith('optional!') ||
+            moduleName.endsWith('/module-dependencies')
+        ) {
+            return false;
+        }
         const module = registry[moduleName];
         return module && module.error;
     });
@@ -70,7 +77,7 @@ function showAlertOnTimeoutInBrowser(defaultHandler: Function): (err: RequireErr
         if (!err) {
             return;
         }
-    
+
         if (err.requireType !== REQUIRE_TIMEOUT_TYPE) {
             return defaultHandler(err);
         }
@@ -80,24 +87,24 @@ function showAlertOnTimeoutInBrowser(defaultHandler: Function): (err: RequireErr
         if (global.wsConfig && global.wsConfig.showAlertOnTimeoutInBrowser === false) {
             return defaultHandler(err);
         }
-    
+
         // Ignore timeout errors for CSS
         const importantModules = err.requireModules.filter((moduleName) => moduleName.substr(0, 4) !== 'css!');
         if (importantModules.length === 0) {
             return;
         }
-    
+
         if (!isFired) {
             alert('Произошла ошибка загрузки ресурса. Проверьте интернет соединение и повторите попытку.');
             isFired = true;
         }
-    
+
         return defaultHandler(err);
     };
 };
 
 interface IErrorHandlerOptions {
-    logger: ILogger
+    logger: ILogger;
     undefineFailedModules?: boolean;
     showAlertOnError?: boolean;
 }
@@ -105,7 +112,7 @@ interface IErrorHandlerOptions {
 const defaultOptions: IErrorHandlerOptions = {
     logger: null,
     undefineFailedModules: typeof window === 'undefined',
-    showAlertOnError:  typeof window !== 'undefined',
+    showAlertOnError:  typeof window !== 'undefined'
 };
 
 /**
