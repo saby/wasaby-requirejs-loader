@@ -1,5 +1,5 @@
 import {IRequireContext, IRequireModule, IRequireExt} from '../require.ext';
-import {undefine, ILogger} from './undefineAncestors';
+import undefineAncestors, {undefine, ILogger} from './undefineAncestors';
 import {global, getInstance} from './utils';
 
 // Delay to limit the frequency of modules undefining
@@ -23,12 +23,40 @@ export function undefineByError(err: RequireError | Error, require: IRequireExt 
 }
 
 /**
- * * Undefines modules caused an error and whole branch of other modules which recursively depend on failed modules.
- * It's necessary in SSR environment when standalone process maintains many client requests. The goals are:
- * 1. To reproduce errors on each request (ideally) to see them in logs (otherwise we have to search for first error(s) since process has started).
- * 2. To revive failed modules within alive process when they fail because of temporary network problems. It's good to back to normal when those problems will had gone.
+ * Undefines modules caused an error and whole branch of other modules which recursively depend on failed modules.
+ * It's necessary in SSR environment when standalone process maintains many client requests. The goal is to reproduce
+ * errors on each request (ideally) to see them in logs (otherwise we have to search for first error(s) since process
+ * has started).
  */
-function undefineFailedModules(context: IRequireContext, logger: ILogger): void {
+function undefineFailedAncestors(
+    err: RequireError,
+    context: IRequireContext,
+    logger: ILogger
+): void {
+    // Init set of failed modules with those which were skipped last time
+    const failedModules = new Set<string>();
+
+    // Add modules from error to the set of failed
+    const requireModules = err && err.requireModules;
+    if (requireModules) {
+        for (let i = 0; i < requireModules.length; i++) {
+            failedModules.add(requireModules[i]);
+        }
+    }
+
+    // Undefine set of failed modules
+    failedModules.forEach((id) => {
+        undefineAncestors(id, context, new Set<string>(), logger);
+    });
+}
+
+/**
+ * Undefines modules which are not completely loaded
+ * It's necessary in SSR environment when standalone process maintains many client requests. The goals is to revive
+ * failed modules within alive process when they fail because of temporary network problems. It's good to back to
+ * normal when those problems will had gone.
+ */
+function undefineFailedChains(context: IRequireContext, logger: ILogger): void {
     // Limit the frequency of checks
     if (Date.now() < lastUndefineTime + delayForUndefine) {
         return;
@@ -39,17 +67,13 @@ function undefineFailedModules(context: IRequireContext, logger: ILogger): void 
     const registry = context.registry;
     const registryNames = Object.keys(registry);
 
-    // Lookup for any module failed with error
+    // Lookup for extrnal modules failed with error (temporarily only NoticeCenterBase/*, NoticeCenter/*)
     const hasError = registryNames.some((moduleName) => {
-        if (
-            moduleName === 'wsmodPacker' ||
-            moduleName.startsWith('optional!') ||
-            moduleName.endsWith('/module-dependencies')
-        ) {
+        const module = registry[moduleName];
+        if (!module || !module.error) {
             return false;
         }
-        const module = registry[moduleName];
-        return module && module.error;
+        return  moduleName.startsWith('NoticeCenterBase/') || moduleName.startsWith('NoticeCenter/');
     });
 
     // If there are any modules with error try to reload the whole registry
@@ -60,7 +84,7 @@ function undefineFailedModules(context: IRequireContext, logger: ILogger): void 
         context.require(
             registryNames.filter((moduleName) => !moduleName.startsWith('_@r')),
             () => null,
-            (err) => logger.log('RequireJsLoader/extras/errorHandler:undefineFailedModules()', err.message)
+            (err: Error) => logger.log('RequireJsLoader/extras/errorHandler:undefineFailedChains()', err.message)
         );
     }
 }
@@ -101,7 +125,7 @@ function showAlertOnTimeoutInBrowser(defaultHandler: Function): (err: RequireErr
 
         return defaultHandler(err);
     };
-};
+}
 
 interface IErrorHandlerOptions {
     logger: ILogger;
@@ -133,9 +157,9 @@ export default function errorHandler(require: IRequireExt, initialOptions?: IErr
             defaultContext.Module.prototype.emit = function(name: string, evt: RequireError): void {
                 defaultEmit.call(this, name, evt);
                 if (name === 'error') {
-                    undefineFailedModules(defaultContext, options.logger);
+                    undefineFailedAncestors(evt, defaultContext, options.logger);
                 } else if (name === 'defined') {
-                    undefineFailedModules(defaultContext, options.logger);
+                    undefineFailedChains(defaultContext, options.logger);
                 }
             };
 
@@ -162,7 +186,7 @@ export default function errorHandler(require: IRequireExt, initialOptions?: IErr
 
             // Deal with unhandled errors
             require.onError = (err, errback) => {
-                undefineFailedModules(defaultContext, options.logger);
+                undefineFailedAncestors(err, defaultContext, options.logger);
 
                 if (defaultHandler) {
                     defaultHandler(err, errback);
