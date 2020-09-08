@@ -34,7 +34,7 @@ export default class ModulesManager implements IModulesManager {
                 const processed = new Set<string>();
 
                 modules.forEach((module) => {
-                    undefineAncestors(module, defaultContext, processed);
+                    undefineAncestors(module, defaultContext, processed, console);
                 });
                 resolve();
             } catch (err) {
