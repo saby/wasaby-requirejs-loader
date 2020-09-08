@@ -8,6 +8,18 @@ const delayForUndefine = 5000;
 let lastUndefineTime: number = 0;
 
 /**
+ * Returns module ids which depend on module with given id
+ */
+function getParents(id: string, context: IRequireContext): string[] {
+    const registry = context.registry;
+    return Object.keys(registry).filter((name) => {
+        const module = registry[name];
+        const depMaps = module.depMaps;
+        return depMaps && depMaps.some((depModule) => depModule.id === id);
+    });
+}
+
+/**
  * Undefines module with given name
  */
 function undefine(require: Require, name: string, logger: ILogger): void {
@@ -30,12 +42,64 @@ export function undefineByError(err: RequireError | Error, require: IRequireExt 
 }
 
 /**
- * * Undefines modules caused an error and whole branch of other modules which recursively depend on failed modules.
- * It's necessary in SSR environment when standalone process maintains many client requests. The goals are:
- * 1. To reproduce errors on each request (ideally) to see them in logs (otherwise we have to search for first error(s) since process has started).
- * 2. To revive failed modules within alive process when they fail because of temporary network problems. It's good to back to normal when those problems will had gone.
+ * Undefines whole tree branch started from given modules list
  */
-function undefineFailedModules(context: IRequireContext, logger: ILogger): void {
+function undefineFailedAncestorsInner(
+    id: string,
+    context: IRequireContext,
+    processed: Set<string>,
+    logger: ILogger
+): void {
+    if (processed.has(id)) {
+        return;
+    }
+    processed.add(id);
+
+    getParents(id, context).forEach((parentId) => undefineFailedAncestorsInner(
+        parentId,
+        context,
+        processed,
+        logger
+    ));
+
+    undefine(context.require, id, logger);
+}
+
+/**
+ * Undefines modules caused an error and whole branch of other modules which recursively depend on failed modules.
+ * It's necessary in SSR environment when standalone process maintains many client requests. The goal is to reproduce
+ * errors on each request (ideally) to see them in logs (otherwise we have to search for first error(s) since process
+ * has started).
+ */
+function undefineFailedAncestors(
+    err: RequireError,
+    context: IRequireContext,
+    logger: ILogger
+): void {
+    // Init set of failed modules with those which were skipped last time
+    const failedModules = new Set<string>();
+
+    // Add modules from error to the set of failed
+    const requireModules = err && err.requireModules;
+    if (requireModules) {
+        for (let i = 0; i < requireModules.length; i++) {
+            failedModules.add(requireModules[i]);
+        }
+    }
+
+    // Undefine set of failed modules
+    failedModules.forEach((id) => {
+        undefineFailedAncestorsInner(id, context, new Set<string>(), logger);
+    });
+}
+
+/**
+ * Undefines modules which are not completely loaded
+ * It's necessary in SSR environment when standalone process maintains many client requests. The goals is to revive
+ * failed modules within alive process when they fail because of temporary network problems. It's good to back to
+ * normal when those problems will had gone.
+ */
+function undefineFailedChains(context: IRequireContext, logger: ILogger): void {
     // Limit the frequency of checks
     if (Date.now() < lastUndefineTime + delayForUndefine) {
         return;
@@ -46,17 +110,13 @@ function undefineFailedModules(context: IRequireContext, logger: ILogger): void 
     const registry = context.registry;
     const registryNames = Object.keys(registry);
 
-    // Lookup for any module failed with error
+    // Lookup for extrnal modules failed with error (temporarily only NoticeCenterBase/*, NoticeCenter/*)
     const hasError = registryNames.some((moduleName) => {
-        if (
-            moduleName === 'wsmodPacker' ||
-            moduleName.startsWith('optional!') ||
-            moduleName.endsWith('/module-dependencies')
-        ) {
+        const module = registry[moduleName];
+        if (!module || !module.error) {
             return false;
         }
-        const module = registry[moduleName];
-        return module && module.error;
+        return  moduleName.startsWith('NoticeCenterBase/') || moduleName.startsWith('NoticeCenter/');
     });
 
     // If there are any modules with error try to reload the whole registry
@@ -67,7 +127,7 @@ function undefineFailedModules(context: IRequireContext, logger: ILogger): void 
         context.require(
             registryNames.filter((moduleName) => !moduleName.startsWith('_@r')),
             () => null,
-            (err) => logger.log('RequireJsLoader/extras/errorHandler:undefineFailedModules()', err.message)
+            (err: Error) => logger.log('RequireJsLoader/extras/errorHandler:undefineFailedChains()', err.message)
         );
     }
 }
@@ -108,7 +168,7 @@ function showAlertOnTimeoutInBrowser(defaultHandler: Function): (err: RequireErr
 
         return defaultHandler(err);
     };
-};
+}
 
 export interface ILogger {
     log(tag: string, message: string): void;
@@ -144,9 +204,9 @@ export default function errorHandler(require: IRequireExt, initialOptions?: IErr
             defaultContext.Module.prototype.emit = function(name: string, evt: RequireError): void {
                 defaultEmit.call(this, name, evt);
                 if (name === 'error') {
-                    undefineFailedModules(defaultContext, options.logger);
+                    undefineFailedAncestors(evt, defaultContext, options.logger);
                 } else if (name === 'defined') {
-                    undefineFailedModules(defaultContext, options.logger);
+                    undefineFailedChains(defaultContext, options.logger);
                 }
             };
 
@@ -173,7 +233,7 @@ export default function errorHandler(require: IRequireExt, initialOptions?: IErr
 
             // Deal with unhandled errors
             require.onError = (err, errback) => {
-                undefineFailedModules(defaultContext, options.logger);
+                undefineFailedAncestors(err, defaultContext, options.logger);
 
                 if (defaultHandler) {
                     defaultHandler(err, errback);
