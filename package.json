@@ -11,7 +11,7 @@
     "start": "wasaby-cli --tasks=startTest --server",
     "test": "wasaby-cli --tasks=startTest --node --report=console",
     "test:coverage": "wasaby-cli --tasks=startTest --node --coverage",
-    "lint": "saby-typescript --lint -q Types/**/*.ts"
+    "lint": "saby-typescript --lint -q RequireJsLoader/**/*.ts"
   },
   "saby-units": {
     "moduleType": "amd",
