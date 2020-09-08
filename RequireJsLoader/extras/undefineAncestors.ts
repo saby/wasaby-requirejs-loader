@@ -30,7 +30,8 @@ function getParents(id: string, context: IRequireContext): string[] {
 export default function undefineAncestors(
     id: string,
     context: IRequireContext,
-    processed: Set<string>
+    processed: Set<string>,
+    logger: ILogger,
 ): void {
     if (processed.has(id)) {
         return;
@@ -41,9 +42,10 @@ export default function undefineAncestors(
         undefineAncestors(
             parentId,
             context,
-            processed
+            processed,
+            logger
         );
     });
 
-    undefine(context.require, id);
+    undefine(context.require, id, logger);
 }
