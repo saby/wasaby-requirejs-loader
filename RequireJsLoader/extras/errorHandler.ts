@@ -1,12 +1,26 @@
 import {IRequireContext, IRequireModule, IRequireExt} from '../require.ext';
 import {undefine, ILogger} from './undefineAncestors';
-import {global} from './utils';
+import {global, getInstance} from './utils';
 
 // Delay to limit the frequency of modules undefining
 const delayForUndefine = 5000;
 
 // The last time when failed modules have been undefined
 let lastUndefineTime: number = 0;
+
+/**
+ * Undefines failed modules on error to force RequireJS try again to load them and generate that error
+ */
+export function undefineByError(err: RequireError | Error, require: IRequireExt = getInstance()): void {
+    if ((err as RequireError).originalError) {
+        undefineByError((err as RequireError).originalError, require);
+    }
+    if (require && (err as RequireError).requireModules instanceof Array) {
+        (err as RequireError).requireModules.forEach((moduleName) => {
+            require.undef(moduleName);
+        });
+    }
+}
 
 /**
  * * Undefines modules caused an error and whole branch of other modules which recursively depend on failed modules.
