@@ -19,8 +19,7 @@ export interface IStaticResourcesConfig {
     domains: string[];
     resources?: string[];
     types: string[];
- }
-
+}
 
 export interface IWsConfig {
     APP_PATH?: string;

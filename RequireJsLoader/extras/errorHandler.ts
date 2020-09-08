@@ -77,7 +77,7 @@ function showAlertOnTimeoutInBrowser(defaultHandler: Function): (err: RequireErr
         if (!err) {
             return;
         }
-    
+
         if (err.requireType !== REQUIRE_TIMEOUT_TYPE) {
             return defaultHandler(err);
         }
@@ -87,28 +87,28 @@ function showAlertOnTimeoutInBrowser(defaultHandler: Function): (err: RequireErr
         if (global.wsConfig && global.wsConfig.showAlertOnTimeoutInBrowser === false) {
             return defaultHandler(err);
         }
-    
+
         // Ignore timeout errors for CSS
         const importantModules = err.requireModules.filter((moduleName) => moduleName.substr(0, 4) !== 'css!');
         if (importantModules.length === 0) {
             return;
         }
-    
+
         if (!isFired) {
             alert('Произошла ошибка загрузки ресурса. Проверьте интернет соединение и повторите попытку.');
             isFired = true;
         }
-    
+
         return defaultHandler(err);
     };
-};
+}
 
 export interface ILogger {
     log(tag: string, message: string): void;
 }
 
 interface IErrorHandlerOptions {
-    logger: ILogger
+    logger: ILogger;
     undefineFailedModules?: boolean;
     showAlertOnError?: boolean;
 }
@@ -116,13 +116,14 @@ interface IErrorHandlerOptions {
 const defaultOptions: IErrorHandlerOptions = {
     logger: null,
     undefineFailedModules: typeof window === 'undefined',
-    showAlertOnError:  typeof window !== 'undefined',
+    showAlertOnError:  typeof window !== 'undefined'
 };
 
 /**
  * Registers RequireJS errors hooks
  */
 export default function errorHandler(require: IRequireExt, initialOptions?: IErrorHandlerOptions): () => void {
+    // tslint:disable-next-line: prefer-object-spread
     const options = Object.assign({}, defaultOptions, initialOptions);
     const defaultHandler = require.onError;
     const defaultContext = require.s && require.s.contexts._;

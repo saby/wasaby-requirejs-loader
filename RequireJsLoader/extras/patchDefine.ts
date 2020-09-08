@@ -87,7 +87,12 @@ export function checkCircularDependencies(name: string, dependencies: string[]):
  * @param name Defined module name
  * @param {String[]} deps Defined module dependencies
  */
-export function addForeignServiceDependencies(require: IRequireExt, modules: object, name: string, deps: string[]): void {
+export function addForeignServiceDependencies(
+    require: IRequireExt,
+    modules: object,
+    name: string,
+    deps: string[]
+): void {
     if (typeof name === 'string' && deps instanceof Array) {
         const context = require.s.contexts._;
         const paths = context.config.paths || {};
