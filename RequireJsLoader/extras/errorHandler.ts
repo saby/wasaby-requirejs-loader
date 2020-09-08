@@ -1,33 +1,12 @@
 import {IRequireContext, IRequireModule, IRequireExt} from '../require.ext';
-import undefineAncestors, {undefine} from './undefineAncestors';
-import {global, getInstance} from './utils';
-
-interface IErrLoad {
-    (err: Error): void;
-    defaultHandler?: Function;
-    isFired?: boolean;
-}
+import {undefine, ILogger} from './undefineAncestors';
+import {global} from './utils';
 
 // Delay to limit the frequency of modules undefining
 const delayForUndefine = 5000;
-// The map which holds the last time when certain module has been undefined
-let lastUndefinedModules: Map<string, number>;
-// The set of modules id which have failed with error but haven't been undefined due to frequency limitation
-let skippedModules: Set<string>;
 
-/**
- * Undefines failed modules on error to force RequireJS try again to load them and generate that error
- */
-export function undefineByError(err: RequireError | Error, require: IRequireExt = getInstance()): void {
-    if ((err as RequireError).originalError) {
-        undefineByError((err as RequireError).originalError, require);
-    }
-    if (require && (err as RequireError).requireModules instanceof Array) {
-        (err as RequireError).requireModules.forEach((moduleName) => {
-            undefine(require, moduleName);
-        });
-    }
-}
+// The last time when failed modules have been undefined
+let lastUndefineTime: number = 0;
 
 /**
  * * Undefines modules caused an error and whole branch of other modules which recursively depend on failed modules.
@@ -35,45 +14,33 @@ export function undefineByError(err: RequireError | Error, require: IRequireExt 
  * 1. To reproduce errors on each request (ideally) to see them in logs (otherwise we have to search for first error(s) since process has started).
  * 2. To revive failed modules within alive process when they fail because of temporary network problems. It's good to back to normal when those problems will had gone.
  */
-function undefineFailedAncestors(
-    err: RequireError,
-    require: IRequireExt,
-    context: IRequireContext
-): void {
-    // Init the map with modules last undefine time
-    lastUndefinedModules = lastUndefinedModules || new Map<string, number>();
-    // Init the set of modules id which failed with error but were skipped from undefine
-    skippedModules = skippedModules || new Set<string>();
-
-    // Init set of failed modules with those which were skipped last time
-    const failedModules = new Set<string>(skippedModules);
-
-    // Add modules from error to the set of failed
-    const requireModules = err && err.requireModules;
-    if (requireModules) {
-        for (let i = 0; i < requireModules.length; i++) {
-            failedModules.add(requireModules[i]);
-        }
+function undefineFailedModules(context: IRequireContext, logger: ILogger): void {
+    // Limit the frequency of checks
+    if (Date.now() < lastUndefineTime + delayForUndefine) {
+        return;
     }
+    lastUndefineTime = Date.now();
 
-    // Undefine set of failed modules
-    const now = Date.now();
-    failedModules.forEach((id) => {
-        // Add some limitation on purpose of performance
-        const lastCheck = lastUndefinedModules.get(id) || 0;
-        if (now - lastCheck < delayForUndefine) {
-            // Skip this time and do it later
-            skippedModules.add(id);
-        } else {
-            skippedModules.delete(id);
-            lastUndefinedModules.set(id, now);
-            undefineAncestors(id, context, new Set<string>());
-        }
+    // Registry contains modules "in progress" include failed with error and defined but not required
+    const registry = context.registry;
+    const registryNames = Object.keys(registry);
+
+    // Lookup for any module failed with error
+    const hasError = registryNames.some((moduleName) => {
+        const module = registry[moduleName];
+        return module && module.error;
     });
 
-    // In case of error also undefine failed modules in general manner
-    if (requireModules) {
-        undefineByError(err, require);
+    // If there are any modules with error try to reload the whole registry
+    if (hasError) {
+        registryNames.forEach((moduleName) => {
+            undefine(context.require, moduleName, logger);
+        });
+        context.require(
+            registryNames.filter((moduleName) => !moduleName.startsWith('_@r')),
+            () => null,
+            (err) => logger.log('RequireJsLoader/extras/errorHandler:undefineFailedModules()', err.message)
+        );
     }
 }
 
@@ -82,57 +49,72 @@ const REQUIRE_TIMEOUT_TYPE = 'timeout';
 /**
  * Shows alert message in browser in case of module loading error
  */
-const showAlertOnTimeoutInBrowser: IErrLoad = (err: RequireError) => {
-    if (!err) {
-        return;
-    }
+function showAlertOnTimeoutInBrowser(defaultHandler: Function): (err: RequireError) => void {
+    let isFired = false;
 
-    const defaultHandler = showAlertOnTimeoutInBrowser.defaultHandler;
-
-    if (err.requireType !== REQUIRE_TIMEOUT_TYPE) {
+    return (err: RequireError): void => {
+        if (!err) {
+            return;
+        }
+    
+        if (err.requireType !== REQUIRE_TIMEOUT_TYPE) {
+            return defaultHandler(err);
+        }
+        if (!(err.requireModules instanceof Array)) {
+            return defaultHandler(err);
+        }
+        if (global.wsConfig && global.wsConfig.showAlertOnTimeoutInBrowser === false) {
+            return defaultHandler(err);
+        }
+    
+        // Ignore timeout errors for CSS
+        const importantModules = err.requireModules.filter((moduleName) => moduleName.substr(0, 4) !== 'css!');
+        if (importantModules.length === 0) {
+            return;
+        }
+    
+        if (!isFired) {
+            alert('Произошла ошибка загрузки ресурса. Проверьте интернет соединение и повторите попытку.');
+            isFired = true;
+        }
+    
         return defaultHandler(err);
-    }
-    if (!(err.requireModules instanceof Array)) {
-        return defaultHandler(err);
-    }
-    if (global.wsConfig && global.wsConfig.showAlertOnTimeoutInBrowser === false) {
-        return defaultHandler(err);
-    }
+    };
+};
 
-    // Ignore timeout errors for CSS
-    const importantModules = err.requireModules.filter((moduleName) => moduleName.substr(0, 4) !== 'css!');
-    if (importantModules.length === 0) {
-        return;
-    }
+interface IErrorHandlerOptions {
+    logger: ILogger
+    undefineFailedModules?: boolean;
+    showAlertOnError?: boolean;
+}
 
-    if (!showAlertOnTimeoutInBrowser.isFired) {
-        alert('Произошла ошибка загрузки ресурса. Проверьте интернет соединение и повторите попытку.');
-        showAlertOnTimeoutInBrowser.isFired = true;
-    }
-
-    return defaultHandler(err);
+const defaultOptions: IErrorHandlerOptions = {
+    logger: null,
+    undefineFailedModules: typeof window === 'undefined',
+    showAlertOnError:  typeof window !== 'undefined',
 };
 
 /**
  * Registers RequireJS errors hooks
  */
-export default function errorHandler(require: IRequireExt, force?: boolean): () => void {
+export default function errorHandler(require: IRequireExt, initialOptions?: IErrorHandlerOptions): () => void {
+    const options = Object.assign({}, defaultOptions, initialOptions);
     const defaultHandler = require.onError;
     const defaultContext = require.s && require.s.contexts._;
+
     let defaultGet;
     let defaultEmit;
 
-    if (force || typeof window === 'undefined') {
-        // Translate error from failed module to all its ancestors
+    if (options.undefineFailedModules) {
         if (defaultContext) {
-            // Capture errors processed by module event handlers include dynamic modules require([...names]) calls
+            // Capture modules emitting include dynamic modules require([...names]) calls
             defaultEmit = defaultContext.Module.prototype.emit;
             defaultContext.Module.prototype.emit = function(name: string, evt: RequireError): void {
                 defaultEmit.call(this, name, evt);
                 if (name === 'error') {
-                    undefineFailedAncestors(evt, require, defaultContext);
+                    undefineFailedModules(defaultContext, options.logger);
                 } else if (name === 'defined') {
-                    undefineFailedAncestors(null, require, defaultContext);
+                    undefineFailedModules(defaultContext, options.logger);
                 }
             };
 
@@ -159,7 +141,7 @@ export default function errorHandler(require: IRequireExt, force?: boolean): () 
 
             // Deal with unhandled errors
             require.onError = (err, errback) => {
-                undefineFailedAncestors(err, require, defaultContext);
+                undefineFailedModules(defaultContext, options.logger);
 
                 if (defaultHandler) {
                     defaultHandler(err, errback);
@@ -167,10 +149,11 @@ export default function errorHandler(require: IRequireExt, force?: boolean): () 
                 throw err;
             };
         }
-    } else {
-        // Show UI notification in browser
-        showAlertOnTimeoutInBrowser.defaultHandler = defaultHandler;
-        require.onError = showAlertOnTimeoutInBrowser;
+    }
+
+    if (options.showAlertOnError) {
+        // Show UI alert on error
+        require.onError = showAlertOnTimeoutInBrowser(require.onError);
     }
 
     return () => {

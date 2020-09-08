@@ -1,6 +1,6 @@
 {
   "name": "wasaby-requirejs-loader",
-  "version": "20.5000.0",
+  "version": "20.6100.0",
   "description": "Мальцев А. А.",
   "scripts": {
     "build": "npm run build:install && npm run build:typescript && npm run build:app",
@@ -17,7 +17,9 @@
   "saby-units": {
     "moduleType": "amd",
     "root": "application",
-    "tests": ["RequireJsLoaderUnit"]
+    "tests": [
+      "RequireJsLoaderUnit"
+    ]
   },
   "repository": {
     "type": "git",
@@ -33,6 +35,6 @@
     "RequireJsLoader/*"
   ],
   "devDependencies": {
-    "wasaby-cli": "git+https://platform-git.sbis.ru/saby/wasaby-cli.git#rc-20.5000"
+    "wasaby-cli": "git+https://platform-git.sbis.ru/saby/wasaby-cli.git#rc-20.6100"
   }
 }

@@ -9,30 +9,30 @@ define([
    'use strict';
 
    describe('RequireJsLoader/extras/errorHandler', function() {
+      var logger = console;
       var requirejs = utils.getInstance();
 
-      var undo;
+      context('when undefine failed modules and some far ancestor module is not defined', function() {
+         var undo;
 
-      before(function() {
-         undo = errorHandler.default(requirejs, true);
-      });
+         before(function() {
+            undo = errorHandler.default(requirejs, {
+               logger,
+               undefineFailedModules: true,
+               showAlertOnError: false
+            });
 
-      after(function() {
-         undo();
-      });
+            define('Foo/bar1', ['Foo/bar2'], function(bar2) {
+                return '[bar1]' + bar2;
+            });
+    
+            define('Foo/bar2', ['Foo/bar3'], function(bar3) {
+                return '[bar2]' + bar3;
+            });
+         });
 
-      context('when some far ancestor module is not defined', function() {
          after(function() {
-            requirejs.undef('Foo/bar1');
-            requirejs.undef('Foo/bar2');
-         });
-
-         define('Foo/bar1', ['Foo/bar2'], function(bar2) {
-            return '[bar1]' + bar2;
-         });
-
-         define('Foo/bar2', ['Foo/bar3'], function(bar3) {
-            return '[bar2]' + bar3;
+            undo();
          });
 
          it('should call error handler on first require call', function(done) {
