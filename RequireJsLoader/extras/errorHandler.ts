@@ -16,6 +16,20 @@ function undefine(require: Require, name: string, logger: ILogger): void {
 }
 
 /**
+ * Undefines failed modules on error to force RequireJS try again to load them and generate that error
+ */
+export function undefineByError(err: RequireError | Error, require: IRequireExt = getInstance()): void {
+    if ((err as RequireError).originalError) {
+        undefineByError((err as RequireError).originalError, require);
+    }
+    if (require && (err as RequireError).requireModules instanceof Array) {
+        (err as RequireError).requireModules.forEach((moduleName) => {
+            require.undef(moduleName);
+        });
+    }
+}
+
+/**
  * * Undefines modules caused an error and whole branch of other modules which recursively depend on failed modules.
  * It's necessary in SSR environment when standalone process maintains many client requests. The goals are:
  * 1. To reproduce errors on each request (ideally) to see them in logs (otherwise we have to search for first error(s) since process has started).
