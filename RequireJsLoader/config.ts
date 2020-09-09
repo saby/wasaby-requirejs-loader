@@ -53,23 +53,20 @@ define('RequireJsLoader/config', (() => {
         }
     }
 
-    /*
-    Поллифил Object.assing.
-    В IE нет Object.assing, данный модуль грузится самым первым на страницу до полифила.
-    Пришлось для быстрого решения проблемы написать полифил прям внутри модуля.
-    */
-    function assign(original: object, donor: object): object {
-        if (!Object.assign) {
-            for (const name in donor) {
-                if (donor.hasOwnProperty(name)) {
-                    original[name] = donor[name];
-                }
-            }
-
-            return original;
+    /**
+     * Cross-browser Object.assign implementation
+     */
+    function assign(target: object, source: object): object {
+        if (Object.assign) {
+            return Object.assign(target, source);
         }
 
-        return Object.assign(original, donor);
+        for (const name in source) {
+            if (source.hasOwnProperty(name)) {
+                target[name] = source[name];
+            }
+        }
+        return target;
     }
 
     /**

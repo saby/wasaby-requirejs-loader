@@ -143,7 +143,7 @@ const defaultOptions: IErrorHandlerOptions = {
  * Registers RequireJS errors hooks
  */
 export default function errorHandler(require: IRequireExt, initialOptions?: IErrorHandlerOptions): () => void {
-    const options = Object.assign({}, defaultOptions, initialOptions);
+    const options = {...defaultOptions, ...initialOptions};
     const defaultHandler = require.onError;
     const defaultContext = require.s && require.s.contexts._;
 
