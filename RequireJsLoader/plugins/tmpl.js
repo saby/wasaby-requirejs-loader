@@ -3,12 +3,10 @@
  */
 define('tmpl', [
    'wml',
-   'optional!UI/Executor',
-   'optional!Env/Env'
+   'optional!UI/Executor'
 ], function(
    wml,
-   Executor,
-   Env
+   Executor
 ) {
    'use strict';
 
