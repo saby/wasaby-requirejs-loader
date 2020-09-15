@@ -147,9 +147,7 @@ define('wml', [
       },
       load: function (name, require, load) {
           var deps = [];
-          if (!Env.constants.isProduction) {
-             deps.unshift('UI/Builder');
-          }
+         deps.unshift('UI/Builder');
           wmlObj.loadBase(name, require, load, 'wml', deps, createTemplate);
       },
       createLostFunction: createLostFunction,
