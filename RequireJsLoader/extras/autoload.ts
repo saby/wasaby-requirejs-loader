@@ -40,7 +40,7 @@ function autoload(): () => void {
     let restoreErrorHandler = require ? errorHandler(require, {logger}) : null;
     let restoreResourceLoadCallback = require ? resourceLoadHandler(require) : null;
     let restoreDefine = patchDefine();
-    let restorehotReload = hotReload(logger);
+    let restorehotReload = hotReload();
 
     return () => {
         if (restoreErrorHandler) {
