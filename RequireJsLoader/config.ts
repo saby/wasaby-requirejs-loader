@@ -201,12 +201,12 @@ define('RequireJsLoader/config', (() => {
         const wsCoreIncluded = contents?.modules?.['WS.Core'];
 
         // Returns required dependencies for candidate
-        function needDependencyFor(name: string, candidateDeps: string[], skipDeps: string[]): string[] {
+        function needDependencyFor(name: string, candidateDeps: string[], skipNamespace: string): string[] {
             if (
                 typeof name !== 'string' || // Don't add to anonymous
                 name.indexOf('/') === -1 || // Don't add to special names
                 candidateDeps.indexOf(name) > -1 || // Don't add to each other
-                skipDeps.indexOf(name) > -1 // Break cycles we know about
+                name.substr(0, skipNamespace.length) === skipNamespace // Break cycles we know about
             ) {
                 return [];
             }
@@ -223,14 +223,7 @@ define('RequireJsLoader/config', (() => {
                 IS_SERVER_SCRIPT ? '' : (wsCoreIncluded ? 'Core/polyfill' : ''),
                 // Force load extra patches for RequireJS
                 'RequireJsLoader/extras/autoload'
-            ], [
-                // Break cycles
-                'RequireJsLoader/extras/errorHandler',
-                'RequireJsLoader/extras/resourceLoadHandler',
-                'RequireJsLoader/extras/patchDefine',
-                'RequireJsLoader/extras/undefineAncestors',
-                'RequireJsLoader/extras/utils'
-            ]);
+            ], 'RequireJsLoader/extras/');
 
             let finalDeps = deps;
             let finalCallback = callback;

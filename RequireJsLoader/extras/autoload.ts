@@ -1,13 +1,11 @@
 import errorHandler from './errorHandler';
-import {ILogger} from './undefineAncestors';
 import resourceLoadHandler from './resourceLoadHandler';
 import patchDefine from './patchDefine';
+import hotReload from './hotReload';
 import {getInstance} from './utils';
+import ILogger from './ILogger';
 
 let patchApplied = false;
-let restoreErrorHandler;
-let restoreResourceLoadCallback;
-let restoreDefine;
 
 interface IIoC {
     resolve<T>(name: string): T;
@@ -32,31 +30,34 @@ const logger: ILogger = {
  * @author Мальцев А.А.
  */
 function autoload(): () => void {
-    if (!patchApplied) {
-        patchApplied = true;
-
-        const require = getInstance();
-        if (require) {
-            restoreErrorHandler = errorHandler(require, {logger});
-            restoreResourceLoadCallback = resourceLoadHandler(require);
-        }
-
-        restoreDefine = patchDefine();
+    if (patchApplied) {
+        return () => undefined;
     }
+    patchApplied = true;
+
+    const require = getInstance();
+
+    let restoreErrorHandler = require ? errorHandler(require, {logger}) : null;
+    let restoreResourceLoadCallback = require ? resourceLoadHandler(require) : null;
+    let restoreDefine = patchDefine();
+    let restorehotReload = hotReload();
 
     return () => {
         if (restoreErrorHandler) {
             restoreErrorHandler();
             restoreErrorHandler = undefined;
         }
+
         if (restoreResourceLoadCallback) {
             restoreResourceLoadCallback();
             restoreResourceLoadCallback = undefined;
         }
-        if (restoreDefine) {
-            restoreDefine();
-            restoreDefine = undefined;
-        }
+
+        restoreDefine();
+        restoreDefine = undefined;
+
+        restorehotReload();
+        restorehotReload = undefined;
 
         patchApplied = false;
     };
