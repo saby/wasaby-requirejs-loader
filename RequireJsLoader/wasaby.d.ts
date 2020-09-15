@@ -21,7 +21,6 @@ export interface IStaticResourcesConfig {
     types: string[];
  }
 
-
 export interface IWsConfig {
     APP_PATH?: string;
     BUILD_MODE?: string;

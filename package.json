@@ -8,7 +8,7 @@
     "build:typescript": "saby-typescript --install --mode=development",
     "build:app": "wasaby-cli --tasks=build --watcher",
     "build:require-min": "npm install uglify-js@3.4.9 && node node_modules/uglify-js/bin/uglifyjs --compress --mangle -o RequireJsLoader/require.min.js -- RequireJsLoader/require.js",
-    "compile": "saby-typescript --compiler",
+    "compile": "saby-typescript --compiler -- watch",
     "start": "wasaby-cli --tasks=startTest --server",
     "test": "wasaby-cli --tasks=startTest --node --report=console",
     "test:coverage": "wasaby-cli --tasks=startTest --node --coverage",
