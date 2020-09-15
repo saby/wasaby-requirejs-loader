@@ -1,5 +1,6 @@
 import {IRequireContext, IRequireModule, IRequireExt} from '../require.ext';
-import undefineAncestors, {undefine, ILogger} from './undefineAncestors';
+import undefineAncestors, {undefine} from './undefineAncestors';
+import ILogger from './ILogger';
 import {global, getInstance} from './utils';
 
 // Delay to limit the frequency of modules undefining

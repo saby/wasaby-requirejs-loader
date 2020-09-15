@@ -1,8 +1,5 @@
 import {IRequireContext} from '../require.ext';
-
-export interface ILogger {
-    log(tag: string, message: string): void;
-}
+import ILogger from './ILogger';
 
 /**
  * Undefines module with given name

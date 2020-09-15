@@ -22,16 +22,14 @@ define('RequireJsLoader/config', (() => {
         return this || (0, eval)('this');
     }());
 
-    // Init global wsConfig variable
-    if (!GLOBAL.wsConfig) {
-        GLOBAL.wsConfig = {};
-    }
-
     // Check if we're on server side
     const IS_SERVER_SCRIPT: boolean = typeof window === 'undefined';
 
     // Resource loading timeout for RequireJS
     const LOADING_TIMEOUT: number = 60;
+
+    // Default resources path
+    const DEFAULT_RESOURCES_PATH = 'resources';
 
     // Release mode
     const RELEASE_MODE: RequireJsLoader.BuildMode = 'release';
@@ -42,7 +40,13 @@ define('RequireJsLoader/config', (() => {
     // Application build mode
     const BUILD_MODE: RequireJsLoader.BuildMode = GLOBAL.contents && GLOBAL.contents.buildMode || DEBUG_MODE;
 
-    const HAS_WS_CORE = GLOBAL.contents && GLOBAL.contents.modules && GLOBAL.contents.modules['WS.Core'];
+    function getWsConfig(): RequireJsLoader.IWsConfig {
+        return GLOBAL.wsConfig || (GLOBAL.wsConfig = {});
+    }
+
+    function getContents(): RequireJsLoader.IContents {
+        return GLOBAL.contents;
+    }
 
     function logError(err: Error): void {
         if (typeof console === 'object') {
@@ -56,7 +60,7 @@ define('RequireJsLoader/config', (() => {
     /**
      * Cross-browser Object.assign implementation
      */
-    function assign(target: object, source: object): object {
+    function objectAssign(target: object, source: object): object {
         if (Object.assign) {
             Object.assign(target, source);
             return target;
@@ -69,36 +73,6 @@ define('RequireJsLoader/config', (() => {
         }
         return target;
     }
-
-    /**
-     * На страницах OnlineSbisRu/CompatibleTemplate зависимости пакуются в rt-пакеты и собираются DepsCollector(saby/UI)
-     * Поэтому в глобальной переменной храним имена запакованных в rt-пакет модулей
-     * И игнорируем попытки require
-     * https://online.sbis.ru/opendoc.html?guid=348beb13-7b57-4257-b8b8-c5393bee13bd
-     * TODO следует избавится при отказе от rt-паковки
-     */
-    const rtPack = {
-        MODULES_NAMES: undefined,
-
-        getModules(): Record<string, string> {
-            if (IS_SERVER_SCRIPT || !GLOBAL.rtpackModuleNames) {
-                return {};
-            }
-            try {
-                    return JSON.parse(GLOBAL.rtpackModuleNames);
-            } catch (err) {
-                logError(err);
-                return {};
-            }
-        },
-
-        isPacked(moduleName: string): boolean {
-            if (!this.MODULES_NAMES) {
-                this.MODULES_NAMES = this.getModules();
-            }
-            return this.MODULES_NAMES && this.MODULES_NAMES.hasOwnProperty(moduleName);
-        }
-    };
 
     // Removes leading slash from string
     function removeLeadingSlash(path: string): string {
@@ -157,31 +131,64 @@ define('RequireJsLoader/config', (() => {
         }
     }
 
-    let prevConfig;
-    let prevStaticDomains;
+    /**
+     * На страницах OnlineSbisRu/CompatibleTemplate зависимости пакуются в rt-пакеты и собираются DepsCollector(saby/UI)
+     * Поэтому в глобальной переменной храним имена запакованных в rt-пакет модулей
+     * И игнорируем попытки require
+     * https://online.sbis.ru/opendoc.html?guid=348beb13-7b57-4257-b8b8-c5393bee13bd
+     * TODO следует избавится при отказе от rt-паковки
+     */
+    const rtPack = {
+        MODULES_NAMES: undefined,
+
+        getModules(): Record<string, string> {
+            if (IS_SERVER_SCRIPT || !GLOBAL.rtpackModuleNames) {
+                return {};
+            }
+            try {
+                    return JSON.parse(GLOBAL.rtpackModuleNames);
+            } catch (err) {
+                logError(err);
+                return {};
+            }
+        },
+
+        isPacked(moduleName: string): boolean {
+            if (!this.MODULES_NAMES) {
+                this.MODULES_NAMES = this.getModules();
+            }
+            return this.MODULES_NAMES && this.MODULES_NAMES.hasOwnProperty(moduleName);
+        }
+    };
 
     /**
-     * Returns config for static files
+     * Work with static files
      */
-    function getStaticConfig(): RequireJsLoader.IStaticResourcesConfig {
-        if (prevConfig && GLOBAL.wsConfig.staticDomains === prevStaticDomains) {
-            return prevConfig;
+    const staticFiles = {
+        prevConfig: null,
+        prevStaticDomains: null,
+
+        getConfig(): RequireJsLoader.IStaticResourcesConfig {
+            const wsConfig = getWsConfig();
+            if (this.prevConfig && wsConfig.staticDomains === this.prevStaticDomains) {
+                return this.prevConfig;
+            }
+    
+            // Normailze config for statics
+            const config = wsConfig.staticDomains instanceof Array ? {
+                domains: wsConfig.staticDomains,
+                types: ['js']
+            } : (wsConfig.staticDomains || {
+                domains: [],
+                types: ['js']
+            });
+    
+            this.prevConfig = config;
+            this.prevStaticDomains = wsConfig.staticDomains;
+    
+            return config;
         }
-
-        // Normailze config for statics
-        const config = GLOBAL.wsConfig.staticDomains instanceof Array ? {
-            domains: GLOBAL.wsConfig.staticDomains,
-            types: ['js']
-        } : (GLOBAL.wsConfig.staticDomains || {
-            domains: [],
-            types: ['js']
-        });
-
-        prevConfig = config;
-        prevStaticDomains = GLOBAL.wsConfig.staticDomains;
-
-        return config;
-    }
+    };
 
     /**
      * Wraps global define() function of RequireJS
@@ -191,14 +198,16 @@ define('RequireJsLoader/config', (() => {
      */
     function patchDefine(require: RequireJsLoader.IRequireExt, original: RequireDefine): RequireDefine {
         const context = require.s.contexts._;
+        const contents = getContents();
+        const wsCoreIncluded = contents?.modules?.['WS.Core'];
 
         // Returns required dependencies for candidate
-        function needDependencyFor(name: string, candidateDeps: string[], skipDeps: string[]): string[] {
+        function needDependencyFor(name: string, candidateDeps: string[], skipNamespace: string): string[] {
             if (
                 typeof name !== 'string' || // Don't add to anonymous
                 name.indexOf('/') === -1 || // Don't add to special names
                 candidateDeps.indexOf(name) > -1 || // Don't add to each other
-                skipDeps.indexOf(name) > -1 // Break cycles we know about
+                name.substr(0, skipNamespace.length) === skipNamespace // Break cycles we know about
             ) {
                 return [];
             }
@@ -212,17 +221,10 @@ define('RequireJsLoader/config', (() => {
         function patchedDefine(name: string, deps?: string[], callback?: Function): void {
             const toAdd = needDependencyFor(name, [
                 // Force load polyfills
-                IS_SERVER_SCRIPT ? '' : (HAS_WS_CORE ? 'Core/polyfill' : ''),
+                IS_SERVER_SCRIPT ? '' : (wsCoreIncluded ? 'Core/polyfill' : ''),
                 // Force load extra patches for RequireJS
                 'RequireJsLoader/extras/autoload'
-            ], [
-                // Break cycles
-                'RequireJsLoader/extras/errorHandler',
-                'RequireJsLoader/extras/resourceLoadHandler',
-                'RequireJsLoader/extras/patchDefine',
-                'RequireJsLoader/extras/undefineAncestors',
-                'RequireJsLoader/extras/utils'
-            ]);
+            ], 'RequireJsLoader/extras/');
 
             let finalDeps = deps;
             let finalCallback = callback;
@@ -300,7 +302,7 @@ define('RequireJsLoader/config', (() => {
 
     // Detect debug mode constants
     const debug = {
-        IS_OVERALL: 'debug' in GLOBAL.wsConfig ? GLOBAL.wsConfig.debug : false,
+        IS_OVERALL: 'debug' in getWsConfig() ? getWsConfig().debug : false,
         MODULES: [],
         /**
          * Determines debug mode for specified URL
@@ -376,7 +378,7 @@ define('RequireJsLoader/config', (() => {
 
         // Returns domain for certain URL
         function getDomain(url: string): string {
-            const domains = getStaticConfig().domains || [];
+            const domains = staticFiles.getConfig().domains || [];
             return domains[0];
         }
 
@@ -386,7 +388,7 @@ define('RequireJsLoader/config', (() => {
             if (modulesPrefixesCache) {
                 return modulesPrefixesCache;
             }
-            const contents = GLOBAL.contents;
+            const contents = getContents();
 
             const prefixes = contents && contents.modules ?
                 Object.keys(contents.modules)
@@ -435,7 +437,7 @@ define('RequireJsLoader/config', (() => {
 
         // Checks interface module that requested in URL
         function checkModule(url: string): void {
-            const contents = GLOBAL.contents;
+            const contents = getContents();
             if (!contents) {
                 return;
             }
@@ -508,7 +510,7 @@ define('RequireJsLoader/config', (() => {
             }
 
             const domain = getDomain(url);
-            const staticConfig = getStaticConfig();
+            const staticConfig = staticFiles.getConfig();
 
             // URL is absolute and doesn't start with double slash
             if (domain && url[0] === '/' && url[1] !== '/') {
@@ -540,7 +542,7 @@ define('RequireJsLoader/config', (() => {
                 return;
             }
 
-            const contents = GLOBAL.contents;
+            const contents = getContents();
             let moduleConfig = null;
 
             const moduleName = getModuleNameFromUrl(url);
@@ -733,27 +735,25 @@ define('RequireJsLoader/config', (() => {
 
     /**
      * Creates startup config for RequireJS
-     * @param appPath Base URL
+     * @param baseUrl Base URL
      * @param wsPath RequireJsLoader path
      * @param resourcesPath Resources path
-     * @param [contents] Optional config
+     * @param [initialContents] Optional config
      */
     function createConfig(
-        appPath: string,
+        baseUrl: string,
         wsPath: string,
         resourcesPath: string,
-        contents?: RequireJsLoader.IContents
+        initialContents?: RequireJsLoader.IContents
     ): RequireConfig {
         // Normalize wsConfig
-        const wsConfig = GLOBAL.wsConfig;
-        wsConfig.APP_PATH = appPath;
+        const wsConfig = getWsConfig();
+        wsConfig.APP_PATH = baseUrl;
         wsConfig.RESOURCES_PATH = resourcesPath;
-
-        const options = contents || GLOBAL.contents;
 
         // Build config
         const config: RequireConfig = {
-            baseUrl: appPath,
+            baseUrl,
             map: {
                 '*': {
                     i18n: 'I18n/i18n'
@@ -790,7 +790,7 @@ define('RequireJsLoader/config', (() => {
 
         // If WS.Core in application
         if (wsPath) {
-            assign(config.paths, {
+            objectAssign(config.paths, {
                 // tlib.js location to use it as AMD dependency in compiled code
                 tslib: pathJoin(wsPath, 'ext/tslib'),
 
@@ -812,12 +812,13 @@ define('RequireJsLoader/config', (() => {
         }
 
         // Check and handle some options
-        if (options) {
-            assign(config, options);
-            if (options.modules) {
-                for (const name in options.modules) {
-                    if (options.modules.hasOwnProperty(name)) {
-                        const moduleConfig = options.modules[name];
+        const contents = initialContents || getContents();
+        if (contents) {
+            objectAssign(config, contents);
+            if (contents.modules) {
+                for (const name in contents.modules) {
+                    if (contents.modules.hasOwnProperty(name)) {
+                        const moduleConfig = contents.modules[name];
                         config.paths[name] = moduleConfig.path ?
                             pathJoin(moduleConfig.path) :
                             pathJoin(resourcesPath, name);
@@ -826,11 +827,12 @@ define('RequireJsLoader/config', (() => {
             }
         }
 
-        // dynamicConfig is needed only on a client-side. Server local
-        // storage has problem with downloading this dependencies - it
-        // can't properly resolve full physical path to dependency.
+        // Dependencies to load in background
         if (!IS_SERVER_SCRIPT) {
-            // Dependencies for loading in background
+            /**
+             * dynamicConfig is needed only on a client-side. Server local storage has problem with downloading this
+             * dependencies - it can't properly resolve full physical path to dependency.
+             */
             config.deps = ['RequireJsLoader/extras/dynamicConfig'];
         }
 
@@ -843,21 +845,18 @@ define('RequireJsLoader/config', (() => {
         const appPath = wsConfig && wsConfig.appRoot || '/';
 
         // Resources path
-        const resourcesPath = wsConfig ? wsConfig.resourceRoot || 'resources' : '';
+        const resourcesPath = wsConfig ? wsConfig.resourceRoot || DEFAULT_RESOURCES_PATH : '';
 
         // WS path
         const wsPath = wsConfig && wsConfig.wsRoot || '';
 
         // Bundles post processing
-        if (GLOBAL.bundles && GLOBAL.contents && BUILD_MODE === RELEASE_MODE) {
-            GLOBAL.contents.bundles = postProcessBundles(GLOBAL.bundles);
+        const contents = getContents();
+        if (GLOBAL.bundles && contents && BUILD_MODE === RELEASE_MODE) {
+            contents.bundles = postProcessBundles(GLOBAL.bundles);
         }
 
-        const config = createConfig(
-            appPath,
-            wsPath,
-            resourcesPath
-        );
+        const config = createConfig(appPath, wsPath, resourcesPath);
         if (context) {
             config.context = context;
         }
@@ -889,18 +888,19 @@ define('RequireJsLoader/config', (() => {
     }
 
     // Normalize wsConfig
-    GLOBAL.wsConfig.BUILD_MODE = BUILD_MODE;
-    GLOBAL.wsConfig.IS_OVERALL_DEBUG = debug.IS_OVERALL;
-    GLOBAL.wsConfig.DEBUGGING_MODULES = debug.MODULES;
-    GLOBAL.wsConfig.IS_SERVER_SCRIPT = IS_SERVER_SCRIPT;
+    const wsConfig = getWsConfig();
+    wsConfig.BUILD_MODE = BUILD_MODE;
+    wsConfig.IS_OVERALL_DEBUG = debug.IS_OVERALL;
+    wsConfig.DEBUGGING_MODULES = debug.MODULES;
+    wsConfig.IS_SERVER_SCRIPT = IS_SERVER_SCRIPT;
 
     // Build URL handlers
-    const handlers = buildHandlers(GLOBAL.wsConfig);
+    const handlers = buildHandlers(wsConfig);
 
     // Prepare environment with patches
     prepareEnvironment(requirejs as RequireJsLoader.IRequireExt, handlers);
 
-    Object.defineProperties(GLOBAL.wsConfig, {
+    Object.defineProperties(wsConfig, {
         getModulesPrefixes: {configurable: true, value: handlers.getModulesPrefixes},
         getWithVersion: {configurable: true, value: handlers.getWithVersion},
         getWithDomain: {configurable: true, value: handlers.getWithDomain},
@@ -908,7 +908,7 @@ define('RequireJsLoader/config', (() => {
     });
 
     // Initialize RequireJS
-    applyConfig(requirejs, GLOBAL.wsConfig);
+    applyConfig(requirejs, wsConfig);
 
     return () => ({
         patchContext,
