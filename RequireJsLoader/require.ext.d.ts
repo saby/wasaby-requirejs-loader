@@ -3,9 +3,6 @@
 export type ContextEnableFunction = (depMap: IRequireModule) => void;
 export type OnResourceLoadCallback = (context: IRequireContext, map: IRequireMapExt, depArray: RequireMap[]) => void;
 
-export interface IRequireConfig extends RequireConfig {
-}
-
 export interface IRequireMapExt extends RequireMap {
     id: string;
  }
@@ -24,7 +21,7 @@ interface IRequireModuleHolderConstructor {
 }
 
 export interface IRequireContext {
-    config: IRequireConfig;
+    config: RequireConfig;
     defined: Record<string, unknown>;
     enable: ContextEnableFunction;
     load: (id: string, url: string) => void;

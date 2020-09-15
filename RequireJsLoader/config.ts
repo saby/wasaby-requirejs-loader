@@ -58,7 +58,8 @@ define('RequireJsLoader/config', (() => {
      */
     function assign(target: object, source: object): object {
         if (Object.assign) {
-            return Object.assign(target, source);
+            Object.assign(target, source);
+            return target;
         }
 
         for (const name in source) {
@@ -755,7 +756,7 @@ define('RequireJsLoader/config', (() => {
             baseUrl: appPath,
             map: {
                 '*': {
-                    'i18n': 'I18n/i18n'
+                    i18n: 'I18n/i18n'
                 }
             },
             paths: {
@@ -903,7 +904,7 @@ define('RequireJsLoader/config', (() => {
         getModulesPrefixes: {configurable: true, value: handlers.getModulesPrefixes},
         getWithVersion: {configurable: true, value: handlers.getWithVersion},
         getWithDomain: {configurable: true, value: handlers.getWithDomain},
-        getWithSuffix: {configurable: true, value: handlers.getWithSuffix},
+        getWithSuffix: {configurable: true, value: handlers.getWithSuffix}
     });
 
     // Initialize RequireJS

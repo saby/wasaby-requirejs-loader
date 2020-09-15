@@ -31,7 +31,7 @@ export default function undefineAncestors(
     id: string,
     context: IRequireContext,
     processed: Set<string>,
-    logger: ILogger,
+    logger: ILogger
 ): void {
     if (processed.has(id)) {
         return;
