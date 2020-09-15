@@ -3,6 +3,11 @@
 export type ContextEnableFunction = (depMap: IRequireModule) => void;
 export type OnResourceLoadCallback = (context: IRequireContext, map: IRequireMapExt, depArray: RequireMap[]) => void;
 
+export interface PluginCallback {
+    <T>(mouduleBody: T): void;
+    error?: (err: Error) => void;
+}
+
 export interface IRequireConfig extends RequireConfig {
 }
 
