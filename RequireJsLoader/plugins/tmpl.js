@@ -75,7 +75,7 @@ define('tmpl', [
               'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible',
               'i18n!' + name.split('/')[0]
           ];
-          if (!Env.constants.isProduction && typeof window !== 'undefined') {
+          if (!Env.constants.isProduction || typeof window === 'undefined') {
               deps.unshift('UI/Builder');
           }
           wml.loadBase(name, require, load, 'tmpl', deps, createTemplate);
