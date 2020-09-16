@@ -2,7 +2,7 @@ import errorHandler, {ILogger} from './errorHandler';
 import resourceLoadHandler from './resourceLoadHandler';
 import patchDefine from './patchDefine';
 import {getInstance} from './utils';
-export * from './dynamicConfig';
+import './dynamicConfig';
 
 let patchApplied = false;
 let restoreErrorHandler;
