@@ -40,7 +40,7 @@ export function clear(): void {
 export function getImplementation<T>(name: string): T {
     const implementation = implementations[name];
 
-    if (implementation) {
+    if (implementation && !defined[name]) {
         if (deps[name]) {
             deps[name].forEach((depName) => getImplementation(depName));
         }

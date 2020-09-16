@@ -1,4 +1,4 @@
-export type ModuleLoadCallback<T> = (name: string, implementation: T) => void;
+export type ModuleLoadCallback<T> = (name: string, implementation: T) => T;
 
 export type ModulesManagerConstructor = new() => IModulesManager;
 
