@@ -26,7 +26,7 @@ define('RequireJsLoader/config', (() => {
     const IS_SERVER_SCRIPT: boolean = typeof window === 'undefined';
 
     // Resource loading timeout for RequireJS
-    const LOADING_TIMEOUT: number = GLOBAL.wsConfig.moduleLoadingTimeout || 60;
+    const LOADING_TIMEOUT: number = getWsConfig().moduleLoadingTimeout || 60;
 
     // Default resources path
     const DEFAULT_RESOURCES_PATH = 'resources';
@@ -173,7 +173,7 @@ define('RequireJsLoader/config', (() => {
             if (this.prevConfig && wsConfig.staticDomains === this.prevStaticDomains) {
                 return this.prevConfig;
             }
-    
+
             // Normailze config for statics
             const config = wsConfig.staticDomains instanceof Array ? {
                 domains: wsConfig.staticDomains,
@@ -182,10 +182,10 @@ define('RequireJsLoader/config', (() => {
                 domains: [],
                 types: ['js']
             });
-    
+
             this.prevConfig = config;
             this.prevStaticDomains = wsConfig.staticDomains;
-    
+
             return config;
         }
     };
