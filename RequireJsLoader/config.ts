@@ -26,7 +26,7 @@ define('RequireJsLoader/config', (() => {
     const IS_SERVER_SCRIPT: boolean = typeof window === 'undefined';
 
     // Resource loading timeout for RequireJS
-    const LOADING_TIMEOUT: number = 60;
+    const LOADING_TIMEOUT: number = GLOBAL.wsConfig.moduleLoadingTimeout || 60;
 
     // Default resources path
     const DEFAULT_RESOURCES_PATH = 'resources';
