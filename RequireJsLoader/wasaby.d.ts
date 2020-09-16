@@ -32,6 +32,7 @@ export interface IWsConfig {
     appRoot?: string;
     debug?: boolean;
     product?: string;
+    moduleLoadingTimeout?: number;
     resourceRoot?: string;
     staticDomains?: IStaticResourcesConfig;
     showAlertOnTimeoutInBrowser?: boolean;
