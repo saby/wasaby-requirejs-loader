@@ -907,8 +907,10 @@ define('RequireJsLoader/config', (() => {
         getWithSuffix: {configurable: true, value: handlers.getWithSuffix}
     });
 
-    // Initialize RequireJS
-    applyConfig(requirejs, wsConfig);
+    // Initialize RequireJS in browser
+    if (!IS_SERVER_SCRIPT) {
+        applyConfig(requirejs, wsConfig);
+    }
 
     return () => ({
         patchContext,
