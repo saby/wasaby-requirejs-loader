@@ -3,7 +3,7 @@ import resourceLoadHandler from './resourceLoadHandler';
 import patchDefine from './patchDefine';
 import {getInstance} from './utils';
 import ILogger from './ILogger';
-export * from './dynamicConfig';
+import './dynamicConfig';
 
 let patchApplied = false;
 
