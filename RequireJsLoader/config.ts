@@ -827,15 +827,6 @@ define('RequireJsLoader/config', (() => {
             }
         }
 
-        // Dependencies to load in background
-        if (!IS_SERVER_SCRIPT) {
-            /**
-             * dynamicConfig is needed only on a client-side. Server local storage has problem with downloading this
-             * dependencies - it can't properly resolve full physical path to dependency.
-             */
-            config.deps = ['RequireJsLoader/extras/dynamicConfig'];
-        }
-
         return config;
     }
 
