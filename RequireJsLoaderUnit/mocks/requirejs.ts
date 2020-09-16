@@ -54,10 +54,15 @@ export function getImplementation<T>(name: string): T {
     return implementation;
 }
 
-function requirejs(modules: string[], callback: Function): void {
-    setTimeout(() => {
-        callback(modules.map(getImplementation));
-    }, 0);
+function requirejs<T>(modules: string | string[], callback: Function): T | void {
+    if (modules instanceof Array) {
+        setTimeout(() => {
+            callback(modules.map(getImplementation));
+        }, 0);
+        return;
+    }
+
+    return getImplementation<T>(modules);
 }
 
 const defaultContext = {

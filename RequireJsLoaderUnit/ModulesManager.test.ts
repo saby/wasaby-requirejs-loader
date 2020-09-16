@@ -3,7 +3,7 @@ import ModulesManager from 'RequireJsLoader/ModulesManager';
 import fakeRequire, {clear, define as fakeDefine, getImplementation} from './mocks/requirejs';
 
 describe('RequireJsLoader/ModulesManager', () => {
-    beforeEach(() => {
+    afterEach(() => {
         clear();
     });
 
@@ -122,6 +122,54 @@ describe('RequireJsLoader/ModulesManager', () => {
             };
             const manager = new ModulesManager(fakeRequire);
             manager.offModuleLoaded(handler);
+        });
+    });
+
+    describe('.loadSync()', () => {
+        it('should return empty array', () => {
+            const manager = new ModulesManager(fakeRequire);
+            assert.deepEqual(manager.loadSync([]), []);
+        });
+
+        it('should return modules implementation', () => {
+            const foo = {};
+            const bar = {};
+            fakeDefine('foo', [], foo);
+            fakeDefine('bar', [], bar);
+
+            const manager = new ModulesManager(fakeRequire);
+            assert.deepEqual(manager.loadSync(['foo', 'bar']), [foo, bar]);
+        });
+    });
+
+    describe('.unloadSync()', () => {
+        it('should clear module implementation', () => {
+            const foo = {};
+            const bar = {};
+            fakeDefine('foo', [], foo);
+            fakeDefine('bar', [], bar);
+
+            const manager = new ModulesManager(fakeRequire);
+            manager.unloadSync(['foo']);
+
+            assert.isUndefined(getImplementation('foo'));
+            assert.strictEqual(getImplementation('bar'), bar);
+        });
+
+        it('should clear depending modules implementations', () => {
+            const foo = {};
+            const bar = {};
+            const baz = {};
+            fakeDefine('foo', [], foo);
+            fakeDefine('bar', ['foo'], bar);
+            fakeDefine('baz', ['foo', 'bar'], baz);
+
+            const manager = new ModulesManager(fakeRequire);
+            manager.unloadSync(['foo']);
+
+            assert.isUndefined(getImplementation('foo'));
+            assert.isUndefined(getImplementation('bar'));
+            assert.isUndefined(getImplementation('baz'));
         });
     });
 });
