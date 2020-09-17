@@ -1,9 +1,10 @@
 import {assert} from 'chai';
 import ModulesManager from 'RequireJsLoader/ModulesManager';
 import fakeRequire, {clear, define as fakeDefine, getImplementation} from './mocks/requirejs';
+import { ModuleLoadCallback } from 'RequireJsLoader/IModulesManager';
 
 describe('RequireJsLoader/ModulesManager', () => {
-    afterEach(() => {
+    beforeEach(() => {
         clear();
     });
 
@@ -60,16 +61,25 @@ describe('RequireJsLoader/ModulesManager', () => {
     });
 
     describe('.onModuleLoaded()', () => {
+        let manager: ModulesManager;
+        let handler: ModuleLoadCallback<unknown>;
+
+        beforeEach(() => {
+            manager = new ModulesManager(fakeRequire);
+        });
+
+        afterEach(() => {
+            manager.offModuleLoaded(handler);
+        });
+
         it('should call function with requested module implementation', () => {
             const foo = {};
             fakeDefine('foo', [], foo);
 
             const loaded: Record<string, unknown> = {};
-            const handler = (name: string, module: unknown) => {
+            handler = (name: string, module: unknown) => {
                 loaded[name] = module;
             };
-
-            const manager = new ModulesManager(fakeRequire);
             manager.onModuleLoaded(handler);
 
             return manager.load(['foo']).then(() => {
@@ -84,15 +94,39 @@ describe('RequireJsLoader/ModulesManager', () => {
             fakeDefine('bar', ['foo'], bar);
 
             const loaded: Record<string, unknown> = {};
-            const handler = (name: string, module: unknown) => {
+            handler = (name: string, module: unknown) => {
                 loaded[name] = module;
             };
-
-            const manager = new ModulesManager(fakeRequire);
             manager.onModuleLoaded(handler);
 
             return manager.load(['bar']).then(() => {
                 assert.strictEqual(loaded.foo, foo);
+            });
+        });
+
+        it('should overwrite module implementation', () => {
+            const foo = ['foo'];
+            const bar = ['bar'];
+
+            fakeDefine('foo', [], foo);
+
+            handler = () => bar;
+            manager.onModuleLoaded(handler);
+
+            return manager.load(['foo']).then(() => {
+                assert.strictEqual(getImplementation('foo'), bar);
+            });
+        });
+
+        it('shouldn\'t overwrite module implementation when returns undefined', () => {
+            const foo = ['foo'];
+            fakeDefine('foo', [], foo);
+
+            handler = () => undefined;
+            manager.onModuleLoaded(handler);
+
+            return manager.load(['foo']).then(() => {
+                assert.strictEqual(getImplementation('foo'), foo);
             });
         });
     });
