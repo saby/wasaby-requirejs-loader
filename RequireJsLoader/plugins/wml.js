@@ -4,17 +4,17 @@
 define('wml', [
    'text',
    'RequireJsLoader/extras/patchDefine',
-   'optional!UI/Builder',
+   'optional!UI/BuilderConfig',
    'optional!Env/Env'
 ], function(
    text,
    patchDefine,
-   Builder,
+   BuilderConfig,
    Env
 ) {
    'use strict';
 
-   var config = Builder && Builder.Config;
+   var config = BuilderConfig && BuilderConfig.Config;
 
    var global = (function(){ return this || (0,eval)('this'); }());
    var isServerSide = typeof window === 'undefined' && !(process && process.versions);
@@ -86,6 +86,7 @@ define('wml', [
          } else {
             //Got template as string with markup
             try {
+               needRequire.unshift('UI/Builder');
                require(needRequire, function(builder) {
                   try {
                      // Check for circular dependencies before we go
@@ -146,7 +147,7 @@ define('wml', [
          }
       },
       load: function (name, require, load) {
-         wmlObj.loadBase(name, require, load, 'wml', ['UI/Builder'], createTemplate);
+          wmlObj.loadBase(name, require, load, 'wml', [], createTemplate);
       },
       createLostFunction: createLostFunction,
       createLoader: createLoader
