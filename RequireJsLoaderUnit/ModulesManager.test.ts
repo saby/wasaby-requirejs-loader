@@ -114,8 +114,19 @@ describe('RequireJsLoader/ModulesManager', () => {
             manager.onModuleLoaded(handler);
 
             return manager.load(['foo']).then(() => {
-                const modules = manager.loadSync(['foo']);
-                assert.strictEqual(modules[0], bar);
+                assert.strictEqual(getImplementation('foo'), bar);
+            });
+        });
+
+        it('shouldn\'t overwirite module implementation when returns undefined', () => {
+            const foo = ['foo'];
+            fakeDefine('foo', [], foo);
+
+            handler = () => undefined;
+            manager.onModuleLoaded(handler);
+
+            return manager.load(['foo']).then(() => {
+                assert.strictEqual(getImplementation('foo'), foo);
             });
         });
     });
