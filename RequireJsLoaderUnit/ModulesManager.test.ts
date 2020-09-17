@@ -104,7 +104,7 @@ describe('RequireJsLoader/ModulesManager', () => {
             });
         });
 
-        it('should overwirite module implementation', () => {
+        it('should overwrite module implementation', () => {
             const foo = ['foo'];
             const bar = ['bar'];
 
@@ -118,7 +118,7 @@ describe('RequireJsLoader/ModulesManager', () => {
             });
         });
 
-        it('shouldn\'t overwirite module implementation when returns undefined', () => {
+        it('shouldn\'t overwrite module implementation when returns undefined', () => {
             const foo = ['foo'];
             fakeDefine('foo', [], foo);
 
