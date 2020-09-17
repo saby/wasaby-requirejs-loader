@@ -1,6 +1,7 @@
 import errorHandler from './errorHandler';
 import resourceLoadHandler from './resourceLoadHandler';
 import patchDefine from './patchDefine';
+import hotReload from './hotReload';
 import {getInstance} from './utils';
 import ILogger from './ILogger';
 import './dynamicConfig';
@@ -40,6 +41,7 @@ function autoload(): () => void {
     let restoreErrorHandler = require ? errorHandler(require, {logger}) : null;
     let restoreResourceLoadCallback = require ? resourceLoadHandler(require) : null;
     let restoreDefine = patchDefine();
+    let restorehotReload = hotReload(logger);
 
     return () => {
         if (restoreErrorHandler) {
@@ -54,6 +56,9 @@ function autoload(): () => void {
 
         restoreDefine();
         restoreDefine = undefined;
+
+        restorehotReload();
+        restorehotReload = undefined;
 
         patchApplied = false;
     };
