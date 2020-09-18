@@ -8,7 +8,7 @@ export type ModulesManagerConstructor = new() => IModulesManager;
 export default interface IModulesManager {
     /**
      * Проверяет, что моудль загружен
-     * @param modules Имя модуля
+     * @param module Имя модуля
      */
     isLoaded(module: string): boolean;
 

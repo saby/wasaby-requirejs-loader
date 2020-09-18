@@ -6,14 +6,14 @@ export type ModulesManagerSyncConstructor = new() => IModulesManagerSync;
 export default interface IModulesManagerSync {
     /**
      * Загружает модуль с указанными именами
-     * @param modules Имена модулей для загрузки
+     * @param module Имена модулей для загрузки
      * @returns Загруженные модули
      */
-    loadSync<T>(modules: string[]): T;
+    loadSync<T>(module: string): T;
 
     /**
      * Выгружает модули с указанными именами
-     * @param modules Имена модулей для выгрузки
+     * @param module Имена модулей для выгрузки
      */
-    unloadSync(modules: string[]): void;
+    unloadSync(module: string): void;
 }
