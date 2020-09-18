@@ -37,7 +37,7 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
     unload(modules: string[]): Promise<void> {
         return new Promise((resolve, reject) => {
             try {
-                this.unloadSync(modules);
+                modules.forEach((module) => this.unloadSync(module));
                 resolve();
             } catch (err) {
                 reject(err);
@@ -61,28 +61,15 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
 
     // region IModulesManagerSync
 
-    loadSync<T>(modules: string[]): T {
-        return modules.map(
-            (name) => this.loader(name)
-        ) as unknown as T;
+    loadSync<T>(module: string): T {
+        return this.loader(module);
     }
 
-    unloadSync(modules: string[]): void {
-        const errors: Error[] = [];
-        try {
-            const defaultContext: IRequireContext = (this.loader as IRequireExt).s.contexts._;
-            const processed = new Set<string>();
+    unloadSync(module: string): void {
+        const defaultContext: IRequireContext = (this.loader as IRequireExt).s.contexts._;
+        const processed = new Set<string>();
 
-            modules.forEach((module) => {
-                undefineAncestors(module, defaultContext, processed, console);
-            });
-        } catch (err) {
-            errors.push(err);
-        }
-
-        if (errors.length) {
-            throw errors[0];
-        }
+        undefineAncestors(module, defaultContext, processed, console);
     }
 
     // endregion

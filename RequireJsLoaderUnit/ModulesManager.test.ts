@@ -172,19 +172,12 @@ describe('RequireJsLoader/ModulesManager', () => {
     });
 
     describe('.loadSync()', () => {
-        it('should return empty array', () => {
-            const manager = new ModulesManager(fakeRequire);
-            assert.deepEqual(manager.loadSync([]), []);
-        });
-
-        it('should return modules implementation', () => {
+        it('should return module', () => {
             const foo = {};
-            const bar = {};
             fakeDefine('foo', [], foo);
-            fakeDefine('bar', [], bar);
 
             const manager = new ModulesManager(fakeRequire);
-            assert.deepEqual(manager.loadSync(['foo', 'bar']), [foo, bar]);
+            assert.strictEqual(manager.loadSync('foo'), foo);
         });
     });
 
@@ -196,7 +189,7 @@ describe('RequireJsLoader/ModulesManager', () => {
             fakeDefine('bar', [], bar);
 
             const manager = new ModulesManager(fakeRequire);
-            manager.unloadSync(['foo']);
+            manager.unloadSync('foo');
 
             assert.isUndefined(getImplementation('foo'));
             assert.strictEqual(getImplementation('bar'), bar);
@@ -211,7 +204,7 @@ describe('RequireJsLoader/ModulesManager', () => {
             fakeDefine('baz', ['foo', 'bar'], baz);
 
             const manager = new ModulesManager(fakeRequire);
-            manager.unloadSync(['foo']);
+            manager.unloadSync('foo');
 
             assert.isUndefined(getImplementation('foo'));
             assert.isUndefined(getImplementation('bar'));
