@@ -35,8 +35,9 @@ describe('RequireJsLoader/ModulesManager', () => {
             fakeDefine('bar', [], bar);
 
             const manager = new ModulesManager(fakeRequire);
-            return manager.load(['foo', 'bar']).then((loadedModules) => {
-                assert.deepEqual(loadedModules, [foo, bar]);
+            return manager.load(['foo', 'bar']).then(([theFoo, theBar]) => {
+                assert.equal(theFoo, foo);
+                assert.equal(theBar, bar);
             });
         });
     });
