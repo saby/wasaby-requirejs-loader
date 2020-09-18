@@ -17,10 +17,14 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
      * Конструктор
      * @param loader Корневой экземпляр RequireJS
      */
-    constructor(protected loader: IRequireExt = requirejs as IRequireExt) {
+    constructor(protected loader: Require = requirejs) {
     }
 
     // region IModulesManager
+
+    isLoaded(module: string): boolean {
+        return this.loader.defined(module);
+    }
 
     load<T>(modules: string[]): Promise<T> {
         return new Promise((resolve, reject) => {
@@ -66,7 +70,7 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
     unloadSync(modules: string[]): void {
         const errors: Error[] = [];
         try {
-            const defaultContext: IRequireContext = this.loader.s.contexts._;
+            const defaultContext: IRequireContext = (this.loader as IRequireExt).s.contexts._;
             const processed = new Set<string>();
 
             modules.forEach((module) => {

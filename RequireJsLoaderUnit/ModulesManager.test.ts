@@ -8,6 +8,18 @@ describe('RequireJsLoader/ModulesManager', () => {
         clear();
     });
 
+    describe('.isLoaded()', () => {
+        it('should return true if module is loaded', () => {
+            const manager = new ModulesManager(requirejs);
+            assert.isTrue(manager.isLoaded('RequireJsLoader/ModulesManager'));
+        });
+
+        it('should return false if module is not loaded', () => {
+            const manager = new ModulesManager(requirejs);
+            assert.isFalse(manager.isLoaded('RequireJsLoader/UnknownModulesManager'));
+        });
+    });
+
     describe('.load()', () => {
         it('should return empty array', () => {
             const manager = new ModulesManager(fakeRequire);
