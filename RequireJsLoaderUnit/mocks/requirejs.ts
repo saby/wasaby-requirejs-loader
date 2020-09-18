@@ -63,9 +63,11 @@ export function getImplementation<T>(name: string, strict: boolean = false): T {
 
 function requirejs<T>(modules: string | string[], callback: Function): T | void {
     if (modules instanceof Array) {
-        setTimeout(() => {
-            callback(modules.map((module) => getImplementation(module, true)));
-        }, 0);
+        new Promise((resolve) => {
+            resolve(modules.map(
+                (module) => getImplementation(module, true)
+            ));
+        }).then((implementations) => callback(...implementations as unknown[]));
         return;
     }
 

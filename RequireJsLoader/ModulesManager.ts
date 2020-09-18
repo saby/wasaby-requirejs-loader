@@ -28,8 +28,8 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
 
     load<T>(modules: string[]): Promise<T> {
         return new Promise((resolve, reject) => {
-            this.loader(modules, (loadedModules) => {
-                resolve(loadedModules);
+            this.loader(modules, (...loadedModules) => {
+                resolve(loadedModules as unknown as T);
             }, reject);
         });
     }
