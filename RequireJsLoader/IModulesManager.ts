@@ -7,6 +7,12 @@ export type ModulesManagerConstructor = new() => IModulesManager;
  */
 export default interface IModulesManager {
     /**
+     * Проверяет, что моудль загружен
+     * @param modules Имя модуля
+     */
+    isLoaded(module: string): boolean;
+
+    /**
      * Загружает модули с указанными именами
      * @param modules Имена модулей для загрузки
      * @returns Загруженные модули
