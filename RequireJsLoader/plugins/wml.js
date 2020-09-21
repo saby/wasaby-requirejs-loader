@@ -4,11 +4,13 @@
 define('wml', [
    'text',
    'RequireJsLoader/extras/patchDefine',
+   'UI/Base',
    'optional!UI/BuilderConfig',
    'optional!Env/Env'
 ], function(
    text,
    patchDefine,
+   Base,
    BuilderConfig,
    Env
 ) {
@@ -40,49 +42,11 @@ define('wml', [
       throw err;
    }
 
-   function createLostFunction(err, ext) {
-      logError(ext + '!', err.message, err);
-      var wrapper = function () {
-         return '<div>' + err.message + '</div>';
-      };
-      wrapper.stable = true;
-      wrapper.includedFunctions = {};
-      return wrapper;
-   }
-
-   function createTemplate(name, html, tmpl, conf, load, ext) {
-      try {
-         if (!conf.fileName) {
-            conf.fileName = name;
-         }
-         tmpl.getFile(html, conf, function (file) {
-            load.fromTextFixed ? load.fromTextFixed(file) : load.fromText(file);
-            load = undefined;
-         }, function (err) {
-            err.message = 'Error while parsing template "' + name + '": ' + err.message;
-            try {
-               var timeoutAlert = showAlertOnTimeoutInBrowser(err);
-               if (!timeoutAlert) {
-                  logError('Template', err.message, err);
-               }
-            } catch (err) {
-               logError('Template', err.message, err);
-            }
-            load.error(err);
-         }, ext);
-      } catch (err) {
-         err.message = 'Error while parsing template "' + name + '": ' + err.message;
-         logError('Template', err.message, err);
-         load.error(err);
-         load = undefined;
-      }
-   }
-
    function createLoader(name, require, load, conf, ext, needRequire, callback) {
       var loader = function (html) {
          if (html && html.indexOf('define') === 0) {
             //Got template as compiled AMD module
-            load.fromTextFixed ? load.fromTextFixed(html) : load.fromText(html);
+             Base.loadModule(name, html, load);
          } else {
             //Got template as string with markup
             try {
@@ -147,10 +111,8 @@ define('wml', [
          }
       },
       load: function (name, require, load) {
-          wmlObj.loadBase(name, require, load, 'wml', [], createTemplate);
-      },
-      createLostFunction: createLostFunction,
-      createLoader: createLoader
+          wmlObj.loadBase(name, require, load, 'wml', [], Base.createWmlTemplate);
+      }
    };
 
    return wmlObj;
