@@ -1,6 +1,7 @@
 import {IRequireContext, IRequireExt, IRequireMapExt} from './require.ext';
-import IModulesManager, { ModuleLoadCallback } from './IModulesManager';
+import IModulesManager from './IModulesManager';
 import IModulesManagerSync from './IModulesManagerSync';
+import IModulesHandler, { ModuleLoadCallback } from './IModulesHandler';
 import undefineAncestors from './extras/undefineAncestors';
 
 type OnResourceLoadCallback = typeof require.onResourceLoad;
@@ -8,7 +9,7 @@ type OnResourceLoadCallback = typeof require.onResourceLoad;
 /**
  * Менеджер модулей на основе RequireJS
  */
-export default class ModulesManager implements IModulesManager, IModulesManagerSync {
+export default class ModulesManager implements IModulesManager, IModulesManagerSync, IModulesHandler {
     protected _moduleLoadCallbacks: Array<ModuleLoadCallback<unknown>> = [];
 
     protected _onModuleLoad: [OnResourceLoadCallback];
@@ -45,18 +46,6 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
         });
     }
 
-    onModuleLoaded<T>(callback: ModuleLoadCallback<T>): void {
-        this._moduleLoadCallbacks.push(callback);
-        this._setModuleLoadHook();
-    }
-
-    offModuleLoaded<T>(callback: ModuleLoadCallback<T>): void {
-        this._moduleLoadCallbacks = this._moduleLoadCallbacks.filter((foundCallback) => foundCallback !== callback);
-        if (this._moduleLoadCallbacks.length === 0) {
-            this._removeModuleLoadHook();
-        }
-    }
-
     // endregion
 
     // region IModulesManagerSync
@@ -70,6 +59,22 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
         const processed = new Set<string>();
 
         undefineAncestors(module, defaultContext, processed, console);
+    }
+
+    // endregion
+
+    // region IModulesHandler
+
+    onModuleLoaded<T>(callback: ModuleLoadCallback<T>): void {
+        this._moduleLoadCallbacks.push(callback);
+        this._setModuleLoadHook();
+    }
+
+    offModuleLoaded<T>(callback: ModuleLoadCallback<T>): void {
+        this._moduleLoadCallbacks = this._moduleLoadCallbacks.filter((foundCallback) => foundCallback !== callback);
+        if (this._moduleLoadCallbacks.length === 0) {
+            this._unsetModuleLoadHook();
+        }
     }
 
     // endregion
@@ -105,7 +110,7 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
     /**
      * Removes a hook from RequireJS
      */
-    protected _removeModuleLoadHook(): void {
+    protected _unsetModuleLoadHook(): void {
         if (!this._onModuleLoad) {
             return;
         }

@@ -1,7 +1,7 @@
 import {assert} from 'chai';
 import ModulesManager from 'RequireJsLoader/ModulesManager';
 import fakeRequire, {clear, define as fakeDefine, getImplementation} from './mocks/requirejs';
-import { ModuleLoadCallback } from 'RequireJsLoader/IModulesManager';
+import { ModuleLoadCallback } from 'RequireJsLoader/IModulesHandler';
 
 describe('RequireJsLoader/ModulesManager', () => {
     beforeEach(() => {
