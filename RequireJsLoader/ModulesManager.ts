@@ -90,12 +90,17 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
         const originalLoad = this.loader.onResourceLoad;
 
         this.loader.onResourceLoad = (context: IRequireContext, map: IRequireMapExt, depArray: RequireMap[]) => {
-            const exports = context.defined[map.id];
-            const moduleName = map.name;
+            const moduleId = map.id;
+            const exports = context.defined[moduleId];
             this._moduleLoadCallbacks.forEach((callback) => {
-                const overrided = callback(moduleName, exports);
+                const overrided = callback(moduleId, exports);
                 if (overrided !== undefined) {
-                    context.defined[map.id] = overrided;
+                    context.defined[moduleId] = overrided;
+
+                    const mod = context.registry[moduleId];
+                    if (mod) {
+                        mod.exports = overrided;
+                    }
                 }
             });
 
