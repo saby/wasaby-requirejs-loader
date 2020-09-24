@@ -47,7 +47,7 @@ export interface IContents {
     buildnumber?: string;
     contextVersion?: string;
     loadedServices?: Record<string, boolean>;
-    modules: {
+    modules?: {
        [key: string]: IModule;
     };
 }
