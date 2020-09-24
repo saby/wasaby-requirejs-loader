@@ -415,15 +415,23 @@ define('RequireJsLoader/config', (() => {
                 return;
             }
 
+            let pathname = url;
+            // Remove domain name if needed
+            if (pathname.substr(0, 2) === '//') {
+                const pathParts = pathname.substr(2).split('/');
+                pathParts[0] = '';
+                pathname = pathParts.join('/');
+            }
+
             // Search for suitable module
             const prefixes = getModulesPrefixes();
             for (let i = 0; i < prefixes.length; i++) {
                 const modulePrefix = prefixes[i][1];
                 // URL should start with base prefix or certain module prefix
-                if (modulePrefix && url.substr(0, modulePrefix.length) === modulePrefix) {
+                if (modulePrefix && pathname.substr(0, modulePrefix.length) === modulePrefix) {
                     if (i === 0) {
                         // Base prefix
-                        return reviseModuleName(url.substr(modulePrefix.length).split('/')[0]);
+                        return reviseModuleName(pathname.substr(modulePrefix.length).split('/')[0]);
                     } else {
                         // Certain module prefix
                         return prefixes[i][0];

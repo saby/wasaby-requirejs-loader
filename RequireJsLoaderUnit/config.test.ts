@@ -3,7 +3,10 @@ import {assert} from 'chai';
 import {patchContext, handlers} from 'RequireJsLoader/config';
 import { IRequireExt } from '../RequireJsLoader/require.ext';
 
-const global = this || (0, eval)('this');// eslint-disable-line no-eval
+const global: RequireJsLoader.IPatchedGlobal = (function(): RequireJsLoader.IPatchedGlobal {
+    // tslint:disable-next-line:ban-comma-operator
+    return this || (0, eval)('this');
+}());
 
 describe('RequireJsLoader/config', () => {
     const contents = global.contents;
@@ -56,6 +59,43 @@ describe('RequireJsLoader/config', () => {
             it('shouldn\'t add .js extension if url already ends with .wml or .tmpl', () => {
                 assert.isTrue(defContext.nameToUrl('foo/bar.wml').endsWith('/foo/bar.wml'));
                 assert.isTrue(defContext.nameToUrl('foo/bar.tmpl').endsWith('/foo/bar.tmpl'));
+            });
+        });
+    });
+
+    context('handlers', () => {
+        const {checkModule, getModulesPrefixes} = handlers;
+
+        beforeEach(() => {
+            getModulesPrefixes.invalidate();
+        });
+
+        context('checkModule()', () => {
+            it('shouldn\'t add local service name to "loadedServices" in "contents"', () => {
+                checkModule('/foo/bar.js');
+                assert.isUndefined(global.contents.loadedServices);
+            });
+
+            it('should add external service name to "loadedServices" in "contents" using relative URL', () => {
+                global.contents.modules = {
+                    foo: {
+                        path: '/foo-service-path/',
+                        service: 'foo-service'
+                    }
+                };
+                checkModule('/foo-service-path/bar.js');
+                assert.isTrue(global.contents.loadedServices['foo-service']);
+            });
+
+            it('should add external service name to "loadedServices" in "contents" using URL with domain', () => {
+                global.contents.modules = {
+                    foo: {
+                        path: '/foo-service-path/',
+                        service: 'foo-service'
+                    }
+                };
+                checkModule('//foo.domain/foo-service-path/bar.js');
+                assert.isTrue(global.contents.loadedServices['foo-service']);
             });
         });
     });
