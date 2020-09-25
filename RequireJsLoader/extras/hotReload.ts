@@ -1,3 +1,5 @@
+// @ts-ignore
+import { BUILD_MODE, DEBUG_MODE } from '../config';
 import ILogger from './ILogger';
 
 // Superglobal root
@@ -12,10 +14,12 @@ const ENTRY_POINT = 'HotReload/eventStream/client/runner';
  * Initializes "Hot Reload" module
  */
 export default function hotReload(logger: ILogger): () => void {
-    if (typeof window !== 'undefined') {
-        if (GLOBAL.contents?.modules?.HotReload) {
-            import(ENTRY_POINT).catch((err) => logger.log('RequireJsLoader/extras/hotReload', err));
-        }
+    if (
+        typeof window !== 'undefined' &&
+        BUILD_MODE === DEBUG_MODE &&
+        GLOBAL.contents?.modules?.HotReload
+    ) {
+        import(ENTRY_POINT).catch((err) => logger.log('RequireJsLoader/extras/hotReload', err));
     }
 
     return () => undefined;

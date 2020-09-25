@@ -912,6 +912,9 @@ define('RequireJsLoader/config', (() => {
     }
 
     return () => ({
+        BUILD_MODE,
+        RELEASE_MODE,
+        DEBUG_MODE,
         patchContext,
         createConfig,
         applyConfig,
