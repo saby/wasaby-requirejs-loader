@@ -85,7 +85,7 @@ function undefineFailedChains(context: IRequireContext, logger: ILogger): void {
         context.require(
             registryNames.filter((moduleName) => !moduleName.startsWith('_@r')),
             () => null,
-            (err: Error) => logger.log('RequireJsLoader/extras/errorHandler:undefineFailedChains()', err.message)
+            (err: Error) => logger.log('RequireJsLoader/extras:errorHandler->undefineFailedChains()', err.message)
         );
     }
 }

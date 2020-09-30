@@ -1,6 +1,6 @@
-import {assert} from 'chai';
+import { assert } from 'chai';
 // @ts-ignore
-import {patchContext, handlers} from 'RequireJsLoader/config';
+import { patchContext, handlers } from 'RequireJsLoader/config';
 import { IRequireExt } from '../RequireJsLoader/require.ext';
 
 const global: RequireJsLoader.IPatchedGlobal = (function(): RequireJsLoader.IPatchedGlobal {

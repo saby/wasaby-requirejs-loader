@@ -3,12 +3,12 @@
  */
 define('wml', [
    'text',
-   'RequireJsLoader/extras/patchDefine',
+   'RequireJsLoader/extras',
    'optional!UI/BuilderConfig',
    'optional!Env/Env'
 ], function(
    text,
-   patchDefine,
+   extras,
    BuilderConfig,
    Env
 ) {
@@ -90,7 +90,7 @@ define('wml', [
                require(needRequire, function(builder) {
                   try {
                      // Check for circular dependencies before we go
-                     patchDefine.checkCircularDependencies(ext + '!' + name, builder.Tmpl.getComponents(html, conf));
+                     extras.patchDefine.checkCircularDependencies(ext + '!' + name, builder.Tmpl.getComponents(html, conf));
 
                      callback(name, html, builder.Tmpl, conf, load, ext);
                   } catch (err) {

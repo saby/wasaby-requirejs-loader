@@ -1,5 +1,5 @@
 //@ts-ignore
-import {handlers} from './config';
+import {handlers} from '../config';
 
 /**
  * Возвращает обработанный URL ресураса с указанием домена и версии.

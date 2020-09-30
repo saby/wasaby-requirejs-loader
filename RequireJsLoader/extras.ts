@@ -1,10 +1,15 @@
-import errorHandler from './errorHandler';
-import resourceLoadHandler from './resourceLoadHandler';
-import patchDefine from './patchDefine';
-import hotReload from './hotReload';
-import {getInstance} from './utils';
-import ILogger from './ILogger';
-import './dynamicConfig';
+/**
+ * Library that provides extra functionalities for RequireJS
+ * @library RequireJsLoader/extras
+ */
+
+import errorHandler from './_extras/errorHandler';
+import resourceLoadHandler from './_extras/resourceLoadHandler';
+import patchDefine from './_extras/patchDefine';
+import hotReload from './_extras/hotReload';
+import {getInstance} from './_extras/utils';
+import ILogger from './_extras/ILogger';
+import './_extras/dynamicConfig';
 
 let patchApplied = false;
 
@@ -65,3 +70,5 @@ function autoload(): () => void {
 }
 
 export default autoload();
+
+export {patchDefine};

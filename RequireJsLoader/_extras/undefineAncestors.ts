@@ -6,7 +6,7 @@ import ILogger from './ILogger';
  */
 export function undefine(require: Require, name: string, logger: ILogger): void {
     require.undef(name);
-    logger.log('RequireJsLoader/extras/undefineAncestors:undefine()', `Module "${name}" has been undefined.`);
+    logger.log('RequireJsLoader/extras:undefineAncestors->undefine()', `Module "${name}" has been undefined.`);
 }
 
 /**
