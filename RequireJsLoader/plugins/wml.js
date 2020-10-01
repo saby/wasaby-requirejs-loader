@@ -90,7 +90,7 @@ define('wml', [
                require(needRequire, function(builder) {
                   try {
                      // Check for circular dependencies before we go
-                     extras.patchDefine.checkCircularDependencies(ext + '!' + name, builder.Tmpl.getComponents(html, conf));
+                     extras.checkCircularDependencies(ext + '!' + name, builder.Tmpl.getComponents(html, conf));
 
                      callback(name, html, builder.Tmpl, conf, load, ext);
                   } catch (err) {
