@@ -71,4 +71,7 @@ function autoload(): () => void {
 
 export default autoload();
 
-export {checkCircularDependencies};
+export {
+    errorHandler,
+    checkCircularDependencies
+};
