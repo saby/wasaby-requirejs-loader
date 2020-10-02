@@ -6,7 +6,9 @@
     "native-css", "optional", "preload",
     "remote", "text", "tmpl", "wml",
 
-    "RequireJsLoader/extras/*"
+    "RequireJsLoader/extras/*",
+    "RequireJsLoader/ModulesManager",
+    "RequireJsLoader/getResourceUrl"
   ],
   "extendsTo": "online-superbundle.package.js"
 }]
