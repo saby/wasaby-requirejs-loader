@@ -3,7 +3,7 @@
  * @library RequireJsLoader/extras
  */
 
-import errorHandler from './_extras/errorHandler';
+import errorHandler, {undefineByError} from './_extras/errorHandler';
 import resourceLoadHandler from './_extras/resourceLoadHandler';
 import patchDefine, {checkCircularDependencies} from './_extras/patchDefine';
 import hotReload from './_extras/hotReload';
@@ -73,5 +73,6 @@ export default autoload();
 
 export {
     errorHandler,
+    undefineByError,
     checkCircularDependencies
 };
