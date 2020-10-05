@@ -19,7 +19,7 @@ export default function hotReload(logger: ILogger): () => void {
         BUILD_MODE === DEBUG_MODE &&
         GLOBAL.contents?.modules?.HotReload
     ) {
-        import(ENTRY_POINT).catch((err) => logger.log('RequireJsLoader/extras/hotReload', err));
+        import(ENTRY_POINT).catch((err) => logger.log('RequireJsLoader/extras:hotReload', err));
     }
 
     return () => undefined;

@@ -1,14 +1,14 @@
 /* global define, describe, it, assert */
 define([
-   'RequireJsLoader/extras/errorHandler',
-   'RequireJsLoader/extras/utils'
+   'RequireJsLoader/_extras/errorHandler',
+   'RequireJsLoader/_extras/utils'
 ], function(
    errorHandler,
    utils
 ) {
    'use strict';
 
-   describe('RequireJsLoader/extras/errorHandler', function() {
+   describe('RequireJsLoader/_extras/errorHandler', function() {
       var logger = console;
       var requirejs = utils.getInstance();
 

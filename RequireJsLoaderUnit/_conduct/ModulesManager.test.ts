@@ -1,9 +1,9 @@
-import {assert} from 'chai';
-import ModulesManager from 'RequireJsLoader/ModulesManager';
-import fakeRequire, {clear, define as fakeDefine, getImplementation} from './mocks/requirejs';
-import { ModuleLoadCallback } from 'RequireJsLoader/IModulesHandler';
+import { assert } from 'chai';
+import ModulesManager from 'RequireJsLoader/_conduct/ModulesManager';
+import { ModuleLoadCallback } from 'RequireJsLoader/_conduct/IModulesHandler';
+import fakeRequire, { clear, define as fakeDefine, getImplementation } from '../mocks/requirejs';
 
-describe('RequireJsLoader/ModulesManager', () => {
+describe('RequireJsLoader/_conduct/ModulesManager', () => {
     beforeEach(() => {
         clear();
     });
@@ -11,12 +11,12 @@ describe('RequireJsLoader/ModulesManager', () => {
     describe('.isLoaded()', () => {
         it('should return true if module is loaded', () => {
             const manager = new ModulesManager(requirejs);
-            assert.isTrue(manager.isLoaded('RequireJsLoader/ModulesManager'));
+            assert.isTrue(manager.isLoaded('RequireJsLoader/_conduct/ModulesManager'));
         });
 
         it('should return false if module is not loaded', () => {
             const manager = new ModulesManager(requirejs);
-            assert.isFalse(manager.isLoaded('RequireJsLoader/UnknownModulesManager'));
+            assert.isFalse(manager.isLoaded('RequireJsLoader/_conduct/UnknownModulesManager'));
         });
     });
 

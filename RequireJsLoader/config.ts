@@ -223,8 +223,8 @@ define('RequireJsLoader/config', (() => {
                 // Force load polyfills
                 IS_SERVER_SCRIPT ? '' : (wsCoreIncluded ? 'Core/polyfill' : ''),
                 // Force load extra patches for RequireJS
-                'RequireJsLoader/extras/autoload'
-            ], 'RequireJsLoader/extras/');
+                'RequireJsLoader/autoload'
+            ], 'RequireJsLoader/_extras/');
 
             let finalDeps = deps;
             let finalCallback = callback;

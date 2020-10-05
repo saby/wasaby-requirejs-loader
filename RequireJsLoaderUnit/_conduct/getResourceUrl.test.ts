@@ -1,7 +1,7 @@
-import {assert} from 'chai';
-import getResourceUrl from 'RequireJsLoader/getResourceUrl';
+import { assert } from 'chai';
+import getResourceUrl from 'RequireJsLoader/_conduct/getResourceUrl';
 // @ts-ignore
-import {handlers} from 'RequireJsLoader/config';
+import { handlers } from 'RequireJsLoader/config';
 
 // tslint:disable-next-line:ban-comma-operator
 const global = (0, eval)('this');
@@ -14,7 +14,7 @@ function clear(obj: object): void {
    });
 }
 
-describe('RequireJsLoader/getResourceUrl', () => {
+describe('RequireJsLoader/_conduct/getResourceUrl', () => {
    beforeEach(() => {
       global.contents = {};
       handlers.getModulesPrefixes.invalidate();

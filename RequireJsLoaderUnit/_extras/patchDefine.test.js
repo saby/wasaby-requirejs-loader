@@ -1,14 +1,14 @@
 /* global define, describe, it, assert */
 define([
-   'RequireJsLoader/extras/patchDefine',
-   'RequireJsLoader/extras/utils'
+   'RequireJsLoader/_extras/patchDefine',
+   'RequireJsLoader/_extras/utils'
 ], function(
    defineExtra,
    utils
 ) {
    'use strict';
 
-   describe('RequireJsLoader/extras/patchDefine', function() {
+   describe('RequireJsLoader/_extras/patchDefine', function() {
       var requirejs = utils.getInstance();
 
       describe('getCircularDependencies()', function() {
