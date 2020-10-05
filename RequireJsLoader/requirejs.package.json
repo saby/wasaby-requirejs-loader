@@ -16,8 +16,9 @@
     "tmpl",
     "wml",
 
-    "RequireJsLoader/extras",
-    "RequireJsLoader/conduct"
+    "RequireJsLoader/autoload",
+    "RequireJsLoader/conduct",
+    "RequireJsLoader/extras"
   ],
   "extendsTo": "online-superbundle.package.js"
 }]
