@@ -1,14 +1,14 @@
 /* global define, describe, it, assert */
 define([
-   'RequireJsLoader/extras/resourceLoadHandler',
-   'RequireJsLoader/extras/utils'
+   'RequireJsLoader/_extras/resourceLoadHandler',
+   'RequireJsLoader/_extras/utils'
 ], function(
    resourceLoadHandler,
    utils
 ) {
    'use strict';
 
-   describe('RequireJsLoader/extras/resourceLoadHandler', function() {
+   describe('RequireJsLoader/_extras/resourceLoadHandler', function() {
       var requirejs = utils.getInstance();
 
       var undo;

@@ -1,14 +1,24 @@
 [{
   "include": [
-    "browser", "cdn", "css",
-    "html", "is",
-    "is-api", "js", "json",
-    "native-css", "optional", "preload",
-    "remote", "text", "tmpl", "wml",
+    "browser",
+    "cdn",
+    "css",
+    "html",
+    "is",
+    "is-api",
+    "js",
+    "json",
+    "native-css",
+    "optional",
+    "preload",
+    "remote",
+    "text",
+    "tmpl",
+    "wml",
 
-    "RequireJsLoader/extras/*",
-    "RequireJsLoader/ModulesManager",
-    "RequireJsLoader/getResourceUrl"
+    "RequireJsLoader/autoload",
+    "RequireJsLoader/conduct",
+    "RequireJsLoader/extras"
   ],
   "extendsTo": "online-superbundle.package.js"
 }]

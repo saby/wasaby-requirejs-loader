@@ -1,6 +1,6 @@
-import {assert} from 'chai';
+import { assert } from 'chai';
 // @ts-ignore
-import {patchContext, handlers} from 'RequireJsLoader/config';
+import { patchContext, handlers } from 'RequireJsLoader/config';
 import { IRequireExt } from '../RequireJsLoader/require.ext';
 
 const global: RequireJsLoader.IPatchedGlobal = (function(): RequireJsLoader.IPatchedGlobal {
@@ -11,10 +11,12 @@ const global: RequireJsLoader.IPatchedGlobal = (function(): RequireJsLoader.IPat
 describe('RequireJsLoader/config', () => {
     const contents = global.contents;
     const wsConfig = global.wsConfig;
+    const {getModulesPrefixes} = handlers;
 
     beforeEach(() => {
         global.contents = {};
         global.wsConfig = Object.assign({}, global.wsConfig);
+        getModulesPrefixes.invalidate();
     });
 
     afterEach(() => {
@@ -64,11 +66,7 @@ describe('RequireJsLoader/config', () => {
     });
 
     context('handlers', () => {
-        const {checkModule, getModulesPrefixes} = handlers;
-
-        beforeEach(() => {
-            getModulesPrefixes.invalidate();
-        });
+        const {checkModule} = handlers;
 
         context('checkModule()', () => {
             it('shouldn\'t add local service name to "loadedServices" in "contents"', () => {
