@@ -18,7 +18,9 @@
 
     "RequireJsLoader/autoload",
     "RequireJsLoader/conduct",
-    "RequireJsLoader/extras"
+    "RequireJsLoader/extras",
+    "RequireJsLoader/ModulesManager",
+    "RequireJsLoader/getResourceUrl"
   ],
   "extendsTo": "online-superbundle.package.js"
 }]
