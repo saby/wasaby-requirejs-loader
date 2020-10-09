@@ -91,6 +91,27 @@ define([
 
             assert.isNull(result);
          });
+
+         it('should return module synchronously if it is loaded already', function() {
+            var foo = {};
+            var require = function(name) {
+               if (name === 'foo') {
+                   return foo;
+               }
+               throw new Error('Not found')
+            };
+            require.defined = function(name) {
+                return name === 'foo'
+            }
+
+            var result;
+            var handler = function(res) {
+               result = res;
+            };
+            optional.load('foo', require, handler);
+
+            assert.equal(result, foo);
+         });
       });
    });
 });

@@ -32,7 +32,7 @@ define('optional', function() {
       throw err;
    }
 
-   function isNorFoundError(error) {
+   function isNotFoundError(error) {
       if (!error) {
          return false;
       }
@@ -85,10 +85,16 @@ define('optional', function() {
          }
 
          try {
+            // Try to return module synchronously if it's already loaded
+            if (require.defined && require.defined(name)) {
+                onLoad(require(name));
+                return;
+            }
+
             // Slow check via RequireJS result
             require([name], onLoad, function(error) {
                showAlertOnTimeoutInBrowser(error);
-               if (isNorFoundError(error)) {
+               if (isNotFoundError(error)) {
                   onLoad(null);
                } else {
                   if (error.message) {
