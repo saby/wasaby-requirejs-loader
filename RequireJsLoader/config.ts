@@ -764,7 +764,8 @@ define('RequireJsLoader/config', (() => {
             baseUrl,
             map: {
                 '*': {
-                    i18n: 'I18n/i18n'
+                    i18n: 'I18n/i18n',
+                    optional: 'RequireJsLoader/plugins/optional'
                 }
             },
             paths: {

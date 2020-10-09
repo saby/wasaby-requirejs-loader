@@ -3,6 +3,16 @@
 export type ContextEnableFunction = (depMap: IRequireModule) => void;
 export type OnResourceLoadCallback = (context: IRequireContext, map: IRequireMapExt, depArray: RequireMap[]) => void;
 
+export interface PluginLoadFunction {
+    (module: unknown): void;
+    error(err: Error): void;
+}
+
+// An error with XMLHttpRequest instance injected
+export interface IXhrRequireError extends RequireError {
+    xhr: XMLHttpRequest;
+}
+
 export interface IRequireMapExt extends RequireMap {
     id: string;
  }
