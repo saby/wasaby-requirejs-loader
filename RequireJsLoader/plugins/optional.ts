@@ -135,8 +135,11 @@ export = {
         try {
             // Try to return module synchronously if it's already loaded
             if (require.defined && require.defined(name)) {
-                onLoad(require(name));
-                return;
+                const module = require(name);
+                if (module) {
+                    onLoad(module);
+                    return;
+                }
             }
 
             // Try to return module asynchronously
