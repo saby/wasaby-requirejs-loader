@@ -73,24 +73,24 @@ function showAlertOnTimeoutInBrowser(err: RequireError): void {
  * @param error Module loading error
  */
 function isNotFoundError(error: IXhrRequireError): boolean {
-if (!error) {
-    return false;
-}
+    if (!error) {
+        return false;
+    }
 
-// Handle RequireJS errors
-switch (error.requireType) {
-    case 'scripterror':
+    // Handle RequireJS errors
+    switch (error.requireType) {
+        case 'scripterror':
+            return true;
+        case 'define':
+            return String(error.message).indexOf('tried node\'s require(') > -1;
+    }
+
+    // Handle XMLHttpRequest errors
+    if (error.xhr && error.xhr.status === HTTP_STATUS_NOT_FOUND) {
         return true;
-    case 'define':
-        return String(error.message).indexOf('tried node\'s require(') > -1;
-}
+    }
 
-// Handle XMLHttpRequest errors
-if (error.xhr && error.xhr.status === HTTP_STATUS_NOT_FOUND) {
-    return true;
-}
-
-return false;
+    return false;
 }
 
 function onLoadError(name: string, error: Error, onLoad: PluginLoadFunction): void {
