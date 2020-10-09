@@ -133,6 +133,12 @@ export = {
         }
 
         try {
+            // Try to return module synchronously if it's already loaded
+            if (require.defined && require.defined(name)) {
+                onLoad(require(name));
+                return;
+            }
+
             // Try to return module asynchronously
             require([name], onLoad, (error: RequireError): void => {
                 showAlertOnTimeoutInBrowser(error);

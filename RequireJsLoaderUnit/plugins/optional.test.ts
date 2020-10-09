@@ -73,7 +73,7 @@ describe('RequireJsLoader/plugins/optional', () => {
             assert.isNull(result);
         });
 
-        it.skip('should return module synchronously if it is loaded already', () => {
+        it('should return module synchronously if it is loaded already', () => {
             const foo = {};
             const require = (name) => {
                 if (name === 'foo') {
