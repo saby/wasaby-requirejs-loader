@@ -2,6 +2,7 @@
  * Library that provides the conduct of the modules system
  * @library RequireJsLoader/conduct
  * @includes getResourceUrl RequireJsLoader/_conduct/getResourceUrl
+ * @includes getModuleUrl RequireJsLoader/_conduct/getModuleUrl
  * @includes IModulesHandler RequireJsLoader/_conduct/IModulesHandler
  * @includes IModulesManager RequireJsLoader/_conduct/IModulesManager
  * @includes IModulesManagerSync RequireJsLoader/_conduct/IModulesManagerSync
@@ -9,6 +10,7 @@
  */
 
 export {default as getResourceUrl} from './_conduct/getResourceUrl';
+export {default as getModuleUrl} from './_conduct/getModuleUrl';
 export {default as IModulesHandler} from './_conduct/IModulesHandler';
 export {default as IModulesManager} from './_conduct/IModulesManager';
 export {default as IModulesManagerSync} from './_conduct/IModulesManagerSync';
