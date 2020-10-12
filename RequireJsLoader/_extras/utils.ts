@@ -6,11 +6,35 @@ export const global = (function(): IPatchedGlobal {
     return this || (0, eval)('this');
 }());
 
+/**
+ * Returns global RequireJS instance
+ */
 export function getInstance(): IRequireExt {
     return global.requirejs;
 }
 
-// Returns UI module name from AMD module name
+/**
+ * Returns a sign that module is really defined.
+ * This function aims to cover implicit RequireJS behaviour when it creates an empty object as module exports in case when
+ * module uses 'exports' handler:
+ * https://github.com/saby/wasaby-requirejs-loader/blob/a15a8c6126a3525682d047b858c4344319ff9607/RequireJsLoader/require.js#L586
+ * It happens before module factory call therefore we can get an empty module instead of its real body.
+ * @param name Module name
+ */
+export function isModuleDefined(require: Require, name: string): boolean {
+    if (!require.defined(name)) {
+        return false;
+    }
+    const mod = require(name);
+
+    return mod && (typeof mod !== 'object' || Object.keys(mod).length > 1);
+}
+
+/**
+ * Returns UI module name from AMD module name
+ * @param amdModuleName Module name in AMD format
+ * @param removePlugin Remove plugin names from module name
+ */
 export function getInterfaceModuleName(amdModuleName: string, removePlugin?: boolean): string {
     if (removePlugin) {
         const pluginSeparatorPosition = amdModuleName.lastIndexOf('!');
