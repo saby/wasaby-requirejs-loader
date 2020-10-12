@@ -74,7 +74,7 @@ describe('RequireJsLoader/plugins/optional', () => {
         });
 
         it('should return module synchronously if it is loaded already', () => {
-            const foo = {};
+            const foo = {bar: 'baz'};
             const require = (name) => {
                 if (name === 'foo') {
                      return foo;

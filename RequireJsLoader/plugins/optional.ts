@@ -2,7 +2,7 @@
  * RequireJS plugin which allows deal with not exists modules
  */
 
-import { utils } from '../extras';
+import { isModuleDefined } from '../conduct';
 import { IXhrRequireError, PluginLoadFunction } from '../require.ext';
 import { IPatchedWindow } from '../wasaby';
 
@@ -135,8 +135,9 @@ export = {
 
         try {
             // Try to return module synchronously if it's already loaded
-            if (utils.isModuleDefined(require, name)) {
+            if (isModuleDefined(require, name)) {
                 onLoad(require(name));
+                return;
             }
 
             // Try to return module asynchronously
