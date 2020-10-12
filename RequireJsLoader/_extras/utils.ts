@@ -6,11 +6,18 @@ export const global = (function(): IPatchedGlobal {
     return this || (0, eval)('this');
 }());
 
+/**
+ * Returns global RequireJS instance
+ */
 export function getInstance(): IRequireExt {
     return global.requirejs;
 }
 
-// Returns UI module name from AMD module name
+/**
+ * Returns UI module name from AMD module name
+ * @param amdModuleName Module name in AMD format
+ * @param removePlugin Remove plugin names from module name
+ */
 export function getInterfaceModuleName(amdModuleName: string, removePlugin?: boolean): string {
     if (removePlugin) {
         const pluginSeparatorPosition = amdModuleName.lastIndexOf('!');
