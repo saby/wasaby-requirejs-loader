@@ -27,6 +27,7 @@ export interface IWsConfig {
     DEBUGGING_MODULES?: string[];
     IS_OVERALL_DEBUG?: boolean;
     IS_SERVER_SCRIPT?: boolean;
+    IS_INITIALIZED?: boolean;
     RESOURCES_PATH?: string;
     appRoot?: string;
     debug?: boolean;
