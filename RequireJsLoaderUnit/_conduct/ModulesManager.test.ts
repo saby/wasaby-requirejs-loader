@@ -18,6 +18,16 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
             const manager = new ModulesManager(requirejs);
             assert.isFalse(manager.isLoaded('RequireJsLoader/_conduct/UnknownModulesManager'));
         });
+
+        it('should return false for module with empty exports', () => {
+            const foo = {};
+            fakeDefine('foo', [], foo);
+
+            const manager = new ModulesManager(fakeRequire);
+            return manager.load(['foo']).then(() => {
+                assert.isFalse(manager.isLoaded('foo'));
+            });
+        });
     });
 
     describe('.load()', () => {

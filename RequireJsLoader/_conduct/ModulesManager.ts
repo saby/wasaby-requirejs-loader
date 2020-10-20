@@ -2,6 +2,7 @@ import {IRequireContext, IRequireExt, IRequireMapExt} from '../require.ext';
 import IModulesManager from './IModulesManager';
 import IModulesManagerSync from './IModulesManagerSync';
 import IModulesHandler, { ModuleLoadCallback } from './IModulesHandler';
+import isModuleDefined from './isModuleDefined';
 import undefineAncestors from '../_extras/undefineAncestors';
 
 type OnResourceLoadCallback = typeof require.onResourceLoad;
@@ -24,7 +25,7 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
     // region IModulesManager
 
     isLoaded(module: string): boolean {
-        return this.loader.defined(module);
+        return isModuleDefined(this.loader, module);
     }
 
     load<T>(modules: string[]): Promise<T> {
