@@ -1,27 +1,23 @@
 import { assert } from 'chai';
 // @ts-ignore
 import { patchContext, handlers } from 'RequireJsLoader/config';
+import { global } from 'RequireJsLoader/_extras/utils';
 import { IRequireExt } from '../RequireJsLoader/require.ext';
 
-const global: RequireJsLoader.IPatchedGlobal = (function(): RequireJsLoader.IPatchedGlobal {
-    // tslint:disable-next-line:ban-comma-operator
-    return this || (0, eval)('this');
-}());
-
 describe('RequireJsLoader/config', () => {
-    const contents = global.contents;
-    const wsConfig = global.wsConfig;
+    const originalContents = global.contents;
+    const originalWsConfig = global.wsConfig;
     const {getModulesPrefixes} = handlers;
 
     beforeEach(() => {
         global.contents = {};
-        global.wsConfig = Object.assign({}, global.wsConfig);
+        global.wsConfig = Object.assign({}, originalWsConfig);
         getModulesPrefixes.invalidate();
     });
 
     afterEach(() => {
-        global.contents = contents;
-        global.wsConfig = wsConfig;
+        global.contents = originalContents;
+        global.wsConfig = originalWsConfig;
     });
 
     context('when affects requirejs()\'s behaviour', () => {

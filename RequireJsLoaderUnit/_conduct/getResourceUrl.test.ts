@@ -1,12 +1,11 @@
 import { assert } from 'chai';
 import getResourceUrl from 'RequireJsLoader/_conduct/getResourceUrl';
+import { global } from 'RequireJsLoader/_extras/utils';
 // @ts-ignore
 import { handlers } from 'RequireJsLoader/config';
 
-// tslint:disable-next-line:ban-comma-operator
-const global = (0, eval)('this');
-const contents = global.contents;
-const wsConfig = Object.assign({}, global.wsConfig);
+const originalContents = global.contents;
+const originalWsConfig = Object.assign({}, global.wsConfig);
 
 function clear(obj: object): void {
    Object.keys(obj).forEach((key) => {
@@ -21,10 +20,9 @@ describe('RequireJsLoader/_conduct/getResourceUrl', () => {
    });
 
    afterEach(() => {
-      global.contents = contents;
-
+      global.contents = originalContents;
       clear(global.wsConfig);
-      Object.assign(global.wsConfig, wsConfig);
+      Object.assign(global.wsConfig, originalWsConfig);
    });
 
    it('should add domain name for absolute URL', () => {

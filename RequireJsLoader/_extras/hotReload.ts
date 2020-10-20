@@ -1,12 +1,7 @@
+import { global } from './utils';
+import ILogger from './ILogger';
 // @ts-ignore
 import { BUILD_MODE, DEBUG_MODE } from '../config';
-import ILogger from './ILogger';
-
-// Superglobal root
-const GLOBAL: RequireJsLoader.IPatchedGlobal = (function(): RequireJsLoader.IPatchedGlobal {
-    // tslint:disable-next-line:ban-comma-operator
-    return this || (0, eval)('this');
-}());
 
 const ENTRY_POINT = 'HotReload/eventStream/client/runner';
 
@@ -17,7 +12,7 @@ export default function hotReload(logger: ILogger): () => void {
     if (
         typeof window !== 'undefined' &&
         BUILD_MODE === DEBUG_MODE &&
-        GLOBAL.contents?.modules?.HotReload
+        global.contents?.modules?.HotReload
     ) {
         import(ENTRY_POINT).catch((err) => logger.log('RequireJsLoader/extras:hotReload', err));
     }
