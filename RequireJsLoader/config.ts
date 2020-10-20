@@ -25,8 +25,11 @@ define('RequireJsLoader/config', (() => {
     // Check if we're on server side
     const IS_SERVER_SCRIPT: boolean = typeof window === 'undefined';
 
+    // Default loading timeout for RequireJS
+    const DEFAULT_LOADING_TIMEOUT = 60;
+
     // Resource loading timeout for RequireJS
-    const LOADING_TIMEOUT: number = getWsConfig().moduleLoadingTimeout || 60;
+    const LOADING_TIMEOUT: number = getWsConfig().moduleLoadingTimeout || DEFAULT_LOADING_TIMEOUT;
 
     // Default resources path
     const DEFAULT_RESOURCES_PATH = 'resources';
@@ -146,7 +149,7 @@ define('RequireJsLoader/config', (() => {
                 return {};
             }
             try {
-                    return JSON.parse(GLOBAL.rtpackModuleNames);
+                return JSON.parse(GLOBAL.rtpackModuleNames);
             } catch (err) {
                 logError(err);
                 return {};
@@ -887,29 +890,35 @@ define('RequireJsLoader/config', (() => {
         } : withHandlers);
     }
 
-    // Normalize wsConfig
-    const wsConfig = getWsConfig();
-    wsConfig.BUILD_MODE = BUILD_MODE;
-    wsConfig.IS_OVERALL_DEBUG = debug.IS_OVERALL;
-    wsConfig.DEBUGGING_MODULES = debug.MODULES;
-    wsConfig.IS_SERVER_SCRIPT = IS_SERVER_SCRIPT;
+    const localWsConfig = getWsConfig();
 
     // Build URL handlers
-    const handlers = buildHandlers(wsConfig);
+    const handlers = buildHandlers(localWsConfig);
 
-    // Prepare environment with patches
-    prepareEnvironment(requirejs as RequireJsLoader.IRequireExt, handlers);
+    // Prevent from several initializations because RT packing could grab this module
+    if (!localWsConfig.IS_INITIALIZED) {
+        // Normalize wsConfig
+        localWsConfig.IS_INITIALIZED = true;
+        localWsConfig.BUILD_MODE = BUILD_MODE;
+        localWsConfig.IS_OVERALL_DEBUG = debug.IS_OVERALL;
+        localWsConfig.DEBUGGING_MODULES = debug.MODULES;
+        localWsConfig.IS_SERVER_SCRIPT = IS_SERVER_SCRIPT;
 
-    Object.defineProperties(wsConfig, {
-        getModulesPrefixes: {configurable: true, value: handlers.getModulesPrefixes},
-        getWithVersion: {configurable: true, value: handlers.getWithVersion},
-        getWithDomain: {configurable: true, value: handlers.getWithDomain},
-        getWithSuffix: {configurable: true, value: handlers.getWithSuffix}
-    });
+        // Prepare environment with patches
+        prepareEnvironment(requirejs as RequireJsLoader.IRequireExt, handlers);
 
-    // Initialize RequireJS in browser
-    if (!IS_SERVER_SCRIPT) {
-        applyConfig(requirejs, wsConfig);
+        // TODO: remove this, should use RequireJsLoader/config as dependency instead
+        Object.defineProperties(localWsConfig, {
+            getModulesPrefixes: {configurable: true, value: handlers.getModulesPrefixes},
+            getWithVersion: {configurable: true, value: handlers.getWithVersion},
+            getWithDomain: {configurable: true, value: handlers.getWithDomain},
+            getWithSuffix: {configurable: true, value: handlers.getWithSuffix}
+        });
+
+        // Initialize RequireJS in browser
+        if (!IS_SERVER_SCRIPT) {
+            applyConfig(requirejs, localWsConfig);
+        }
     }
 
     return () => ({
