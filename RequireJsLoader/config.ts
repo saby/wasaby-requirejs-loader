@@ -651,56 +651,53 @@ define('RequireJsLoader/config', (() => {
         if (context.isPatchedByWs) {
             return;
         }
-
         context.isPatchedByWs = true;
+
+        const HAS_PROTOCOL = /^([a-z]+:)?\/\//;
         const originalNameToUrl = context.nameToUrl;
 
-        context.nameToUrl = (() => {
-            const HAS_PROTOCOL = /^([a-z]+:)?\/\//;
-
-            /**
-             * Converts a module name to a file path. Supports cases where moduleName may actually be just an URL.
-             * @param name The name of the module.
-             * @param [ext] The extension of the module
-             * @param [skipExt] Skip extension
-             */
-            return function nameToUrlDecorator(name: string, ext?: string, skipExt?: boolean): string {
-                let skipExtActual = skipExt;
-                /*
-                * For URLs with domain name included RequireJS does the 2nd call of nameToUrl() and passes there 'name'
-                * argument which already contains the extension and empty 'ext' argument so that default implementation
-                * below simply adds '.js' extension to the result URL.
-                * To bypass this behaviour we have to manage 'skipExt' flag if extension already presented in URL.
-                */
-                if (name && !ext && !skipExtActual) {
-                    const nameDotIndex = name.lastIndexOf('.');
-                    const nameExt = nameDotIndex > -1 ? name.substr(nameDotIndex) : '';
-                    // Only deal with templates
-                    if (nameExt === '.wml' || nameExt === '.tmpl') {
-                        skipExtActual = true;
-                    }
+        /**
+         * Converts module name to the file path. Supports cases where moduleName may actually be just an URL.
+         * @param name The name of the module.
+         * @param [ext] The extension of the module
+         * @param [skipExt] Skip extension
+         */
+        context.nameToUrl = function nameToUrlDecorator(name: string, ext?: string, skipExt?: boolean): string {
+            let skipExtActual = skipExt;
+            /*
+            * For URLs with domain name included RequireJS does the 2nd call of nameToUrl() and passes there 'name'
+            * argument which already contains the extension and empty 'ext' argument so that default implementation
+            * below simply adds '.js' extension to the result URL.
+            * To bypass this behaviour we have to manage 'skipExt' flag if extension already presented in URL.
+            */
+            if (name && !ext && !skipExtActual) {
+                const nameDotIndex = name.lastIndexOf('.');
+                const nameExt = nameDotIndex > -1 ? name.substr(nameDotIndex) : '';
+                // Only deal with templates
+                if (nameExt === '.wml' || nameExt === '.tmpl') {
+                    skipExtActual = true;
                 }
+            }
 
-                let url = originalNameToUrl(name, ext, skipExtActual);
+            let url = originalNameToUrl(name, ext, skipExtActual);
 
-                // Skip URLs with protocol prefix
-                if (HAS_PROTOCOL.test(url)) {
-                    return url;
-                }
-
-                if (getWithSuffix) {
-                    url = getWithSuffix(url);
-                }
-                if (getWithVersion) {
-                    url = getWithVersion(url);
-                }
-                if (getWithDomain) {
-                    url = getWithDomain(url);
-                }
-
+            // Skip URLs with protocol prefix
+            if (HAS_PROTOCOL.test(url)) {
                 return url;
-            };
-        })();
+            }
+
+            if (getWithSuffix) {
+                url = getWithSuffix(url);
+            }
+            if (getWithVersion) {
+                url = getWithVersion(url);
+            }
+            if (getWithDomain) {
+                url = getWithDomain(url);
+            }
+
+            return url;
+        };
 
         let originalLoad;
         if (checkModule) {
@@ -926,6 +923,7 @@ define('RequireJsLoader/config', (() => {
         RELEASE_MODE,
         DEBUG_MODE,
         patchContext,
+        getWsConfig,
         createConfig,
         applyConfig,
         prepareEnvironment,

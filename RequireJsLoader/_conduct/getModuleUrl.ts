@@ -1,4 +1,6 @@
-import { IRequireExt } from '../require.ext';
+import getResourceUrl from './getResourceUrl';
+// @ts-ignore
+import { getWsConfig } from '../config';
 
 interface IModuleInfo {
     plugin: string;
@@ -23,5 +25,15 @@ function getModuleInfo(module: string): IModuleInfo {
  */
 export default function getModuleUrl(module: string, loader: Require = requirejs): string {
     const info = getModuleInfo(module);
-    return loader.toUrl(info.basename + info.extension);
+    const config = getWsConfig();
+    let url = loader.toUrl(info.basename + info.extension);
+
+    if (config.APP_PATH && url.startsWith(config.APP_PATH)) {
+        url = url.substr(config.APP_PATH.length);
+        if (url && url[0] !== '/') {
+            url = '/' + url;
+        }
+    }
+
+    return getResourceUrl(url);
 }
