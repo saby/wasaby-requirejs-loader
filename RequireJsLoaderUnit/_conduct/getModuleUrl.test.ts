@@ -4,6 +4,7 @@ import { global } from 'RequireJsLoader/_extras/utils';
 // @ts-ignore
 import { createConfig } from 'RequireJsLoader/config';
 import { IWsConfig } from 'RequireJsLoader/wasaby';
+import { IRequireExt } from '../../RequireJsLoader/require.ext';
 
 const originalWsConfig = global.wsConfig;
 
@@ -35,5 +36,17 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
     it('should return URL with domain name', () => {
         wsConfig.staticDomains = {domains: ['foo.bar']};
         assert.equal(getModuleUrl('RequireJsLoader/conduct'), '//foo.bar/RequireJsLoader/conduct.js');
+    });
+
+    it('should return URL with domain name', () => {
+        wsConfig.APP_PATH = '/';
+
+        const context = (requirejs as IRequireExt).s.contexts._;
+        const originalNameToUrl = context.nameToUrl;
+        context.nameToUrl = () => '//foo.bar/RequireJsLoader/conduct.js';
+        const result = getModuleUrl('RequireJsLoader/conduct');
+        context.nameToUrl = originalNameToUrl;
+
+        assert.equal(result , '//foo.bar/RequireJsLoader/conduct.js');
     });
 });
