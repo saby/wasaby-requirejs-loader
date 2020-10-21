@@ -904,14 +904,6 @@ define('RequireJsLoader/config', (() => {
         // Prepare environment with patches
         prepareEnvironment(requirejs as RequireJsLoader.IRequireExt, handlers);
 
-        // TODO: remove this, should use RequireJsLoader/config as dependency instead
-        Object.defineProperties(localWsConfig, {
-            getModulesPrefixes: {configurable: true, value: handlers.getModulesPrefixes},
-            getWithVersion: {configurable: true, value: handlers.getWithVersion},
-            getWithDomain: {configurable: true, value: handlers.getWithDomain},
-            getWithSuffix: {configurable: true, value: handlers.getWithSuffix}
-        });
-
         // Initialize RequireJS in browser
         if (!IS_SERVER_SCRIPT) {
             applyConfig(requirejs, localWsConfig);
