@@ -2,16 +2,20 @@ import { assert } from 'chai';
 // @ts-ignore
 import { patchContext, handlers } from 'RequireJsLoader/config';
 import { global } from 'RequireJsLoader/_extras/utils';
-import { IRequireExt } from '../RequireJsLoader/require.ext';
+import { IContents, IWsConfig } from 'RequireJsLoader/wasaby';
+import { IRequireExt } from 'RequireJsLoader/require.ext';
+
+const originalContents = global.contents;
+const originalWsConfig = global.wsConfig;
+const {getModulesPrefixes} = handlers;
 
 describe('RequireJsLoader/config', () => {
-    const originalContents = global.contents;
-    const originalWsConfig = global.wsConfig;
-    const {getModulesPrefixes} = handlers;
+    let wsConfig: IWsConfig;
+    let contents: IContents;
 
     beforeEach(() => {
-        global.contents = {};
-        global.wsConfig = Object.assign({}, originalWsConfig);
+        contents = global.contents = {};
+        wsConfig = global.wsConfig = Object.assign({}, originalWsConfig);
         getModulesPrefixes.invalidate();
     });
 
@@ -22,7 +26,7 @@ describe('RequireJsLoader/config', () => {
 
     context('when affects requirejs()\'s behaviour', () => {
         it('shouldn\'t throw ReferenceError for file in resources folder', () => {
-            global.wsConfig.resourceRoot = '/assets/';
+            wsConfig.resourceRoot = '/assets/';
             return new Promise((resolve) => {
                 requirejs(['/assets/contents.js'], resolve, (err) => {
                     assert.notInstanceOf(err, ReferenceError);
@@ -34,7 +38,7 @@ describe('RequireJsLoader/config', () => {
 
     context('when affects require.defined()\'s behaviour', () => {
         it('shouldn\'t throw ReferenceError if module doesn\'t exist', () => {
-            global.wsConfig.resourceRoot = '/assets/';
+            wsConfig.resourceRoot = '/assets/';
             assert.isFalse(requirejs.defined('path/to/resource'));
         });
     });
@@ -67,29 +71,29 @@ describe('RequireJsLoader/config', () => {
         context('checkModule()', () => {
             it('shouldn\'t add local service name to "loadedServices" in "contents"', () => {
                 checkModule('/foo/bar.js');
-                assert.isUndefined(global.contents.loadedServices);
+                assert.isUndefined(contents.loadedServices);
             });
 
             it('should add external service name to "loadedServices" in "contents" using relative URL', () => {
-                global.contents.modules = {
+                contents.modules = {
                     foo: {
                         path: '/foo-service-path/',
                         service: 'foo-service'
                     }
                 };
                 checkModule('/foo-service-path/bar.js');
-                assert.isTrue(global.contents.loadedServices['foo-service']);
+                assert.isTrue(contents.loadedServices['foo-service']);
             });
 
             it('should add external service name to "loadedServices" in "contents" using URL with domain', () => {
-                global.contents.modules = {
+                contents.modules = {
                     foo: {
                         path: '/foo-service-path/',
                         service: 'foo-service'
                     }
                 };
                 checkModule('//foo.domain/foo-service-path/bar.js');
-                assert.isTrue(global.contents.loadedServices['foo-service']);
+                assert.isTrue(contents.loadedServices['foo-service']);
             });
         });
     });

@@ -3,12 +3,15 @@ import getModuleUrl from 'RequireJsLoader/_conduct/getModuleUrl';
 import { global } from 'RequireJsLoader/_extras/utils';
 // @ts-ignore
 import { createConfig } from 'RequireJsLoader/config';
+import { IWsConfig } from 'RequireJsLoader/wasaby';
 
 const originalWsConfig = global.wsConfig;
 
 describe('RequireJsLoader/_conduct/getModuleUrl', () => {
+    let wsConfig: IWsConfig;
+
     beforeEach(() => {
-        global.wsConfig = Object.assign({}, global.wsConfig);
+        wsConfig = global.wsConfig = Object.assign({}, originalWsConfig);
     });
 
     afterEach(() => {
@@ -22,7 +25,7 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
         );
     });
 
-    it('should return valid plugin+module URL', () => {
+    it('should return valid URL for css! plugin', () => {
         assert.equal(
             getModuleUrl('css!RequireJsLoader/conduct'),
             '/RequireJsLoader/conduct.css'
@@ -30,7 +33,7 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
     });
 
     it('should return URL with domain name', () => {
-        global.wsConfig.staticDomains = {domains: ['foo.bar']};
+        wsConfig.staticDomains = {domains: ['foo.bar']};
         assert.equal(getModuleUrl('RequireJsLoader/conduct'), '//foo.bar/RequireJsLoader/conduct.js');
-     });
-  });
+    });
+});

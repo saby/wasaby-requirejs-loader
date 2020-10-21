@@ -1,3 +1,4 @@
+import getResourceUrl from './getResourceUrl';
 // @ts-ignore
 import { getWsConfig } from '../config';
 
@@ -29,7 +30,10 @@ export default function getModuleUrl(module: string, loader: Require = requirejs
 
     if (config.APP_PATH && url.startsWith(config.APP_PATH)) {
         url = url.substr(config.APP_PATH.length);
+        if (url && url[0] !== '/') {
+            url = '/' + url;
+        }
     }
 
-    return url;
+    return getResourceUrl(url);
 }
