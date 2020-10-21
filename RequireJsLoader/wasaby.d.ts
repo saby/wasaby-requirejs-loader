@@ -18,7 +18,7 @@ export interface IPatchedWindow extends Window, IPatchedGlobal {
 export interface IStaticResourcesConfig {
     domains: string[];
     resources?: string[];
-    types: string[];
+    types?: string[];
  }
 
 export interface IWsConfig {
@@ -34,7 +34,7 @@ export interface IWsConfig {
     product?: string;
     moduleLoadingTimeout?: number;
     resourceRoot?: string;
-    staticDomains?: IStaticResourcesConfig;
+    staticDomains?: IStaticResourcesConfig | string[];
     showAlertOnTimeoutInBrowser?: boolean;
     wsRoot?: string;
     versioning?: boolean;
@@ -54,6 +54,7 @@ export interface IContents {
 
 interface IModule {
     buildnumber?: string;
+    contextVersion?: string;
     path?: string;
     dict?: string[];
     service?: string;
