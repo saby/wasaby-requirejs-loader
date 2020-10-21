@@ -57,11 +57,3 @@ describe('require()', () => {
         });
     });
 });
-
-describe('require.toUrl()', () => {
-    it('should return defined module body', () => {
-        return asyncRequire(['RequireJsLoaderUnit/require/foo']).then(([result]) => {
-            assert.equal(result, 'RequireJsLoaderUnit/require/foo.js');
-        });
-    });
-});
