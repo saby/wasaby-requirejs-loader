@@ -28,7 +28,11 @@ export default function getModuleUrl(module: string, loader: Require = requirejs
     const config = getWsConfig();
     let url = loader.toUrl(info.basename + info.extension);
 
-    if (config.APP_PATH && url.startsWith(config.APP_PATH)) {
+    if (
+        config.APP_PATH &&
+        config.APP_PATH !== '/' &&
+        url.startsWith(config.APP_PATH)
+    ) {
         url = url.substr(config.APP_PATH.length);
         if (url && url[0] !== '/') {
             url = '/' + url;
