@@ -9,7 +9,6 @@
     "js",
     "json",
     "native-css",
-    "optional",
     "preload",
     "remote",
     "text",
@@ -18,7 +17,8 @@
 
     "RequireJsLoader/autoload",
     "RequireJsLoader/conduct",
-    "RequireJsLoader/extras"
+    "RequireJsLoader/extras",
+    "RequireJsLoader/plugins/*"
   ],
   "extendsTo": "online-superbundle.package.js"
 }]
