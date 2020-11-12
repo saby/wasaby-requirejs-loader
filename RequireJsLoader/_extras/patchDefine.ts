@@ -1,18 +1,12 @@
 import {IRequireExt} from '../require.ext';
+// @ts-ignore
+import { debug } from '../config';
 import {global, getInterfaceModuleName} from './utils';
 import {IContents} from '../wasaby';
 
 interface IDependenciesMap {
     [propName: string]: string[];
 }
-
-/**
- * Need to check circular dependencies only when debug mode is on
- */
-const needCheckCircularDependencies = global.wsConfig && Boolean(
-    global.wsConfig.IS_OVERALL_DEBUG ||
-    (global.wsConfig.DEBUGGING_MODULES && global.wsConfig.DEBUGGING_MODULES.length)
-);
 
 const moduleDependencies: Record<string, string[]> = {};
 
@@ -62,7 +56,7 @@ export function getCircularDependencies(name: string, map: IDependenciesMap): st
  * @param dependencies Module dependencies
  */
 export function checkCircularDependencies(name: string, dependencies: string[]): void {
-    if (!needCheckCircularDependencies) {
+    if (!debug.enabled) {
         return;
     }
 
