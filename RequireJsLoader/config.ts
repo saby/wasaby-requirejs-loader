@@ -875,7 +875,8 @@ define('RequireJsLoader/config', (() => {
         }
 
         // Set resource load handler
-        require.onResourceLoad = createResourceLoader(require.onResourceLoad);
+        const dummy = createResourceLoader(require.onResourceLoad);
+        require.onResourceLoad = dummy;
 
         // Patch default context
         patchContext(require.s.contexts._, IS_SERVER_SCRIPT ? {
