@@ -1,5 +1,5 @@
 /**
- * Configures RequireJS on Wasaby environment.
+ * Configures RequireJS on Wasaby environment.1
  * This code should be executed before any other module load that's why it's a self-invoking function.
  */
 define('RequireJsLoader/config', (() => {
