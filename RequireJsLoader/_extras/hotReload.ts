@@ -1,7 +1,6 @@
 import { global } from './utils';
 import ILogger from './ILogger';
-// @ts-ignore
-import { debug, BUILD_MODE, DEBUG_MODE } from '../config';
+import { debug, BUILD_MODE, DEBUG_MODE } from 'RequireJsLoader/config';
 
 const ENTRY_POINT = 'HotReload/eventStream/client/runner';
 

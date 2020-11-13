@@ -9,11 +9,11 @@ define('RequireJsLoader/config', (() => {
     }
 
     interface IHandlers {
-        getModulesPrefixes: IGetModulePrefixes;
-        checkModule: (url: string) => void;
-        getWithDomain: (url: string) => string;
-        getWithSuffix: (url: string) => string;
-        getWithVersion: (url: string) => string;
+        getModulesPrefixes?: IGetModulePrefixes;
+        checkModule?: (url: string) => void;
+        getWithDomain?: (url: string) => string;
+        getWithSuffix?: (url: string) => string;
+        getWithVersion?: (url: string) => string;
     }
 
     // Superglobal root
@@ -324,6 +324,13 @@ define('RequireJsLoader/config', (() => {
         },
 
         /**
+         * Debug mode is enabled
+         */
+        get enabled(): boolean {
+            return this.isOverall() || this.modules.length > 0;
+        },
+
+        /**
          * Debugging modules list
          */
         get modules(): string[] {
@@ -332,13 +339,6 @@ define('RequireJsLoader/config', (() => {
                 return [];
             }
             return rawModules.split(',');
-        },
-
-        /**
-         * Debug mode is enabled
-         */
-        get enabled(): boolean {
-            return this.isOverall() || this.modules.length > 0;
         },
 
         /**
@@ -778,8 +778,8 @@ define('RequireJsLoader/config', (() => {
      */
     function createConfig(
         baseUrl: string,
-        wsPath: string,
-        resourcesPath: string,
+        wsPath?: string,
+        resourcesPath?: string,
         initialContents?: RequireJsLoader.IContents
     ): RequireConfig {
         // Normalize wsConfig
