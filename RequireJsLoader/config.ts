@@ -9,11 +9,11 @@ define('RequireJsLoader/config', (() => {
     }
 
     interface IHandlers {
-        getModulesPrefixes: IGetModulePrefixes;
-        checkModule: (url: string) => void;
-        getWithDomain: (url: string) => string;
-        getWithSuffix: (url: string) => string;
-        getWithVersion: (url: string) => string;
+        getModulesPrefixes?: IGetModulePrefixes;
+        checkModule?: (url: string) => void;
+        getWithDomain?: (url: string) => string;
+        getWithSuffix?: (url: string) => string;
+        getWithVersion?: (url: string) => string;
     }
 
     // Superglobal root
@@ -303,43 +303,71 @@ define('RequireJsLoader/config', (() => {
         };
     }
 
-    // Detect debug mode constants
+    // Debug mode features
     const debug = {
-        IS_OVERALL: 'debug' in getWsConfig() ? getWsConfig().debug : false,
-        MODULES: [],
+        get rawModules(): string {
+            if (this._rawModules !== undefined) {
+                return this._rawModules;
+            }
+
+            const cookie = getCookie();
+            if (!cookie) {
+                return this._rawModules = '';
+            }
+
+            const matches = cookie.match(/s3debug=([^;]+)[;]?/);
+            if (!matches) {
+                return this._rawModules = '';
+            }
+
+            return this._rawModules = String(matches[1]);
+        },
+
+        /**
+         * Debug mode is enabled
+         */
+        get enabled(): boolean {
+            return this.isOverall() || this.modules.length > 0;
+        },
+
+        /**
+         * Debugging modules list
+         */
+        get modules(): string[] {
+            const rawModules = this.rawModules;
+            if (rawModules === 'true') {
+                return [];
+            }
+            return rawModules.split(',');
+        },
+
+        /**
+         * Debug mode for the whole application
+         */
+        isOverall(): boolean {
+            return 'debug' in getWsConfig() ? getWsConfig().debug : this.rawModules === 'true';
+        },
+
         /**
          * Determines debug mode for specified URL
          */
         isDebuggingModule(url: string): boolean {
             return url && (
-                this.IS_OVERALL ||
-                this.MODULES.some((mod) => url.indexOf('/' + mod) !== -1)
+                this.isOverall() ||
+                this.modules.some((mod) => url.indexOf('/' + mod) !== -1)
             );
         }
     };
-
-    const cookie = getCookie();
-    if (cookie) {
-        const matches = cookie.match(/s3debug=([^;]+)[;]?/);
-        if (matches) {
-            const debugModules = String(matches[1]);
-            if (debugModules === 'true') {
-                debug.IS_OVERALL = true;
-            } else {
-                debug.MODULES = debugModules.split(',');
-            }
-        }
-    }
 
     /**
      * Deal with bundles in depend on debug mode
      */
     function postProcessBundles(bundles: string[]): object {
-        if (!bundles || debug.IS_OVERALL) {
+        if (!bundles || debug.isOverall()) {
             return {};
         }
 
-        if (debug.MODULES.length === 0) {
+        if (debug.modules.length === 0) {
             return bundles;
         }
 
@@ -347,11 +375,11 @@ define('RequireJsLoader/config', (() => {
         function filterReleasePackages(packageName: string): boolean {
             return bundles[packageName].every((moduleNameWithPlugin) => {
                 const moduleName = moduleNameWithPlugin.split('!').pop();
-                return debug.MODULES.every((debugMode) => moduleName.indexOf(debugMode) === -1);
+                return debug.modules.every((debugMode) => moduleName.indexOf(debugMode) === -1);
             });
         }
 
-        // Filtering bundles by rejecting packages which are include modules from debug.MODULES
+        // Filtering bundles by rejecting packages which are include modules from debug.modules
         return Object.keys(bundles)
             .filter(filterReleasePackages)
             .reduce((memo, packageName) => {
@@ -750,8 +778,8 @@ define('RequireJsLoader/config', (() => {
      */
     function createConfig(
         baseUrl: string,
-        wsPath: string,
-        resourcesPath: string,
+        wsPath?: string,
+        resourcesPath?: string,
         initialContents?: RequireJsLoader.IContents
     ): RequireConfig {
         // Normalize wsConfig
@@ -897,8 +925,6 @@ define('RequireJsLoader/config', (() => {
         // Normalize wsConfig
         localWsConfig.IS_INITIALIZED = true;
         localWsConfig.BUILD_MODE = BUILD_MODE;
-        localWsConfig.IS_OVERALL_DEBUG = debug.IS_OVERALL;
-        localWsConfig.DEBUGGING_MODULES = debug.MODULES;
         localWsConfig.IS_SERVER_SCRIPT = IS_SERVER_SCRIPT;
 
         // Prepare environment with patches
@@ -914,6 +940,7 @@ define('RequireJsLoader/config', (() => {
         BUILD_MODE,
         RELEASE_MODE,
         DEBUG_MODE,
+        debug,
         patchContext,
         getWsConfig,
         createConfig,
@@ -922,3 +949,63 @@ define('RequireJsLoader/config', (() => {
         handlers
     });
 })());
+/**
+ * Not standard module definitions
+ */
+
+declare module 'RequireJsLoader/config' {
+    interface IGetModulePrefixes {
+        (): string[][];
+        invalidate(): void;
+    }
+
+    interface IHandlers {
+        getModulesPrefixes?: IGetModulePrefixes;
+        checkModule?: (url: string) => void;
+        getWithDomain?: (url: string) => string;
+        getWithSuffix?: (url: string) => string;
+        getWithVersion?: (url: string) => string;
+    }
+
+    interface IDebug {
+        enabled: boolean;
+        modules: string[];
+        isOverall(): boolean;
+        isDebuggingModule(url: string): boolean;
+    }
+
+    export const BUILD_MODE: RequireJsLoader.BuildMode;
+
+    export const RELEASE_MODE: RequireJsLoader.BuildMode;
+
+    export const DEBUG_MODE: RequireJsLoader.BuildMode;
+
+    export const debug: IDebug;
+
+    export const handlers: IHandlers;
+
+    export function patchContext(
+        context: RequireJsLoader.IRequireContext,
+        {checkModule, getWithSuffix, getWithVersion, getWithDomain}: IHandlers
+    ): () => void;
+
+    export function getWsConfig(): RequireJsLoader.IWsConfig;
+
+    export function createConfig(
+        baseUrl: string,
+        wsPath?: string,
+        resourcesPath?: string,
+        initialContents?: RequireJsLoader.IContents
+    ): RequireConfig;
+
+    export function applyConfig(
+        require: Require,
+        wsConfig: RequireJsLoader.IWsConfig,
+        context?: string
+    ): Require;
+
+    export function prepareEnvironment(
+        require: RequireJsLoader.IRequireExt,
+        withHandlers: IHandlers
+    ): void;
+}

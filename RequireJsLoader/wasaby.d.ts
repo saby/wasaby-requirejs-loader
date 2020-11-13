@@ -24,8 +24,6 @@ export interface IStaticResourcesConfig {
 export interface IWsConfig {
     APP_PATH?: string;
     BUILD_MODE?: string;
-    DEBUGGING_MODULES?: string[];
-    IS_OVERALL_DEBUG?: boolean;
     IS_SERVER_SCRIPT?: boolean;
     IS_INITIALIZED?: boolean;
     RESOURCES_PATH?: string;

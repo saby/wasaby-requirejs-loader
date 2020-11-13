@@ -1,5 +1,4 @@
-//@ts-ignore
-import {handlers} from '../config';
+import { handlers } from 'RequireJsLoader/config';
 
 /**
  * Возвращает обработанный URL ресураса с указанием домена и версии.
