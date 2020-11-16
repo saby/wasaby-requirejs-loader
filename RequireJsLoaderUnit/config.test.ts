@@ -68,6 +68,26 @@ describe('RequireJsLoader/config', () => {
     context('handlers', () => {
         const {checkModule} = handlers;
 
+        context('getModulesPrefixes()', () => {
+            it('should return resources root by defasult', () => {
+                const result = getModulesPrefixes();
+                assert.deepEqual(result, [['', './']]);
+            });
+
+            it('should return updated resources root after its change from empty string to meaningful value', () => {
+                const localWsConfig = handlers.config;
+                const originalResourceRoot = localWsConfig.resourceRoot;
+                localWsConfig.resourceRoot = '';
+                getModulesPrefixes();
+                localWsConfig.resourceRoot = 'assets/';
+                const result = getModulesPrefixes();
+
+                localWsConfig.resourceRoot = originalResourceRoot;
+
+                assert.deepEqual(result, [['', 'assets/']]);
+            });
+        });
+
         context('checkModule()', () => {
             it('shouldn\'t add local service name to "loadedServices" in "contents"', () => {
                 checkModule('/foo/bar.js');
