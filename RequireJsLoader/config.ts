@@ -9,6 +9,7 @@ define('RequireJsLoader/config', (() => {
     }
 
     interface IHandlers {
+        config: RequireJsLoader.IWsConfig;
         getModulesPrefixes: IGetModulePrefixes;
         checkModule: (url: string) => void;
         getWithDomain: (url: string) => string;
@@ -391,8 +392,8 @@ define('RequireJsLoader/config', (() => {
             if (modulesPrefixesCache) {
                 return modulesPrefixesCache;
             }
-            const contents = getContents();
 
+            const contents = getContents();
             const prefixes = contents && contents.modules ?
                 Object.keys(contents.modules)
                     .map((moduleName) => [moduleName, contents.modules[moduleName].path])
@@ -402,9 +403,17 @@ define('RequireJsLoader/config', (() => {
                 [];
 
             // Base resource path is most suitable
-            prefixes.unshift(['', getResourcesPath()]);
+            const resourcesPath = getResourcesPath();
+            prefixes.unshift(['', resourcesPath]);
 
-            return modulesPrefixesCache = prefixes;
+            // Cache result only in case when resourcesPath conatains a value
+            // That's because of PS issue: it changes resourcesPath value after application starts:
+            // https://online.sbis.ru/opendoc.html?guid=0afb656b-e2d4-47ae-b86f-86d1aac5a4ac
+            if (resourcesPath) {
+                modulesPrefixesCache = prefixes;
+            }
+
+            return prefixes;
         }
         getModulesPrefixes.invalidate = () => {
             modulesPrefixesCache = undefined;
@@ -631,6 +640,7 @@ define('RequireJsLoader/config', (() => {
         }
 
         return {
+            config,
             getModulesPrefixes,
             checkModule,
             getWithDomain,
