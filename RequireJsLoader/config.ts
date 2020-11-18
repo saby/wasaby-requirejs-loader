@@ -10,6 +10,7 @@ define('RequireJsLoader/config', (() => {
 
     interface IHandlers {
         config: RequireJsLoader.IWsConfig;
+        getModuleNameFromUrl: (url: string) => string,
         getModulesPrefixes: IGetModulePrefixes;
         checkModule: (url: string) => void;
         getWithDomain: (url: string) => string;
@@ -431,11 +432,21 @@ define('RequireJsLoader/config', (() => {
             }
 
             let pathname = url;
+
             // Remove domain name if needed
             if (pathname.substr(0, 2) === '//') {
                 const pathParts = pathname.substr(2).split('/');
                 pathParts[0] = '';
                 pathname = pathParts.join('/');
+            }
+
+            // Remove application path if needed
+            if (
+                config.IS_SERVER_SCRIPT &&
+                config.APP_PATH &&
+                pathname.substr(0, config.APP_PATH.length) === config.APP_PATH
+            ) {
+                pathname = pathname.substr(config.APP_PATH.length);
             }
 
             // Search for suitable module
@@ -641,6 +652,7 @@ define('RequireJsLoader/config', (() => {
 
         return {
             config,
+            getModuleNameFromUrl,
             getModulesPrefixes,
             checkModule,
             getWithDomain,
@@ -889,8 +901,10 @@ define('RequireJsLoader/config', (() => {
 
         // Patch default context
         patchContext(require.s.contexts._, IS_SERVER_SCRIPT ? {
+            config: withHandlers.config,
             checkModule: withHandlers.checkModule,
             getWithVersion: withHandlers.getWithVersion,
+            getModuleNameFromUrl: withHandlers.getModuleNameFromUrl,
             getModulesPrefixes: undefined,
             getWithSuffix: undefined,
             getWithDomain: undefined
