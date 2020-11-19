@@ -1,7 +1,6 @@
 import { assert } from 'chai';
 import getResourceUrl from 'RequireJsLoader/_conduct/getResourceUrl';
 import { global } from 'RequireJsLoader/_extras/utils';
-// @ts-ignore
 import { handlers } from 'RequireJsLoader/config';
 import { IContents, IWsConfig } from 'RequireJsLoader/wasaby';
 

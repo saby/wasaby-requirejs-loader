@@ -1,8 +1,7 @@
-import {IRequireExt} from '../require.ext';
-// @ts-ignore
-import { debug } from '../config';
-import {global, getInterfaceModuleName} from './utils';
-import {IContents} from '../wasaby';
+import { IRequireExt } from '../require.ext';
+import { debug } from 'RequireJsLoader/config';
+import { global, getInterfaceModuleName } from './utils';
+import { IContents } from '../wasaby';
 
 interface IDependenciesMap {
     [propName: string]: string[];

@@ -1,6 +1,5 @@
 import getResourceUrl from './getResourceUrl';
-// @ts-ignore
-import { getWsConfig } from '../config';
+import { getWsConfig } from 'RequireJsLoader/config';
 
 interface IModuleInfo {
     plugin: string;

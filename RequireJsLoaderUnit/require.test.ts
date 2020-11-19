@@ -1,5 +1,4 @@
 import { assert } from 'chai';
-// @ts-ignore
 import { createConfig } from 'RequireJsLoader/config';
 import { IRequireExt } from '../RequireJsLoader/require.ext';
 
