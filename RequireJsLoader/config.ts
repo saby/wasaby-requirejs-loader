@@ -309,6 +309,14 @@ define('RequireJsLoader/config', (() => {
     const debug = {
         IS_OVERALL: 'debug' in getWsConfig() ? getWsConfig().debug : false,
         MODULES: [],
+
+        /**
+         * Debug mode is enabled
+         */
+        isEnabled(): boolean {
+            return this.IS_OVERALL || this.MODULES.length > 0;
+        },
+
         /**
          * Determines debug mode for specified URL
          */
@@ -969,9 +977,9 @@ declare module 'RequireJsLoader/config' {
     }
 
     interface IDebug {
-        enabled: boolean;
-        modules: string[];
-        isOverall(): boolean;
+        MODULSE: string[];
+        IS_OVERALL: boolean;
+        isEnabled(): boolean;
         isDebuggingModule(url: string): boolean;
     }
 
