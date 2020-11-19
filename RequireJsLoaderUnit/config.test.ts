@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 // @ts-ignore
-import { patchContext, handlers } from 'RequireJsLoader/config';
+import { patchContext, handlers, IHandlers } from 'RequireJsLoader/config';
 import { global } from 'RequireJsLoader/_extras/utils';
 import { IContents, IWsConfig } from 'RequireJsLoader/wasaby';
 import { IRequireExt } from 'RequireJsLoader/require.ext';
@@ -48,7 +48,7 @@ describe('RequireJsLoader/config', () => {
         let restoreContext;
 
         beforeEach(() => {
-            restoreContext = patchContext(defContext, {});
+            restoreContext = patchContext(defContext, {} as IHandlers);
         });
 
         afterEach(() => {
