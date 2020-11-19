@@ -949,8 +949,8 @@ define('RequireJsLoader/config', (() => {
         // Normalize wsConfig
         localWsConfig.IS_INITIALIZED = true;
         localWsConfig.BUILD_MODE = BUILD_MODE;
-        localWsConfig.IS_OVERALL_DEBUG = debug.IS_OVERALL;
-        localWsConfig.DEBUGGING_MODULES = debug.MODULES;
+        localWsConfig.IS_OVERALL_DEBUG = debug.isOverall();
+        localWsConfig.DEBUGGING_MODULES = debug.modules;
         localWsConfig.IS_SERVER_SCRIPT = IS_SERVER_SCRIPT;
 
         // Prepare environment with patches
