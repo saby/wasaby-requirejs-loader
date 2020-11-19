@@ -1,4 +1,5 @@
 import { assert } from 'chai';
+// @ts-ignore
 import { patchContext, handlers, IHandlers } from 'RequireJsLoader/config';
 import { global } from 'RequireJsLoader/_extras/utils';
 import { IContents, IWsConfig } from 'RequireJsLoader/wasaby';
