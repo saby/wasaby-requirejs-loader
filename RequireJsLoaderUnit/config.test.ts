@@ -66,7 +66,34 @@ describe('RequireJsLoader/config', () => {
     });
 
     context('handlers', () => {
-        const {checkModule} = handlers;
+        const {checkModule, getModuleNameFromUrl} = handlers;
+
+        let localWsConfigCopy: RequireJsLoader.IWsConfig;
+
+        beforeEach(() => {
+            localWsConfigCopy = {...handlers.config};
+        });
+
+        afterEach(() => {
+            Object.assign(handlers.config, localWsConfigCopy);
+        });
+
+        context('getModulesPrefixes()', () => {
+            it('should return resources root by default', () => {
+                const result = getModulesPrefixes();
+                assert.deepEqual(result, [['', './']]);
+            });
+
+            it('should return updated resources root after its change from empty string to meaningful value', () => {
+                const localWsConfig = handlers.config;
+                localWsConfig.resourceRoot = '';
+                getModulesPrefixes();
+                localWsConfig.resourceRoot = 'assets/';
+                const result = getModulesPrefixes();
+
+                assert.deepEqual(result, [['', 'assets/']]);
+            });
+        });
 
         context('checkModule()', () => {
             it('shouldn\'t add local service name to "loadedServices" in "contents"', () => {
@@ -94,6 +121,52 @@ describe('RequireJsLoader/config', () => {
                 };
                 checkModule('//foo.domain/foo-service-path/bar.js');
                 assert.isTrue(contents.loadedServices['foo-service']);
+            });
+        });
+
+        context('getModuleNameFromUrl()', () => {
+            it('should return undefined for empty URL', () => {
+                assert.isUndefined(getModuleNameFromUrl(''));
+            });
+
+            it('should return undefined for service module URL', () => {
+                assert.isUndefined(getModuleNameFromUrl('_@r123'));
+            });
+
+            it('should return module name for absolute URL', () => {
+                const localWsConfig = handlers.config;
+                localWsConfig.resourceRoot = '/assets/';
+
+                const name = getModuleNameFromUrl('/assets/Foo/bar.js');
+                assert.equal(name, 'Foo');
+            });
+
+            it('should return module name for URL with domain', () => {
+                const localWsConfig = handlers.config;
+                localWsConfig.resourceRoot = '/assets/';
+
+                const name = getModuleNameFromUrl('//domain.name/assets/Foo/bar.js');
+                assert.equal(name, 'Foo');
+            });
+
+            it('should return module name for URL with server path ending with slash', () => {
+                const localWsConfig = handlers.config;
+                localWsConfig.IS_SERVER_SCRIPT = true;
+                localWsConfig.APP_PATH = '/path/to/';
+                localWsConfig.resourceRoot = 'assets/';
+
+                assert.equal(getModuleNameFromUrl('/path/to/assets/Foo/bar.js'), 'Foo');
+            });
+
+            it('should return module name for URL with server path doesn\'t ending with slash', () => {
+                const localWsConfig = handlers.config;
+                localWsConfig.IS_SERVER_SCRIPT = true;
+                localWsConfig.APP_PATH = '/path/to';
+                localWsConfig.resourceRoot = '/assets/';
+
+                localWsConfig.APP_PATH = '/path/to';
+                localWsConfig.resourceRoot = '/assets/';
+                assert.equal(getModuleNameFromUrl('/path/to/assets/Foo/bar.js'), 'Foo');
             });
         });
     });
