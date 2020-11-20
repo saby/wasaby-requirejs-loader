@@ -1,23 +1,33 @@
 /**
  * Configures RequireJS on Wasaby environment.
+ */
+interface IDebug {
+    MODULES: string[];
+    IS_OVERALL: boolean;
+    isEnabled(): boolean;
+    isDebuggingModule(url: string): boolean;
+}
+
+interface IGetModulePrefixes {
+    (): string[][];
+    invalidate(): void;
+}
+
+interface IHandlersInternal {
+    config: RequireJsLoader.IWsConfig;
+    getModuleNameFromUrl: (url: string) => string;
+    getModulesPrefixes: IGetModulePrefixes;
+    checkModule: (url: string) => void;
+    getWithDomain: (url: string) => string;
+    getWithSuffix: (url: string) => string;
+    getWithVersion: (url: string) => string;
+    getWithUserDefined?: (url: string) => string;
+}
+
+/**
  * This code should be executed before any other module load that's why it's a self-invoking function.
  */
 define('RequireJsLoader/config', (() => {
-    interface IGetModulePrefixes {
-        (): string[][];
-        invalidate(): void;
-    }
-
-    interface IHandlers {
-        config: RequireJsLoader.IWsConfig;
-        getModuleNameFromUrl: (url: string) => string,
-        getModulesPrefixes: IGetModulePrefixes;
-        checkModule: (url: string) => void;
-        getWithDomain: (url: string) => string;
-        getWithSuffix: (url: string) => string;
-        getWithVersion: (url: string) => string;
-    }
-
     // Superglobal root
     const GLOBAL: RequireJsLoader.IPatchedGlobal = (function(): RequireJsLoader.IPatchedGlobal {
         // tslint:disable-next-line:ban-comma-operator
@@ -306,7 +316,7 @@ define('RequireJsLoader/config', (() => {
     }
 
     // Detect debug mode constants
-    const debug = {
+    const debug: IDebug = {
         IS_OVERALL: 'debug' in getWsConfig() ? getWsConfig().debug : false,
         MODULES: [],
 
@@ -373,7 +383,7 @@ define('RequireJsLoader/config', (() => {
     /**
      * Creates additional handlers for RequireJS
      */
-    function buildHandlers(config: RequireJsLoader.IWsConfig): IHandlers {
+    function buildHandlers(config: RequireJsLoader.IWsConfig): IHandlersInternal {
         const FILE_EXTENSION = /\.([A-z0-9]+($|\?))/;
         const INTERFACE_MODULE_NAME = /^[A-z0-9\.]+$/;
         const IGNORE_PART = '((?!\\/(cdn|rtpackage|rtpack|demo_src)\\/).)*';
@@ -658,6 +668,10 @@ define('RequireJsLoader/config', (() => {
             return url;
         }
 
+        function getWithUserDefined(url: string): string {
+            return url;
+        }
+
         return {
             config,
             getModuleNameFromUrl,
@@ -665,18 +679,19 @@ define('RequireJsLoader/config', (() => {
             checkModule,
             getWithDomain,
             getWithSuffix,
-            getWithVersion
+            getWithVersion,
+            getWithUserDefined
         };
     }
 
     /**
      * Patches nameToUrl method of specified context as decorator with URL post processing
      * @param context RequireJS context to patch
-     * @param handlers Handlers to apply in patch
+     * @param withHandlers Handlers to apply in patch
      */
     function patchContext(
         context: RequireJsLoader.IRequireContext,
-        {checkModule, getWithSuffix, getWithVersion, getWithDomain}: IHandlers
+        withHandlers: Partial<IHandlersInternal>
     ): () => void {
         if (context.isPatchedByWs) {
             return;
@@ -716,21 +731,24 @@ define('RequireJsLoader/config', (() => {
                 return url;
             }
 
-            if (getWithSuffix) {
-                url = getWithSuffix(url);
+            if (!IS_SERVER_SCRIPT && withHandlers.getWithSuffix) {
+                url = withHandlers.getWithSuffix(url);
             }
-            if (getWithVersion) {
-                url = getWithVersion(url);
+            if (withHandlers.getWithVersion) {
+                url = withHandlers.getWithVersion(url);
             }
-            if (getWithDomain) {
-                url = getWithDomain(url);
+            if (!IS_SERVER_SCRIPT && withHandlers.getWithDomain) {
+                url = withHandlers.getWithDomain(url);
+            }
+            if (withHandlers.getWithUserDefined) {
+                url = withHandlers.getWithUserDefined(url);
             }
 
             return url;
         };
 
         let originalLoad;
-        if (checkModule) {
+        if (withHandlers.checkModule) {
             originalLoad = context.load;
             /**
              * Process the request to load a module.
@@ -741,7 +759,7 @@ define('RequireJsLoader/config', (() => {
                 if (rtPack.isPacked(id)) {
                     return;
                 }
-                checkModule(url);
+                withHandlers.checkModule(url);
                 return originalLoad(id, url);
             };
         }
@@ -895,7 +913,7 @@ define('RequireJsLoader/config', (() => {
     }
 
     // Initiates application environment
-    function prepareEnvironment(require: RequireJsLoader.IRequireExt, withHandlers: IHandlers): void {
+    function prepareEnvironment(require: RequireJsLoader.IRequireExt, withHandlers: IHandlersInternal): void {
         // Mark root RequireJS instance in purpose of Wasaby Dev Tools
         require.isWasaby = true;
 
@@ -908,15 +926,7 @@ define('RequireJsLoader/config', (() => {
         require.onResourceLoad = createResourceLoader(require.onResourceLoad);
 
         // Patch default context
-        patchContext(require.s.contexts._, IS_SERVER_SCRIPT ? {
-            config: withHandlers.config,
-            checkModule: withHandlers.checkModule,
-            getWithVersion: withHandlers.getWithVersion,
-            getModuleNameFromUrl: withHandlers.getModuleNameFromUrl,
-            getModulesPrefixes: undefined,
-            getWithSuffix: undefined,
-            getWithDomain: undefined
-        } : withHandlers);
+        patchContext(require.s.contexts._, withHandlers);
     }
 
     const localWsConfig = getWsConfig();
@@ -957,31 +967,10 @@ define('RequireJsLoader/config', (() => {
 })());
 
 /**
- * Not standard module definitions
+ * Because of not standard module definition make its API visible for others via dedicated declaration
  */
-
 declare module 'RequireJsLoader/config' {
-    interface IGetModulePrefixes {
-        (): string[][];
-        invalidate(): void;
-    }
-
-    interface IHandlers {
-        config: RequireJsLoader.IWsConfig;
-        getModuleNameFromUrl: (url: string) => string;
-        getModulesPrefixes: IGetModulePrefixes;
-        checkModule: (url: string) => void;
-        getWithDomain: (url: string) => string;
-        getWithSuffix: (url: string) => string;
-        getWithVersion: (url: string) => string;
-    }
-
-    interface IDebug {
-        MODULSE: string[];
-        IS_OVERALL: boolean;
-        isEnabled(): boolean;
-        isDebuggingModule(url: string): boolean;
-    }
+    export type IHandlers = IHandlersInternal;
 
     export const BUILD_MODE: RequireJsLoader.BuildMode;
 
@@ -991,11 +980,11 @@ declare module 'RequireJsLoader/config' {
 
     export const debug: IDebug;
 
-    export const handlers: IHandlers;
+    export const handlers: IHandlersInternal;
 
     export function patchContext(
         context: RequireJsLoader.IRequireContext,
-        {checkModule, getWithSuffix, getWithVersion, getWithDomain}: IHandlers
+        handlers: Partial<IHandlersInternal>
     ): () => void;
 
     export function getWsConfig(): RequireJsLoader.IWsConfig;
@@ -1015,6 +1004,6 @@ declare module 'RequireJsLoader/config' {
 
     export function prepareEnvironment(
         require: RequireJsLoader.IRequireExt,
-        withHandlers: IHandlers
+        withHandlers: IHandlersInternal
     ): void;
 }
