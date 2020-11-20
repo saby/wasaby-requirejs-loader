@@ -1,8 +1,6 @@
 import { assert } from 'chai';
 import getModuleUrl from 'RequireJsLoader/_conduct/getModuleUrl';
 import { global } from 'RequireJsLoader/_extras/utils';
-// @ts-ignore
-import { createConfig } from 'RequireJsLoader/config';
 import { IWsConfig } from 'RequireJsLoader/wasaby';
 import { IRequireExt } from '../../RequireJsLoader/require.ext';
 
