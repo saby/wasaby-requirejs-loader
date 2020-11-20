@@ -1,6 +1,7 @@
 {
   "ui-modules":
   [
-    "RequireJsLoader"
+    "RequireJsLoader",
+    "WasabyLoader"
   ]
 }
