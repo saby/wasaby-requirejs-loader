@@ -6,21 +6,25 @@ import { IRequireExt } from 'RequireJsLoader/require.ext';
 
 const originalContents = global.contents;
 const originalWsConfig = global.wsConfig;
-const {getModulesPrefixes} = handlers;
+const { getModulesPrefixes } = handlers;
 
 describe('RequireJsLoader/config', () => {
     let wsConfig: IWsConfig;
     let contents: IContents;
+    let handlersCopy: IHandlers;
 
     beforeEach(() => {
         contents = global.contents = {};
         wsConfig = global.wsConfig = Object.assign({}, originalWsConfig);
+        handlersCopy = {...handlers};
+
         getModulesPrefixes.invalidate();
     });
 
     afterEach(() => {
         global.contents = originalContents;
         global.wsConfig = originalWsConfig;
+        Object.assign(handlers, handlersCopy);
     });
 
     context('when affects requirejs()\'s behaviour', () => {
@@ -57,6 +61,11 @@ describe('RequireJsLoader/config', () => {
         });
 
         context('when affects context.nameToUrl()\'s behaviour', () => {
+            it('should use updated implementation of handlers.getWithUserDefined()', () => {
+                handlers.getWithUserDefined = (url: string): string => url + '#foo';
+                assert.equal(defContext.nameToUrl('/bar.js'), '/bar.js#foo');
+            });
+
             it('shouldn\'t add .js extension if url already ends with .wml or .tmpl', () => {
                 assert.isTrue(defContext.nameToUrl('foo/bar.wml').endsWith('/foo/bar.wml'));
                 assert.isTrue(defContext.nameToUrl('foo/bar.tmpl').endsWith('/foo/bar.tmpl'));
@@ -65,7 +74,7 @@ describe('RequireJsLoader/config', () => {
     });
 
     context('handlers', () => {
-        const {checkModule, getModuleNameFromUrl} = handlers;
+        const {checkModule, getModuleNameFromUrl, getWithUserDefined} = handlers;
 
         let localWsConfigCopy: RequireJsLoader.IWsConfig;
 
@@ -166,6 +175,12 @@ describe('RequireJsLoader/config', () => {
                 localWsConfig.APP_PATH = '/path/to';
                 localWsConfig.resourceRoot = '/assets/';
                 assert.equal(getModuleNameFromUrl('/path/to/assets/Foo/bar.js'), 'Foo');
+            });
+        });
+
+        context('getWithUserDefined()', () => {
+            it('should return given value back by default', () => {
+                assert.deepEqual(getWithUserDefined('/foo/bar.js'), '/foo/bar.js');
             });
         });
     });
