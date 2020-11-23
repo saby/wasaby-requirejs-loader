@@ -29,11 +29,11 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
      * Конструктор
      * @param options Опции
      */
-    constructor(options: IOptions = {}) {
-        this._loader = options.loader || requirejs;
+    constructor(options: IOptions | Require = {}) {
+        this._loader = (options as IOptions).loader || requirejs;
 
-        if (options.urlModifier) {
-            handlers.getWithUserDefined = options.urlModifier;
+        if ((options as IOptions).urlModifier) {
+            handlers.getWithUserDefined = (options as IOptions).urlModifier;
         }
     }
 
