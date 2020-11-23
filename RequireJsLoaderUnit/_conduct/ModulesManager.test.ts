@@ -1,21 +1,38 @@
 import { assert } from 'chai';
 import ModulesManager from 'RequireJsLoader/_conduct/ModulesManager';
 import { ModuleLoadCallback } from 'RequireJsLoader/_conduct/IModulesHandler';
+import { handlers } from 'RequireJsLoader/config';
 import fakeRequire, { clear, define as fakeDefine, getImplementation } from '../mocks/requirejs';
 
 describe('RequireJsLoader/_conduct/ModulesManager', () => {
+    const originalGetWithUserDefined = handlers.getWithUserDefined;
+
     beforeEach(() => {
         clear();
     });
 
+    afterEach(() => {
+        handlers.getWithUserDefined = originalGetWithUserDefined;
+    });
+
+    describe('.constructor()', () => {
+        it('should apply option urlModifier to handlers.getWithUserDefined implementation', () => {
+            const urlModifier = (url: string) => url;
+            let manager = new ModulesManager({urlModifier});
+            manager = null;
+
+            assert.equal(handlers.getWithUserDefined, urlModifier);
+        });
+    });
+
     describe('.isLoaded()', () => {
         it('should return true if module is loaded', () => {
-            const manager = new ModulesManager(requirejs);
+            const manager = new ModulesManager({loader: requirejs});
             assert.isTrue(manager.isLoaded('RequireJsLoader/_conduct/ModulesManager'));
         });
 
         it('should return false if module is not loaded', () => {
-            const manager = new ModulesManager(requirejs);
+            const manager = new ModulesManager({loader: requirejs});
             assert.isFalse(manager.isLoaded('RequireJsLoader/_conduct/UnknownModulesManager'));
         });
 
@@ -23,7 +40,7 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
             const foo = {};
             fakeDefine('foo', [], foo);
 
-            const manager = new ModulesManager(fakeRequire);
+            const manager = new ModulesManager({loader: fakeRequire});
             return manager.load(['foo']).then(() => {
                 assert.isFalse(manager.isLoaded('foo'));
             });
@@ -32,7 +49,7 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
 
     describe('.load()', () => {
         it('should return empty array', () => {
-            const manager = new ModulesManager(fakeRequire);
+            const manager = new ModulesManager({loader: fakeRequire});
             return manager.load([]).then((loadedModules) => {
                 assert.deepEqual(loadedModules, []);
             });
@@ -44,7 +61,7 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
             fakeDefine('foo', [], foo);
             fakeDefine('bar', [], bar);
 
-            const manager = new ModulesManager(fakeRequire);
+            const manager = new ModulesManager({loader: fakeRequire});
             return manager.load(['foo', 'bar']).then(([theFoo, theBar]) => {
                 assert.equal(theFoo, foo);
                 assert.equal(theBar, bar);
@@ -59,7 +76,7 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
             fakeDefine('foo', [], foo);
             fakeDefine('bar', [], bar);
 
-            const manager = new ModulesManager(fakeRequire);
+            const manager = new ModulesManager({loader: fakeRequire});
             return manager.unload(['foo']).then(() => {
                 assert.isUndefined(getImplementation('foo'));
                 assert.strictEqual(getImplementation('bar'), bar);
@@ -74,7 +91,7 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
             fakeDefine('bar', ['foo'], bar);
             fakeDefine('baz', ['foo', 'bar'], baz);
 
-            const manager = new ModulesManager(fakeRequire);
+            const manager = new ModulesManager({loader: fakeRequire});
             return manager.unload(['foo']).then(() => {
                 assert.isUndefined(getImplementation('foo'));
                 assert.isUndefined(getImplementation('bar'));
@@ -88,7 +105,7 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
         let handler: ModuleLoadCallback<unknown>;
 
         beforeEach(() => {
-            manager = new ModulesManager(fakeRequire);
+            manager = new ModulesManager({loader: fakeRequire});
         });
 
         afterEach(() => {
@@ -164,7 +181,7 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
                 loaded[name] = module;
             };
 
-            const manager = new ModulesManager(fakeRequire);
+            const manager = new ModulesManager({loader: fakeRequire});
             manager.onModuleLoaded(handler);
             manager.offModuleLoaded(handler);
 
@@ -177,7 +194,7 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
             const handler = () => {
                 // Do nothing
             };
-            const manager = new ModulesManager(fakeRequire);
+            const manager = new ModulesManager({loader: fakeRequire});
             manager.offModuleLoaded(handler);
         });
     });
@@ -187,7 +204,7 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
             const foo = {};
             fakeDefine('foo', [], foo);
 
-            const manager = new ModulesManager(fakeRequire);
+            const manager = new ModulesManager({loader: fakeRequire});
             assert.strictEqual(manager.loadSync('foo'), foo);
         });
     });
@@ -199,7 +216,7 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
             fakeDefine('foo', [], foo);
             fakeDefine('bar', [], bar);
 
-            const manager = new ModulesManager(fakeRequire);
+            const manager = new ModulesManager({loader: fakeRequire});
             manager.unloadSync('foo');
 
             assert.isUndefined(getImplementation('foo'));
@@ -214,7 +231,7 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
             fakeDefine('bar', ['foo'], bar);
             fakeDefine('baz', ['foo', 'bar'], baz);
 
-            const manager = new ModulesManager(fakeRequire);
+            const manager = new ModulesManager({loader: fakeRequire});
             manager.unloadSync('foo');
 
             assert.isUndefined(getImplementation('foo'));

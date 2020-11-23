@@ -1,11 +1,17 @@
-import {IRequireContext, IRequireExt, IRequireMapExt} from '../require.ext';
+import { IRequireContext, IRequireExt, IRequireMapExt } from '../require.ext';
 import IModulesManager from './IModulesManager';
 import IModulesManagerSync from './IModulesManagerSync';
 import IModulesHandler, { ModuleLoadCallback } from './IModulesHandler';
 import isModuleDefined from './isModuleDefined';
 import undefineAncestors from '../_extras/undefineAncestors';
+import { handlers } from 'RequireJsLoader/config';
 
 type OnResourceLoadCallback = typeof require.onResourceLoad;
+
+interface IOptions {
+    loader?: Require;
+    urlModifier?: (url: string) => string;
+}
 
 /**
  * Менеджер модулей на основе RequireJS
@@ -15,22 +21,31 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
 
     protected _onModuleLoad: [OnResourceLoadCallback];
 
+    protected _loader: Require;
+
+    protected _urlModifier: (url: string) => string;
+
     /**
      * Конструктор
-     * @param loader Корневой экземпляр RequireJS
+     * @param options Опции
      */
-    constructor(protected loader: Require = requirejs) {
+    constructor(options: IOptions | Require = {}) {
+        this._loader = (options as IOptions).loader || requirejs;
+
+        if ((options as IOptions).urlModifier) {
+            handlers.getWithUserDefined = (options as IOptions).urlModifier;
+        }
     }
 
     // region IModulesManager
 
     isLoaded(module: string): boolean {
-        return isModuleDefined(this.loader, module);
+        return isModuleDefined(this._loader, module);
     }
 
     load<T>(modules: string[]): Promise<T> {
         return new Promise((resolve, reject) => {
-            this.loader(modules, (...loadedModules) => {
+            this._loader(modules, (...loadedModules) => {
                 resolve(loadedModules as unknown as T);
             }, reject);
         });
@@ -52,11 +67,11 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
     // region IModulesManagerSync
 
     loadSync<T>(module: string): T {
-        return this.loader(module);
+        return this._loader(module);
     }
 
     unloadSync(module: string): void {
-        const defaultContext: IRequireContext = (this.loader as IRequireExt).s.contexts._;
+        const defaultContext: IRequireContext = (this._loader as IRequireExt).s.contexts._;
         const processed = new Set<string>();
 
         undefineAncestors(module, defaultContext, processed, console);
@@ -88,9 +103,9 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
             return;
         }
 
-        const originalLoad = this.loader.onResourceLoad;
+        const originalLoad = this._loader.onResourceLoad;
 
-        this.loader.onResourceLoad = (context: IRequireContext, map: IRequireMapExt, depArray: RequireMap[]) => {
+        this._loader.onResourceLoad = (context: IRequireContext, map: IRequireMapExt, depArray: RequireMap[]) => {
             const moduleId = map.id;
             const exports = context.defined[moduleId];
             this._moduleLoadCallbacks.forEach((callback) => {
@@ -121,7 +136,7 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
             return;
         }
 
-        this.loader.onResourceLoad = this._onModuleLoad[0];
+        this._loader.onResourceLoad = this._onModuleLoad[0];
         this._onModuleLoad = null;
     }
 }
