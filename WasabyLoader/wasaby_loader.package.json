@@ -1,0 +1,6 @@
+[{
+  "include": [
+    "WasabyLoader/*"
+  ],
+  "extendsTo": "online-superbundle.package.js"
+}]
