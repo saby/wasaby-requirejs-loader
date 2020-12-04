@@ -1,6 +1,8 @@
 /**
  * A modules loader on application level
+ * @module
  * @author Мальцев А.А.
+ * @public
  */
 import { getModuleUrl as getModuleUrlBase, ModulesManager } from 'RequireJsLoader/conduct';
 import * as library from './Library';
@@ -36,7 +38,7 @@ function isCached(name: string): boolean {
 /**
  * Возвращает признак, что модуль загружен
  * @param name Имя модуля в обычном (Foo/bar) или библиотечном (Foo/bar:baz) синтаксисе
- * @protected
+ * @public
  */
 export function isLoaded(name: string): boolean {
     const parsedInfo: IParsedName = library.parse(name);
@@ -46,7 +48,7 @@ export function isLoaded(name: string): boolean {
 /**
  * Возвращает URL местоположения модуля
  * @param name Имя модуля в обычном (Foo/bar) или библиотечном (Foo/bar:baz) синтаксисе
- * @protected
+ * @public
  */
 export function getModuleUrl(name: string): string {
     const parsedInfo: IParsedName = library.parse(name);
@@ -56,7 +58,7 @@ export function getModuleUrl(name: string): string {
 /**
  * Асинхронно загружает модуль
  * @param name Имя модуля в обычном (Foo/bar) или библиотечном (Foo/bar:baz) синтаксисе
- * @protected
+ * @public
  */
 export function loadAsync<T>(name: string): Promise<T> {
     if (isLoaded(name)) {
@@ -90,7 +92,7 @@ export function loadAsync<T>(name: string): Promise<T> {
 /**
  * Возвращает загруженный модуль
  * @param name Имя модуля в обычном (Foo/bar) или библиотечном (Foo/bar:baz) синтаксисе
- * @protected
+ * @public
  */
 export function loadSync<T>(name: string): T {
     const parsedInfo = library.parse(name);
@@ -102,7 +104,7 @@ export function loadSync<T>(name: string): T {
 /**
  * Синхронно выгружает модуль
  * @param module Имя модуля в обычном (Foo/bar) или библиотечном (Foo/bar:baz) синтаксисе
- * @protected
+ * @public
  */
 export function unloadSync(module: string): void {
     const parsedInfo: IParsedName = library.parse(module);
