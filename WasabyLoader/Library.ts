@@ -1,5 +1,6 @@
 /**
  * Workaround for library module name syntax support.
+ * @module
  * @public
  * @author Мальцев А.А.
  */
