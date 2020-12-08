@@ -3,6 +3,7 @@ import {IRequireExt} from 'RequireJsLoader/require.ext';
 const deps = {};
 const registry = {};
 const defined = {};
+const undefined = {};
 
 function clearObject(obj: object): void {
     Object.keys(obj).forEach((name) => {
@@ -26,12 +27,18 @@ export function undefine(name: string): void {
     delete deps[name];
     delete registry[name];
     delete defined[name];
+    undefined[name] = true;
+}
+
+export function hasBeenUndefined(name: string): boolean {
+    return undefined[name];
 }
 
 export function clear(): void {
     clearObject(deps);
     clearObject(registry);
     clearObject(defined);
+    clearObject(undefined);
 }
 
 export function getImplementation<T>(name: string, strict: boolean = false): T {
@@ -43,7 +50,7 @@ export function getImplementation<T>(name: string, strict: boolean = false): T {
     const factory = module?.factory;
     if (!factory) {
         if (strict) {
-            throw new Error(`Module ${name} is not defined`);
+            throw new Error(`Module "${name}" is not defined`);
         }
         return;
     }
@@ -61,17 +68,20 @@ export function getImplementation<T>(name: string, strict: boolean = false): T {
 
 }
 
-function requirejs<T>(modules: string | string[], callback: Function): T | void {
-    if (modules instanceof Array) {
-        new Promise((resolve) => {
-            resolve(modules.map(
-                (module) => getImplementation(module, true)
-            ));
-        }).then((implementations) => callback(...implementations as unknown[]));
-        return;
+function requirejs<T>(modules: string | string[], callback: Function, errback: Function): T | void {
+    if (!(modules instanceof Array)) {
+        return getImplementation<T>(modules, true);
     }
 
-    return getImplementation<T>(modules, true);
+    new Promise((resolve) => {
+        resolve(modules.map(
+            (module) => getImplementation(module, true)
+        ));
+    }).then(
+        (implementations) => callback(...implementations as unknown[])
+    ).catch((err) => {
+        errback(err);
+    });
 }
 
 const defaultContext = {
@@ -90,6 +100,7 @@ requirejs.s = {
     }
 };
 
+requirejs.undef = undefine;
 requirejs.onResourceLoad = null;
 
 export default requirejs as unknown as IRequireExt;

@@ -2,7 +2,7 @@ import { assert } from 'chai';
 import ModulesManager from 'RequireJsLoader/_conduct/ModulesManager';
 import { ModuleLoadCallback } from 'RequireJsLoader/_conduct/IModulesHandler';
 import { handlers } from 'RequireJsLoader/config';
-import fakeRequire, { clear, define as fakeDefine, getImplementation } from '../mocks/requirejs';
+import fakeRequire, { clear, define as fakeDefine, getImplementation, hasBeenUndefined } from '../mocks/requirejs';
 
 describe('RequireJsLoader/_conduct/ModulesManager', () => {
     const originalGetWithUserDefined = handlers.getWithUserDefined;
@@ -65,6 +65,13 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
             return manager.load(['foo', 'bar']).then(([theFoo, theBar]) => {
                 assert.equal(theFoo, foo);
                 assert.equal(theBar, bar);
+            });
+        });
+
+        it('should undefine failed modules', () => {
+            const manager = new ModulesManager({loader: fakeRequire});
+            return manager.load(['foo']).catch((err) => {
+                assert.isTrue(hasBeenUndefined('foo'));
             });
         });
     });

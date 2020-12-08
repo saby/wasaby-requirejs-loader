@@ -47,7 +47,13 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
         return new Promise((resolve, reject) => {
             this._loader(modules, (...loadedModules) => {
                 resolve(loadedModules as unknown as T);
-            }, reject);
+            }, (err) => {
+                modules.forEach((name) => {
+                    this._loader.undef(name);
+                });
+
+                reject(err);
+            });
         });
     }
 

@@ -24,8 +24,18 @@ describe('WasabyLoader/ModulesLoader', () => {
             });
         });
 
+        it('should return an error for empty module name', () => {
+            return loadAsync('').then((res) => {
+                assert.fail('Shouldnt get here');
+            }).catch((err) => {
+                assert.include(err.message, 'Module name must be specified');
+            });
+        });
+
         it('should load library', () => {
-            return loadAsync<Function>('WasabyLoaderUnit/resources/TestModuleAsync:exportFunction').then((exportFunction) => {
+            return loadAsync<Function>(
+                'WasabyLoaderUnit/resources/TestModuleAsync:exportFunction'
+            ).then((exportFunction) => {
                 assert.notEqual(exportFunction, undefined, 'Module not loaded async');
                 assert.equal(exportFunction('test'), 'test', 'Import from module is broken');
             });
@@ -35,7 +45,9 @@ describe('WasabyLoader/ModulesLoader', () => {
          * Проверяем что повторный вызов тоже работает корректно.
          */
         it('should load library twice', () => {
-            return loadAsync<Function>('WasabyLoaderUnit/resources/TestModuleAsync:exportFunction').then((exportFunction) => {
+            return loadAsync<Function>(
+                'WasabyLoaderUnit/resources/TestModuleAsync:exportFunction'
+            ).then((exportFunction) => {
                 assert.notEqual(exportFunction, undefined, 'Module not loaded async');
                 assert.equal(exportFunction('test'), 'test', 'Import from module is broken');
             });

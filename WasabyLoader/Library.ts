@@ -13,34 +13,17 @@ interface IParsed {
    path: string[];
 }
 
-type Loader<T> = (name: string) => Promise<T>;
-
-function defaultLoader<T>(name: string): Promise<T> {
-   return import(name);
-}
-
 /**
  * Loads module as a library.
  * @param name Module name like 'Library/Name:Path.To.Module' or just 'Module/Name'
- * @param [loader] Modules loader (current RequireJS instance by default)
  * @return Loaded module
  * @public
+ * @deprecated Use WasabyLoader/ModulesLoader:loadAsync instead
  */
-export function load<T>(name: string, loader?: Loader<T>): Promise<T> {
-   if (!name) {
-      return Promise.reject(new Error('Module name must be specified'));
-   }
-
-   const actualLoader: Loader<T> = loader || defaultLoader;
-   const info = parse(name);
-
-   return actualLoader(info.name).then((implementation) => {
-      const module = extract<T>(implementation, info);
-      if (module instanceof Error) {
-         throw module;
-      }
-      return module;
-   });
+export function load<T>(name: string): Promise<T> {
+    return import('WasabyLoader/ModulesLoader').then(({loadAsync}) => {
+        return loadAsync(name);
+    });
 }
 
 /**
