@@ -3,7 +3,7 @@ import IModulesManager from './IModulesManager';
 import IModulesManagerSync from './IModulesManagerSync';
 import IModulesHandler, { ModuleLoadCallback } from './IModulesHandler';
 import isModuleDefined from './isModuleDefined';
-import undefineAncestors from '../_extras/undefineAncestors';
+import { undefineAncestors } from '../extras';
 import { handlers } from 'RequireJsLoader/config';
 
 type OnResourceLoadCallback = typeof require.onResourceLoad;
