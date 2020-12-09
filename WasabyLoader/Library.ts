@@ -20,7 +20,7 @@ interface IParsed {
  * @public
  * @deprecated Use WasabyLoader/ModulesLoader:loadAsync instead
  */
-export function load<T>(name: string): Promise<T> {
+export function load<T>(name: string, _loader?: unknown): Promise<T> {
     return import('WasabyLoader/ModulesLoader').then(({loadAsync}) => {
         return loadAsync(name);
     });
