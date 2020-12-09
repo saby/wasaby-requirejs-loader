@@ -3,6 +3,8 @@ import undefineAncestors, {undefine} from './undefineAncestors';
 import ILogger from './ILogger';
 import {global, getInstance} from './utils';
 
+const cssPluginPrefixLength = 4;
+
 // Delay to limit the frequency of modules undefining
 const delayForUndefine = 5000;
 
@@ -114,7 +116,9 @@ function showAlertOnTimeoutInBrowser(defaultHandler: Function): (err: RequireErr
         }
 
         // Ignore timeout errors for CSS
-        const importantModules = err.requireModules.filter((moduleName) => moduleName.substr(0, 4) !== 'css!');
+        const importantModules = err.requireModules.filter(
+            (moduleName) => moduleName.substr(0, cssPluginPrefixLength) !== 'css!'
+        );
         if (importantModules.length === 0) {
             return;
         }
@@ -167,17 +171,17 @@ export default function errorHandler(require: IRequireExt, initialOptions?: IErr
             // Call error handler on every failed module required via require.get
             if (require.get) {
                 defaultGet = require.get;
-                require.get = function(
+                require.get = function<T>(
                     context: IRequireContext,
                     deps: string,
                     relMap: IRequireModule,
                     localRequire: Function
-                ): unknown {
+                ): T {
                     const result = defaultGet.call(this, context, deps, relMap, localRequire);
                     if (typeof deps === 'string') {
                         const module = context.registry[deps];
                         if (module && module.error) {
-                            return context.onError(module.error);
+                            return context.onError(module.error) as unknown as T;
                         }
                     }
                     return result;

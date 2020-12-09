@@ -115,7 +115,7 @@ export default class ModulesManager implements IModulesManager, IModulesManagerS
 
                     const mod = context.registry[moduleId];
                     if (mod) {
-                        mod.exports = overrided;
+                        mod.exports = overrided as object;
                     }
                 }
             });

@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 import optional = require('RequireJsLoader/plugins/optional');
-import { IXhrRequireError, PluginLoadFunction } from 'RequireJsLoader/require.ext';
+import { IXhrRequireError, IPluginLoadFunction } from 'RequireJsLoader/require.ext';
 
 describe('RequireJsLoader/plugins/optional', () => {
     describe('.load()', () => {
@@ -11,7 +11,7 @@ describe('RequireJsLoader/plugins/optional', () => {
             let result: unknown;
             const handler = (res: unknown) => result = res;
 
-            optional.load('foo', require as Require, handler as PluginLoadFunction);
+            optional.load('foo', require as Require, handler as IPluginLoadFunction);
 
             assert.equal(result, 'ok:foo');
         });
@@ -24,7 +24,7 @@ describe('RequireJsLoader/plugins/optional', () => {
             const handler = {
                 error: (err: unknown) => error = err
             };
-            optional.load('foo', require as Require, handler as PluginLoadFunction);
+            optional.load('foo', require as Require, handler as IPluginLoadFunction);
 
             assert.instanceOf(error, Error);
         });
@@ -39,7 +39,7 @@ describe('RequireJsLoader/plugins/optional', () => {
             let result: unknown;
             const handler = (res: unknown) => result = res;
 
-            optional.load('foo', require as Require, handler as PluginLoadFunction);
+            optional.load('foo', require as Require, handler as IPluginLoadFunction);
             assert.isNull(result);
         });
 
@@ -53,7 +53,7 @@ describe('RequireJsLoader/plugins/optional', () => {
             let result: unknown;
             const handler = (res: unknown) => result = res;
 
-            optional.load('foo', require as Require, handler as PluginLoadFunction);
+            optional.load('foo', require as Require, handler as IPluginLoadFunction);
             assert.isNull(result);
         });
 
@@ -69,7 +69,7 @@ describe('RequireJsLoader/plugins/optional', () => {
             let result: unknown;
             const handler = (res: unknown) => result = res;
 
-            optional.load('foo', require as Require, handler as PluginLoadFunction);
+            optional.load('foo', require as Require, handler as IPluginLoadFunction);
             assert.isNull(result);
         });
 
@@ -86,7 +86,7 @@ describe('RequireJsLoader/plugins/optional', () => {
             let result: unknown;
             const handler = (res: unknown) => result = res;
 
-            optional.load('foo', require as Require, handler as PluginLoadFunction);
+            optional.load('foo', require as Require, handler as IPluginLoadFunction);
             assert.equal(result, foo);
         });
     });

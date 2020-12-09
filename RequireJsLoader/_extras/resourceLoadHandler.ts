@@ -1,3 +1,7 @@
+import { IRequireContext, IRequireMapExt } from '../require.ext';
+
+const MAX_SERIALIZATION_LOOKUP_DEPTH = 4;
+
 interface ISerializableFunction extends Function {
     toJSON: Function;
 }
@@ -25,9 +29,14 @@ export default function resourceLoadHandler(require: Require, force?: boolean): 
                 };
             };
 
-            const makeArraySerializable = (arr: any[], moduleName: string, prefix: string, depth?: number): void => {
+            const makeArraySerializable = (
+                arr: object[],
+                moduleName: string,
+                initialPrefix: string,
+                depth?: number
+            ): void => {
                 const arrLength = arr.length;
-                prefix = prefix ? `${prefix}.` : '';
+                const prefix = initialPrefix ? `${initialPrefix}.` : '';
                 for (let i = 0; i < arrLength; i++) {
                     makeSerializable(depth, arr[i], moduleName, prefix + i);
                 }
@@ -73,11 +82,16 @@ export default function resourceLoadHandler(require: Require, force?: boolean): 
              * А при загрузке самого модуля В, toJSON для f1 будет вызван от объекта B.K
              * соответственно правильная ссылка будет потеряна.
              */
-            const makeSerializable = (depth: number, obj: any, moduleName: string, prefix?: string): void => {
-                if (depth === 0) {
+            const makeSerializable = (
+                initialDepth: number,
+                obj: object | Function,
+                moduleName: string,
+                prefix?: string
+            ): void => {
+                if (initialDepth === 0) {
                     return;
                 }
-                depth--;
+                const depth = initialDepth - 1;
 
                 switch (obj && typeof obj) {
                     case 'function':
@@ -104,7 +118,7 @@ export default function resourceLoadHandler(require: Require, force?: boolean): 
 
                         // Secondly add a new property and this way prevent to go through it
                         if (!obj.hasOwnProperty('toJSON')) {
-                            makeFunctionSerializable(obj, getNameAndPath);
+                            makeFunctionSerializable(obj as ISerializableFunction, getNameAndPath);
                         }
                         break;
 
@@ -119,7 +133,7 @@ export default function resourceLoadHandler(require: Require, force?: boolean): 
                 }
             };
 
-            return function(context: any, map: any): void {
+            return function(context: IRequireContext, map: IRequireMapExt): void {
                 let prefix = map.prefix || '';
                 if (!prefix || prefix === 'js') {
                     const exports = context.defined[map.id];
@@ -129,7 +143,7 @@ export default function resourceLoadHandler(require: Require, force?: boolean): 
                         prefix += '!';
                     }
 
-                    makeSerializable(4, exports, prefix + moduleName);
+                    makeSerializable(MAX_SERIALIZATION_LOOKUP_DEPTH, exports as object, prefix + moduleName);
                 }
 
                 if (source) {

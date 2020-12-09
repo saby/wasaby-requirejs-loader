@@ -18,9 +18,8 @@ describe('RequireJsLoader/_conduct/ModulesManager', () => {
     describe('.constructor()', () => {
         it('should apply option urlModifier to handlers.getWithUserDefined implementation', () => {
             const urlModifier = (url: string) => url;
-            let manager = new ModulesManager({urlModifier});
-            manager = null;
-
+            const manager = new ModulesManager({urlModifier});
+            assert.instanceOf(manager, ModulesManager);
             assert.equal(handlers.getWithUserDefined, urlModifier);
         });
     });
