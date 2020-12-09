@@ -19,23 +19,22 @@ define('html', [
    function setToJsonForFunction(func, moduleName, path) {
       func.toJSON = function() {
          var serialized = {
-            $serialized$: 'func',
+            '$serialized$': 'func',
             module: moduleName
          };
          if (path) {
             serialized.path = path;
          }
          return serialized;
-      }
+      };
    }
 
    function mkTemplate(f, name) {
       var fname = name.replace(/[^a-z0-9]/gi, '_');
 
-      // Это обертка для улучшения логов. Создается именованая функция с понятным названием чтобы из стэка можно было понять битый шаблон
-      var factory = new Function('f',
-         "return function " + fname + "(){ return f.apply(this, arguments); }"
-      );
+      // Создается именованая функция с понятным названием чтобы из стэка можно было понять битый шаблон
+      // eslint-disable-next-line no-new-func
+      var factory = new Function('f', 'return function ' + fname + '(){ return f.apply(this, arguments); }');
 
       var result = factory(f);
       setToJsonForFunction(result, 'html!' + name);
@@ -43,7 +42,8 @@ define('html', [
    }
 
    return {
-      load: function(name, require, load, conf) {
+      load: function(initialName, require, load, conf) {
+         var name = initialName;
          var options = name.split('?');
          var doEncode = false;
          var optStr;
@@ -63,8 +63,12 @@ define('html', [
          };
 
          var onLoad = function(html) {
-            if (html && html.indexOf('define') == 0) {
-               load.fromTextFixed ? load.fromTextFixed(html) : load.fromText(html);
+            if (html && html.indexOf('define') === 0) {
+               if (load.fromTextFixed) {
+                  load.fromTextFixed(html);
+               } else {
+                  load.fromText(html);
+               }
                return;
             }
 
@@ -73,7 +77,7 @@ define('html', [
                return;
             }
 
-            //Если у нас не скомпилена html, например /debug/
+            // Если у нас не скомпилена html, например /debug/
             config = doT.getSettings();
             config.strip = false;
             if (doEncode) {
@@ -103,8 +107,8 @@ define('html', [
                text.load(path, require, onLoad, conf);
             });
          } catch (err) {
-            onError(err)
+            onError(err);
          }
       }
-   }
+   };
 });

@@ -16,10 +16,9 @@ define('datasource', ['text'], function() {
             }, function(err) {
                onLoad.error(err);
             });
-         }
-         catch (err) {
+         } catch (err) {
             onLoad.error(err);
          }
       }
-   }
+   };
 });

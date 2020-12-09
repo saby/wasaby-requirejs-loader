@@ -16,7 +16,7 @@ define('wml', [
 
    var config = BuilderConfig && BuilderConfig.Config;
 
-   var global = (function(){ return this || (0,eval)('this'); }());
+   var global = extras.utils.global;
    var isServerSide = typeof window === 'undefined' && !(process && process.versions);
 
    function logError(tag, err) {
@@ -56,7 +56,11 @@ define('wml', [
             conf.fileName = name;
          }
          tmpl.getFile(html, conf, function (file) {
-            load.fromTextFixed ? load.fromTextFixed(file) : load.fromText(file);
+            if (load.fromTextFixed) {
+               load.fromTextFixed(file);
+            } else {
+               load.fromText(file)
+            }
             load = undefined;
          }, function (err) {
             err.message = 'Error while parsing template "' + name + '": ' + err.message;
@@ -65,8 +69,8 @@ define('wml', [
                if (!timeoutAlert) {
                   logError('Template', err.message, err);
                }
-            } catch (err) {
-               logError('Template', err.message, err);
+            } catch (terr) {
+               logError('Template', terr.message, terr);
             }
             load.error(err);
          }, ext);
@@ -82,7 +86,11 @@ define('wml', [
       var loader = function (html) {
          if (html && html.indexOf('define') === 0) {
             //Got template as compiled AMD module
-            load.fromTextFixed ? load.fromTextFixed(html) : load.fromText(html);
+            if (load.fromTextFixed) {
+               load.fromTextFixed(html);
+            } else {
+               load.fromText(html);
+            }
          } else {
             //Got template as string with markup
             try {

@@ -7,25 +7,34 @@ define('is-api', function() {
       var f = api.parse(name);
       f.feature = normalize(f.feature);
 
-      if (f.yesModuleId)
+      if (f.yesModuleId) {
          f.yesModuleId = normalize(f.yesModuleId);
-      if (f.noModuleId)
+      }
+
+      if (f.noModuleId) {
          f.noModuleId = normalize(f.noModuleId);
+      }
 
-      //reconstruct
-      if (f.type == 'lookup')
+      // reconstruct
+      if (f.type === 'lookup') {
          return f.feature;
+      }
 
-      if (!f.yesBuild)
+      if (!f.yesBuild) {
          f.yesModuleId = '[' + f.yesModuleId + ']';
-      if (!f.noBuild)
+      }
+
+      if (!f.noBuild) {
          f.noModuleId = '[' + f.noModuleId + ']';
+      }
 
-      if (f.type == 'load_if_not')
+      if (f.type === 'load_if_not') {
          return '~' + f.feature + '?' + f.yesModuleId + (f.noModuleId ? ':' + f.noModuleId : '');
+      }
 
-      if (f.type == 'load_if')
+      if (f.type === 'load_if') {
          return f.feature + '?' + f.yesModuleId + (f.noModuleId ? ':' + f.noModuleId : '');
+      }
    };
 
    /*
@@ -45,37 +54,39 @@ define('is-api', function() {
 
       var yesModuleId = actions.substr(0, actions.indexOf(':'));
 
-      if (actions.substr(yesModuleId.length + 1, 2) == '//')
+      if (actions.substr(yesModuleId.length + 1, 2) === '//') {
          yesModuleId = actions.substr(0, actions.indexOf(':', yesModuleId.length + 1));
+      }
 
       var noModuleId = actions.substr(yesModuleId.length + 1, actions.length - yesModuleId.length - 1);
 
-      if (yesModuleId == '') {
+      if (yesModuleId === '') {
          yesModuleId = actions;
          noModuleId = null;
       }
 
       var yesBuild = true;
       var noBuild = true;
-      if (yesModuleId && yesModuleId.substr(0, 1) == '[' && yesModuleId.substr(yesModuleId.length - 1, 1) == ']') {
+      if (yesModuleId && yesModuleId.substr(0, 1) == '[' && yesModuleId.substr(yesModuleId.length - 1, 1) === ']') {
          yesModuleId = yesModuleId.substr(1, yesModuleId.length - 2);
          yesBuild = false;
       }
-      if (noModuleId && noModuleId.substr(0, 1) == '[' && noModuleId.substr(noModuleId.length - 1, 1) == ']') {
+      if (noModuleId && noModuleId.substr(0, 1) == '[' && noModuleId.substr(noModuleId.length - 1, 1) === ']') {
          noModuleId = noModuleId.substr(1, noModuleId.length - 2);
          noBuild = false;
       }
 
 
-      //is!feature
-      if (feature == '')
+      // is!feature
+      if (feature === '') {
          return {
             feature: f,
             type: 'lookup'
-         }
+         };
+      }
 
-      //is!feature?moduleId
-      if (feature.substr(0, 1) == '~')
+      if (feature.substr(0, 1) === '~') {
+         // is!feature?moduleId
          return {
             feature: feature.substr(1, f.length - 1),
             type: 'load_if_not',
@@ -84,17 +95,18 @@ define('is-api', function() {
             yesBuild: yesBuild,
             noBuild: noBuild
          };
-      //is!~feature?moduleId
-      else
-         return {
-            feature: feature,
-            type: 'load_if',
-            yesModuleId: yesModuleId,
-            noModuleId: noModuleId,
-            yesBuild: yesBuild,
-            noBuild: noBuild
-         };
-   }
+      }
+
+      // is!~feature?moduleId
+      return {
+         feature: feature,
+         type: 'load_if',
+         yesModuleId: yesModuleId,
+         noModuleId: noModuleId,
+         yesBuild: yesBuild,
+         noBuild: noBuild
+      };
+   };
 
    return api;
 });

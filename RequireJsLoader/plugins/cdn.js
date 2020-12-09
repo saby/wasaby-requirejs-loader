@@ -1,10 +1,11 @@
 define('cdn', ['optional!Env/Env'], function(Env) {
    'use strict';
 
-   function removeLeadingSlash(path) {
+   function removeLeadingSlash(initialPath) {
+      var path = initialPath;
       if (path) {
          var head = path.charAt(0);
-         if (head == '/' || head == '\\') {
+         if (head === '/' || head === '\\') {
             path = path.substr(1);
          }
       }
@@ -21,11 +22,11 @@ define('cdn', ['optional!Env/Env'], function(Env) {
          var temp = name.split('!');
          var plugin = temp[1] ? temp[0] + '!' : '';
          var path = temp[1] || temp[0];
-         var cdnRoot = Env && Env.constants.cdnRoot || '/cdn/';
+         var cdnRoot = (Env && Env.constants.cdnRoot) || '/cdn/';
 
          require([plugin + cdnRoot + removeLeadingSlash(path)], onLoad, function(err) {
             onLoad.error(err);
          });
       }
-   }
+   };
 });
