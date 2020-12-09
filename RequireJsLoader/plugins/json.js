@@ -31,5 +31,5 @@ define('json', ['text'], function(text) {
             load.error(err);
          }
       }
-   }
+   };
 });

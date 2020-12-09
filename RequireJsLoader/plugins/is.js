@@ -87,29 +87,35 @@ define('is', [
    is.normalize = api.normalize;
    is.features = module.config() || {};
 
-   //add 'browser' feature
-   if (is.features.browser === undefined)
-      is.features.browser = (typeof window != 'undefined');
-   if (is.features.build === undefined)
+   // add 'browser' feature
+   if (is.features.browser === undefined) {
+      is.features.browser = (typeof window !== 'undefined');
+   }
+   if (is.features.build === undefined) {
       is.features.build = false;
+   }
 
-   //build tracking
+   // build tracking
    is.curModule = null;
    is.modules = null;
 
    is.empty = function() {
       return null;
-   }
+   };
 
    var msIe = is.features.browser && navigator;
    if (msIe) {
       msIe = navigator.appVersion.match(/MSIE\s+(\d+)/);
    }
-   is.features.msIe = !!msIe; //здесь нужен bool, а то, если undefined вдруг будет, он грузить плагин "msIe" начнёт
+
+   // здесь нужен bool, а то, если undefined вдруг будет, он грузить плагин "msIe" начнёт
+   is.features.msIe = !!msIe;
    is.features.msIe8 = is.features.browser && navigator && !!navigator.appVersion.match(/MSIE 8/);
 
-   /*ПЛАГИН для тестов по веткам без режима совместимости, будет удален без предупреждения
-   * в документацию не добавляется, используется в одном контроле*/
+   /**
+    * ПЛАГИН для тестов по веткам без режима совместимости, будет удален без предупреждения
+    * в документацию не добавляется, используется в одном контроле
+    **/
    is.features.compatibleLayer = Env && Env.constants.compat;
 
    is.lookup = function(feature, complete) {
@@ -120,40 +126,44 @@ define('is', [
       }
 
       require([feature], function(_feature) {
-         if (_feature !== true && _feature !== false)
+         if (_feature !== true && _feature !== false) {
             throw 'Feature module ' + feature + ' must return true or false.';
+         }
 
          is.features[feature] = _feature;
 
          complete(_feature);
       });
-   }
+   };
 
-   is.load = function(name, req, load, config) {
+   is.load = function(name, req, load) {
       var f = api.parse(name);
 
-      if (f.type == 'lookup')
+      if (f.type === 'lookup') {
          is.lookup(f.feature, load);
+      }
 
-      if (f.type == 'load_if' || f.type == 'load_if_not') {
-         //check feature
+      if (f.type === 'load_if' || f.type === 'load_if_not') {
+         // check feature
          is.lookup(f.feature, function(_feature) {
-            if ((_feature && f.type == 'load_if') || (!_feature && f.type == 'load_if_not'))
-            //if doing a build, check if we are including the module or not
+            if ((_feature && f.type === 'load_if') || (!_feature && f.type === 'load_if_not')) {
+               // if doing a build, check if we are including the module or not
                require([f.yesModuleId], load, function(err) {
                   load.error(err);
                });
-
-            else if ((!_feature && f.type == 'load_if' && f.noModuleId) || (_feature && f.type == 'load_if_not' && f.noModuleId))
+            } else if (
+                (!_feature && f.type === 'load_if' && f.noModuleId) ||
+                (_feature && f.type === 'load_if_not' && f.noModuleId)
+            ) {
                require([f.noModuleId], load, function(err) {
                   load.error(err);
                });
-
-            else
+            } else {
                load(is.empty());
+            }
          });
       }
-   }
+   };
 
    return is;
 });

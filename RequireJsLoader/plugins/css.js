@@ -1,12 +1,15 @@
 define('css', [
+   'RequireJsLoader/extras',
    'optional!UI/theme/controller',
    'optional!Env/Env'
-], function(controller, Env) {
+], function(
+    extras,
+    controller,
+    Env
+) {
    'use strict';
 
-   var global = (function() {
-      return this || (0, eval)('this') || {};
-   }());
+   var global = extras.utils.global;
    var isControl = /^(Resources\/)?(SBIS3\.CONTROLS)\//;
    var loadCss = (global.wsConfig || {}).loadCss === undefined ? true : global.wsConfig.loadCss;
 
@@ -41,7 +44,7 @@ define('css', [
          };
 
          var onerror = function(err) {
-            var logger = Env && Env.IoC.resolve('ILogger') || console;
+            var logger = (Env && Env.IoC.resolve('ILogger')) || console;
             logger.error(err.message);
             load(null);
          };
@@ -64,7 +67,8 @@ define('css', [
             // не удалил, т.к sbis\core\core-common\sbis-js-engine\implementation\core\convert.cpp:281
             // выбрасывает ошибку приведения типов, вызываем onload на СП синхронно
             onload();
-            /** requirejs кэширует запрошенные модули на сп, при повторном запросе загрузки не произойдет */
+
+            // requirejs кэширует запрошенные модули на сп, при повторном запросе загрузки не произойдет
             return;
          }
 

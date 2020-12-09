@@ -2,8 +2,10 @@
 * @license text 2.0.15 Copyright jQuery Foundation and other contributors.
 * Released under MIT license, http://github.com/requirejs/text/LICENSE
 */
-/* jslint regexp: true */
-/* global require, XMLHttpRequest, define, window, process, Packages, java, location, Components, FileUtils */
+
+/* eslint-disable */
+
+/* global require, XMLHttpRequest, define, process, Packages, java, location, Components, FileUtils */
 
 define('text', ['module'], function (module) {
     'use strict';

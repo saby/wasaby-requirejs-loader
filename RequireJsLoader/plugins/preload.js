@@ -5,6 +5,7 @@ define('preload', function() {
    'use strict';
 
    function noop() {
+       // Do nothing
    }
 
    function clientLoader(name, require, onLoad) {
@@ -21,5 +22,5 @@ define('preload', function() {
 
    return {
       load: typeof window === 'undefined' ? serverLoader : clientLoader
-   }
+   };
 });
