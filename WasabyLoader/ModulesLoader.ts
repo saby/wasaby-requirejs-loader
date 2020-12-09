@@ -3,7 +3,7 @@
  * @author Мальцев А.А.
  */
 import { getModuleUrl as getModuleUrlBase, ModulesManager } from 'RequireJsLoader/conduct';
-import * as library from './Library';
+import { extract, parse } from './Library';
 
 interface IParsedName {
     name: string;
@@ -22,7 +22,7 @@ function getModulesManager(): ModulesManager {
 }
 
 function getFromLib<T>(lib: T, parsedName: IParsedName): T {
-    const mod = library.extract<T>(lib, parsedName);
+    const mod = extract<T>(lib, parsedName);
     if (mod instanceof Error) {
         throw new Error(mod.message);
     }
@@ -39,7 +39,7 @@ function isCached(name: string): boolean {
  * @protected
  */
 export function isLoaded(name: string): boolean {
-    const parsedInfo: IParsedName = library.parse(name);
+    const parsedInfo: IParsedName = parse(name);
     return getModulesManager().isLoaded(parsedInfo.name);
 }
 
@@ -49,7 +49,7 @@ export function isLoaded(name: string): boolean {
  * @protected
  */
 export function getModuleUrl(name: string): string {
-    const parsedInfo: IParsedName = library.parse(name);
+    const parsedInfo: IParsedName = parse(name);
     return getModuleUrlBase(parsedInfo.name);
 }
 
@@ -59,13 +59,17 @@ export function getModuleUrl(name: string): string {
  * @protected
  */
 export function loadAsync<T>(name: string): Promise<T> {
+    if (!name) {
+        return Promise.reject(new Error('Module name must be specified'));
+    }
+
     if (isLoaded(name)) {
         return new Promise((resolve) => {
             resolve(loadSync(name));
         });
     }
 
-    const parsedInfo: IParsedName = library.parse(name);
+    const parsedInfo: IParsedName = parse(name);
     const loadFromModule = (res) => getFromLib(res, parsedInfo);
 
     if (isCached(parsedInfo.name)) {
@@ -93,7 +97,7 @@ export function loadAsync<T>(name: string): Promise<T> {
  * @protected
  */
 export function loadSync<T>(name: string): T {
-    const parsedInfo = library.parse(name);
+    const parsedInfo = parse(name);
     const module = getModulesManager().loadSync<T>(parsedInfo.name);
     return getFromLib(module, parsedInfo);
 
@@ -105,7 +109,7 @@ export function loadSync<T>(name: string): T {
  * @protected
  */
 export function unloadSync(module: string): void {
-    const parsedInfo: IParsedName = library.parse(module);
+    const parsedInfo: IParsedName = parse(module);
     getModulesManager().unloadSync(parsedInfo.name);
 }
 
