@@ -1,7 +1,7 @@
 /**
  * Поддерживаемые форматы запроса
- * - html!SBIS3.CORE.HTMLChunk - подключит шаблон
- * - html!encode=true?SBIS3.CORE.HTMLChunk - подключит шаблон, в котором все {{=it....}} будет делать эскейпинг текста
+ * - html!Path/to/your/Module - подключит шаблон
+ * - html!encode=true?Path/to/your/Module - подключит шаблон, в котором все {{=it....}} будет делать эскейпинг текста
  */
 define('html', [
    'text',
