@@ -3,7 +3,7 @@
 export type ContextEnableFunction = (depMap: IRequireModule) => void;
 export type OnResourceLoadCallback = (context: IRequireContext, map: IRequireMapExt, depArray: RequireMap[]) => void;
 
-export interface PluginLoadFunction {
+export interface IPluginLoadFunction {
     (module: unknown): void;
     error(err: Error): void;
 }
@@ -30,6 +30,14 @@ interface IRequireModuleHolderConstructor {
     new(): IRequireModuleHolder;
 }
 
+interface IRegistryModule {
+    depMaps: string[] | IRequireMapExt[];
+    error?: RequireError;
+    exports: object;
+    factory: Function;
+    map: IRequireMapExt;
+}
+
 export interface IRequireContext {
     config: RequireConfig;
     defined: Record<string, unknown>;
@@ -40,7 +48,7 @@ export interface IRequireContext {
     onError: (err: RequireError, errback?: Function) => void;
     isPatchedByWs: boolean;
     require: Require;
-    registry: Record<string, any>;
+    registry: Record<string, IRegistryModule>;
 }
 
 interface IRequireApi {
@@ -48,7 +56,7 @@ interface IRequireApi {
 }
 
 export interface IRequireExt extends Require {
-    get: (context: IRequireContext, deps: string, relMap: IRequireModule, localRequire: Function) => any;
+    get: <T>(context: IRequireContext, deps: string, relMap: IRequireModule, localRequire: Function) => T;
     isWasaby?: boolean;
     s: IRequireApi;
 }

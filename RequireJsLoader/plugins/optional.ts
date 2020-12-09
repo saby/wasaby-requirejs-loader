@@ -3,7 +3,7 @@
  */
 
 import { isModuleDefined } from '../conduct';
-import { IXhrRequireError, PluginLoadFunction } from '../require.ext';
+import { IXhrRequireError, IPluginLoadFunction } from '../require.ext';
 import { IPatchedWindow } from '../wasaby';
 
 // Superglobal object
@@ -29,6 +29,8 @@ const PLATFORM_MAP = {
     Resources: 'WS.Core',
     Deprecated: 'WS.Deprecated'
 };
+
+const CSS_PLUGIN_PREFIX_LENGTH = 4;
 
 // A sign that alert has been shown
 let hasShownAlertOnTimeoutInBrowser = false;
@@ -56,7 +58,9 @@ function showAlertOnTimeoutInBrowser(err: RequireError): void {
     }
 
     // Skip errors related to CSS modules
-    const importantModules = err.requireModules.filter((moduleName) => moduleName.substr(0, 4) !== 'css!');
+    const importantModules = err.requireModules.filter(
+        (moduleName) => moduleName.substr(0, CSS_PLUGIN_PREFIX_LENGTH) !== 'css!'
+    );
     if (importantModules.length === 0) {
         return;
     }
@@ -94,7 +98,7 @@ function isNotFoundError(error: IXhrRequireError): boolean {
     return false;
 }
 
-function onLoadError(name: string, error: Error, onLoad: PluginLoadFunction): void {
+function onLoadError(name: string, error: Error, onLoad: IPluginLoadFunction): void {
     if (error.message) {
         error.message = `Failed to load "optional!${name}": ${error.message}`;
     }
@@ -102,7 +106,7 @@ function onLoadError(name: string, error: Error, onLoad: PluginLoadFunction): vo
 }
 
 export = {
-    load(name: string, require: Require, onLoad: PluginLoadFunction): void {
+    load(name: string, require: Require, onLoad: IPluginLoadFunction): void {
         // Check if modules list is available and release mode is on
         // In this case we can understand module unavailability without sending a real request
         const contents = GLOBAL.contents;

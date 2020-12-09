@@ -1,5 +1,9 @@
 import {IPatchedWindow} from '../wasaby';
 
+interface IRequireWithPageVisibility extends Require {
+    isPageHidden?: boolean;
+}
+
 /**
  * Invokes given callback on page visibility change
  * @param callback Callback to invoke
@@ -38,7 +42,7 @@ if (
 
     // Disable loading timeout on hidden page
     onPageVisibilityChange((isHidden) => {
-        (rootRequire as any).isPageHidden = isHidden;
+        (rootRequire as IRequireWithPageVisibility).isPageHidden = isHidden;
         rootRequire.config({
             waitSeconds: isHidden ? 0 : defaultTimeout
         });

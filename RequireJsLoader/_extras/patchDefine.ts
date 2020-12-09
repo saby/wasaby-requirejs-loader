@@ -111,6 +111,8 @@ export function addForeignServiceDependencies(
             // Process only modules that are unknown
             return depModuleName && !(depModuleName in paths);
         }).reduce((memo: Record<string, string>, depModuleName: string): Record<string, string> => {
+            let result = memo;
+
             // Resolve module path relative to the requesting module
             if (moduleConfig === undefined) {
                 moduleName = getInterfaceModuleName(name, true);
@@ -121,10 +123,10 @@ export function addForeignServiceDependencies(
 
             // Add only modules requested by foreign service
             if (moduleConfig && moduleConfig.service && servicePath) {
-                memo = memo || {};
+                result = result || {};
 
                 const depModulePath = servicePath + depModuleName;
-                memo[depModuleName] = depModulePath;
+                result[depModuleName] = depModulePath;
 
                 // Add UI module to the modules list
                 if (!modules[depModuleName]) {
@@ -145,7 +147,7 @@ export function addForeignServiceDependencies(
                 }
             }
 
-            return memo;
+            return result;
         }, null);
 
         // If there are some modules from foreign services let's add them to the config

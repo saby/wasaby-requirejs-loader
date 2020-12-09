@@ -15,10 +15,11 @@ export function getInstance(): IRequireExt {
 
 /**
  * Returns UI module name from AMD module name
- * @param amdModuleName Module name in AMD format
+ * @param inititalAmdModuleName Module name in AMD format
  * @param removePlugin Remove plugin names from module name
  */
-export function getInterfaceModuleName(amdModuleName: string, removePlugin?: boolean): string {
+export function getInterfaceModuleName(inititalAmdModuleName: string, removePlugin?: boolean): string {
+    let amdModuleName = inititalAmdModuleName;
     if (removePlugin) {
         const pluginSeparatorPosition = amdModuleName.lastIndexOf('!');
         if (pluginSeparatorPosition !== -1) {
