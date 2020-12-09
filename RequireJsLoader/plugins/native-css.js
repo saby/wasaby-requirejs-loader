@@ -33,10 +33,10 @@
 define('native-css', [], function() {
    // >>excludeStart('excludeRequireCss', pragmas.excludeRequireCss)
    if (
-      typeof window === undefined ||
-      typeof window.navigator === undefined ||
-      typeof document === undefined ||
-      typeof document.getElementsByTagName === undefined
+      typeof window           === typeof void 0 ||
+      typeof window.navigator === typeof void 0 ||
+      typeof document         === typeof void 0 ||
+      typeof document.getElementsByTagName === typeof void 0
    ) {
       return { load: function (n, r, load) { load() } };
    }
