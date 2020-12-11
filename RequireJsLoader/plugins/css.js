@@ -1,15 +1,15 @@
 define('css', [
-   'RequireJsLoader/extras',
    'optional!UI/theme/controller',
    'optional!Env/Env'
 ], function(
-    extras,
     controller,
     Env
 ) {
    'use strict';
 
-   var global = extras.utils.global;
+    var global = (function() {
+        return this || (0, eval)('this') || {};
+    }());
    var isControl = /^(Resources\/)?(SBIS3\.CONTROLS)\//;
    var loadCss = (global.wsConfig || {}).loadCss === undefined ? true : global.wsConfig.loadCss;
 
