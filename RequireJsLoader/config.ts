@@ -239,7 +239,14 @@ define('RequireJsLoader/config', (() => {
                 IS_SERVER_SCRIPT ? '' : (wsCoreIncluded ? 'Core/polyfill' : ''),
                 // Force load extra patches for RequireJS
                 'RequireJsLoader/autoload'
-            ], 'RequireJsLoader/_extras/');
+
+                /**
+                 * RequireJsLoader modules should not have any magic extra dependencies
+                 * from RequireJsLoader, it could cause multiple cycle dependencies between
+                 * from each other. All dependencies of the modules should be strictly declared
+                 * from the beginning.
+                 */
+            ], 'RequireJsLoader/');
 
             let finalDeps = deps;
             let finalCallback = callback;
