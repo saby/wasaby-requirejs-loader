@@ -814,6 +814,8 @@ define('RequireJsLoader/config', (() => {
         wsConfig.APP_PATH = baseUrl;
         wsConfig.RESOURCES_PATH = resourcesPath;
 
+        const REACT_CDN_PATH = '/cdn/React/17.0.1/';
+
         // Build config
         const config: RequireConfig = {
             baseUrl,
@@ -844,8 +846,8 @@ define('RequireJsLoader/config', (() => {
                 tmpl: pathJoin(resourcesPath, 'RequireJsLoader/plugins/tmpl'),
                 wml: pathJoin(resourcesPath, 'RequireJsLoader/plugins/wml'),
                 xml: pathJoin(resourcesPath, 'RequireJsLoader/plugins/xml'),
-                react: '/cdn/React/17.0.1/react.production.min',
-                'react-dom': '/cdn/React/17.0.1/react-dom.production.min',
+                react: REACT_CDN_PATH + (DEBUG_MODE ? 'react.development' : 'react.production.min'),
+                'react-dom': REACT_CDN_PATH + (DEBUG_MODE ? 'react-dom.development' : 'react-dom.production.min'),
                 // jQuery must die
                 jquery: '/cdn/JQuery/jquery/3.3.1/jquery-min'
 
