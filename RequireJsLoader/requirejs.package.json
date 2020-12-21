@@ -20,5 +20,5 @@
     "RequireJsLoader/extras",
     "RequireJsLoader/plugins/*"
   ],
-  "extendsTo": "online-superbundle.package.js"
+  "output": "online-superbundle.package.js"
 }]
