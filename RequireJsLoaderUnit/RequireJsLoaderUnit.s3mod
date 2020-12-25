@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<ui_module id="8cf67cca-ae29-4aaa-b97b-3d54348cd542" name="RequireJsLoaderUnit" responsible="Мальцев А.А." required="1" version="1.00">
+<ui_module id="8cf67cca-ae29-4aaa-b97b-3d54348cd542" name="RequireJsLoaderUnit" responsible="Колбешин Ф.А." required="1" version="1.00">
 
   <description>Unit tests for RequireJsLoaderUnit</description>
 

@@ -1,7 +1,7 @@
 /**
  * Workaround for library module name syntax support.
  * @public
- * @author Мальцев А.А.
+ * @author Колбешин Ф.А.
  */
 
 interface ILibrary<T> {

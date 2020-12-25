@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<ui_module id="e7ee4ba7-5b66-473c-9a12-a11f08f59f01" name="WasabyLoaderUnit" responsible="Мальцев А.А." required="1" version="1.00">
+<ui_module id="e7ee4ba7-5b66-473c-9a12-a11f08f59f01" name="WasabyLoaderUnit" responsible="Колбешин Ф.А." required="1" version="1.00">
 
   <description>Unit tests for WasabyLoaderUnit</description>
 
