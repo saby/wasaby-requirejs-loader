@@ -1,6 +1,6 @@
 /**
  * A modules loader on application level
- * @author Мальцев А.А.
+ * @author Колбешин Ф.А.
  */
 import { getModuleUrl as getModuleUrlBase, ModulesManager } from 'RequireJsLoader/conduct';
 import { extract, parse } from './Library';

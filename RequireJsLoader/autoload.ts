@@ -33,7 +33,7 @@ const logger: ILogger = {
 
 /**
  * Provides a few patches for RequireJS through official and semi-official API
- * @author Мальцев А.А.
+ * @author Колбешин Ф.А.
  */
 function autoload(): () => void {
     if (patchApplied) {
