@@ -19,7 +19,7 @@ interface IHandlersInternal {
     getModulesPrefixes: IGetModulePrefixes;
     checkModule: (url: string) => void;
     getWithDomain: (url: string) => string;
-    getWithSuffix: (url: string) => string;
+    getWithSuffix: (url: string, debugCookieValue?: string) => string;
     getWithVersion: (url: string) => string;
     getWithUserDefined?: (url: string) => string;
 }
@@ -660,8 +660,27 @@ define('RequireJsLoader/config', (() => {
         }
 
         // Injects suffix signature to the URL if necessary
-        function getWithSuffix(url: string): string {
-            if (FILES_SUFFIX && !debug.isDebuggingModule(url)) {
+        function getWithSuffix(url: string, debugCookieValue: string): string {
+            // use transmitted value of s3debug cookie if it exists,
+            // otherwise use debug meta info from current requirejs context.
+            let isDebuggingModule;
+            if (typeof debugCookieValue === 'string') {
+                switch(debugCookieValue) {
+                    case 'true':
+                        isDebuggingModule = true;
+                        break;
+                    case 'false':
+                    case '':
+                        isDebuggingModule = false;
+                        break;
+                    default:
+                        isDebuggingModule = debugCookieValue.split(',').some((mod) => url.indexOf('/' + mod) !== -1);
+                        break;
+                }
+            } else {
+                isDebuggingModule = debug.isDebuggingModule(url);
+            }
+            if (FILES_SUFFIX && !isDebuggingModule) {
                 const suffixSign = FILES_SUFFIX + '.';
 
                 // Inject suffix signature to the URL if it don't have it yet and can be attracted to
