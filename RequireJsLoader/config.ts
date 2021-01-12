@@ -386,7 +386,7 @@ define('RequireJsLoader/config', (() => {
         function filterReleasePackages(packageName: string): boolean {
             return bundles[packageName].every((moduleNameWithPlugin) => {
                 const moduleName = moduleNameWithPlugin.split('!').pop();
-                return debug.MODULES.every((debugMode) => moduleName.indexOf(debugMode) !== 0);
+                return debug.MODULES.every((debugMode) => moduleName.indexOf(`${debugMode}/`) !== 0);
             });
         }
 
