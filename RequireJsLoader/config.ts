@@ -356,15 +356,15 @@ define('RequireJsLoader/config', (() => {
             if (debugModules === 'true') {
                 debug.IS_OVERALL = true;
             } else {
-                debug.MODULES = debugModules.split(',');
+                debug.MODULES = debugModules.split(',').map(currentModule => `${currentModule}/`);
 
                 // for WS.Core interface module files can be required
                 // with different AMD module names, such as 'Core', 'Lib',
                 // 'Ext', 'Helpers', 'Transport'. We should mark these namespaces
                 // as debug too, so there will be no WS.Core custom packages if
                 // WS.Core is chosen for debugging
-                if (debug.MODULES.indexOf('WS.Core') !== -1) {
-                    debug.MODULES = debug.MODULES.concat('Core', 'Lib', 'Ext', 'Helpers', 'Transport');
+                if (debug.MODULES.indexOf('WS.Core/') !== -1) {
+                    debug.MODULES = debug.MODULES.concat('Core/', 'Lib/', 'Ext/', 'Helpers/', 'Transport/');
                 }
             }
         }
@@ -386,7 +386,7 @@ define('RequireJsLoader/config', (() => {
         function filterReleasePackages(packageName: string): boolean {
             return bundles[packageName].every((moduleNameWithPlugin) => {
                 const moduleName = moduleNameWithPlugin.split('!').pop();
-                return debug.MODULES.every((debugMode) => moduleName.indexOf(`${debugMode}/`) !== 0);
+                return debug.MODULES.every((debugMode) => moduleName.indexOf(debugMode) !== 0);
             });
         }
 
