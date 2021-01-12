@@ -656,11 +656,11 @@ define('RequireJsLoader/config', (() => {
 
                     // get normalized url if it's exceptional dependency that have
                     // special url in requirejs config.
-                    // e.g. 'jquery' has an url '/cdn/JQuery/jquery/3.3.1/jquery-min'
+                    // e.g. 'jquery' has an url '/cdn/JQuery/jquery/3.3.1/jquery-min.js'
                     // and getWithVersion function should return proper url according
                     // to this substitution
                     if (requireJsSubstitutions.hasOwnProperty(normalizedUrl)) {
-                        url = requireJsSubstitutions[normalizedUrl];
+                        url = `${requireJsSubstitutions[normalizedUrl]}.js`;
                     }
                 }
             }
