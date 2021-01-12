@@ -4,6 +4,11 @@
  * @author Колбешин Ф.А.
  */
 
+const RETRIEVABLE_TYPES: string[] = [
+    'object',
+    'function'
+];
+
 interface ILibrary<T> {
    [propName: string]: T | ILibrary<T>;
 }
@@ -42,7 +47,7 @@ export function extract<T>(exports: T | ILibrary<T>, info: IParsed): T | Referen
       for (let i = 0; i < info.path.length; i++) {
          const property = info.path[i];
          processed.push(property);
-         if (module && typeof module === 'object' && property in module) {
+         if (module && RETRIEVABLE_TYPES.includes(typeof module) && property in module) {
             module = module[property];
          } else {
             return new ReferenceError(
