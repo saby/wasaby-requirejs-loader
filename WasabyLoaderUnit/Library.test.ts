@@ -55,5 +55,13 @@ describe('WasabyLoader/Library', () => {
             assert.instanceOf(result, ReferenceError);
             assert.isTrue(result.message.indexOf('baz.shmaz') > -1);
         });
+
+        it('should return field of function', () => {
+            const foo = {};
+            const bar = function() {};
+            bar.foo = foo;
+            const meta = parse('Foo/bar:foo');
+            assert.strictEqual(extract(bar, meta), foo);
+        });
     });
 });
