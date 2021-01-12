@@ -409,6 +409,7 @@ define('RequireJsLoader/config', (() => {
         const IGNORE_PART = '((?!\\/(cdn|rtpackage|rtpack|demo_src)\\/).)*';
         const WITH_VERSION_MATCH = new RegExp('^' + IGNORE_PART + '\\.[A-z0-9]+(\\?|$)');
         const WITH_SUFFIX_MATCH = new RegExp('^' + IGNORE_PART + '\\.(js|xhtml|tmpl|wml|css|json|jstpl)(\\?|$)');
+        const EXTENSION_MATCH = /(\.min)?\.js/;
         const FILES_SUFFIX = BUILD_MODE === RELEASE_MODE ? '.min' : '';
 
         function getResourcesPath(): string {
@@ -652,13 +653,24 @@ define('RequireJsLoader/config', (() => {
                     pairs.push('x_app=' + config.product);
                 }
 
-                // get normalized url if it's exceptional dependency that have
-                // special url in requirejs config.
-                // e.g. 'jquery' has an url '/cdn/JQuery/jquery/3.3.1/jquery-min'
-                // and getWithVersion function should return proper url according
-                // to this substitution
-                if (!versions.name && requireJsSubstitutions.hasOwnProperty(url)) {
-                    url = requireJsSubstitutions[url];
+                if (url && !versions.name) {
+                    let normalizedUrl = url.replace(EXTENSION_MATCH, '');
+
+                    // url can be completed, e.g. /react.min.js or /react.js
+                    // so we need to normalize it first to check in requirejs substitutions
+                    // for a match
+                    if (url.charAt(0) === '/') {
+                        normalizedUrl = normalizedUrl.substr(1);
+                    }
+
+                    // get normalized url if it's exceptional dependency that have
+                    // special url in requirejs config.
+                    // e.g. 'jquery' has an url '/cdn/JQuery/jquery/3.3.1/jquery-min.js'
+                    // and getWithVersion function should return proper url according
+                    // to this substitution
+                    if (requireJsSubstitutions.hasOwnProperty(normalizedUrl)) {
+                        url = `${requireJsSubstitutions[normalizedUrl]}.js`;
+                    }
                 }
             }
 
