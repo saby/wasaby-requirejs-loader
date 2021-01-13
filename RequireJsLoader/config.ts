@@ -656,25 +656,25 @@ define('RequireJsLoader/config', (() => {
                 if (versions.name && !versions.defined && config.product) {
                     pairs.push('x_app=' + config.product);
                 }
+            }
 
-                if (url && IS_SERVER_SCRIPT) {
-                    let normalizedUrl = url.replace(EXTENSION_MATCH, '');
+            if (url && IS_SERVER_SCRIPT) {
+                let normalizedUrl = url.replace(EXTENSION_MATCH, '');
 
-                    // url can be completed, e.g. /react.min.js or /react.js
-                    // so we need to normalize it first to check in requirejs substitutions
-                    // for a match
-                    if (url.charAt(0) === '/') {
-                        normalizedUrl = normalizedUrl.substr(1);
-                    }
+                // url can be completed, e.g. /react.min.js or /react.js
+                // so we need to normalize it first to check in requirejs substitutions
+                // for a match
+                if (url.charAt(0) === '/') {
+                    normalizedUrl = normalizedUrl.substr(1);
+                }
 
-                    // get normalized url if it's exceptional dependency that have
-                    // special url in requirejs config.
-                    // e.g. 'jquery' has an url '/cdn/JQuery/jquery/3.3.1/jquery-min.js'
-                    // and getWithVersion function should return proper url according
-                    // to this substitution
-                    if (requireJsSubstitutions.hasOwnProperty(normalizedUrl)) {
-                        url = `${requireJsSubstitutions[normalizedUrl]}.js`;
-                    }
+                // get normalized url if it's exceptional dependency that have
+                // special url in requirejs config.
+                // e.g. 'jquery' has an url '/cdn/JQuery/jquery/3.3.1/jquery-min.js'
+                // and getWithVersion function should return proper url according
+                // to this substitution
+                if (requireJsSubstitutions.hasOwnProperty(normalizedUrl)) {
+                    url = `${requireJsSubstitutions[normalizedUrl]}.js`;
                 }
             }
 
