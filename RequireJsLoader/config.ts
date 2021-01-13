@@ -975,6 +975,10 @@ define('RequireJsLoader/config', (() => {
 
         // Patch default context
         patchContext(require.s.contexts._, withHandlers);
+
+        requireJsSubstitutions['react'] = `${REACT_CDN_PATH}${debug.isEnabled() ? 'react.development' : 'react.production.min'}`;
+        requireJsSubstitutions['react-dom'] = `${REACT_CDN_PATH}${debug.isEnabled() ? 'react-dom.development' : 'react-dom.production.min'}`;
+
     }
 
     const localWsConfig = getWsConfig();
