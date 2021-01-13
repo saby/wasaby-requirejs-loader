@@ -28,7 +28,6 @@ interface IHandlersInternal {
  * This code should be executed before any other module load that's why it's a self-invoking function.
  */
 define('RequireJsLoader/config', (() => {
-    let requireJsSubstitutions: Object = {};
     // Superglobal root
     const GLOBAL: RequireJsLoader.IPatchedGlobal = (function(): RequireJsLoader.IPatchedGlobal {
         // tslint:disable-next-line:ban-comma-operator
@@ -58,6 +57,11 @@ define('RequireJsLoader/config', (() => {
 
     // Path to react on CDN with version
     const REACT_CDN_PATH = '/cdn/React/17.0.1/';
+
+    let requireJsSubstitutions: Object = {
+        react: `${REACT_CDN_PATH}react.production.min`,
+        'react-dom': `${REACT_CDN_PATH}react-dom.production.min`,
+    };
 
     function getWsConfig(): RequireJsLoader.IWsConfig {
         return GLOBAL.wsConfig || (GLOBAL.wsConfig = {});
@@ -975,10 +979,6 @@ define('RequireJsLoader/config', (() => {
 
         // Patch default context
         patchContext(require.s.contexts._, withHandlers);
-
-        requireJsSubstitutions['react'] = `${REACT_CDN_PATH}${debug.isEnabled() ? 'react.development' : 'react.production.min'}`;
-        requireJsSubstitutions['react-dom'] = `${REACT_CDN_PATH}${debug.isEnabled() ? 'react-dom.development' : 'react-dom.production.min'}`;
-
     }
 
     const localWsConfig = getWsConfig();
