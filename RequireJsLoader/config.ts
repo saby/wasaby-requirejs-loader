@@ -58,11 +58,6 @@ define('RequireJsLoader/config', (() => {
     // Path to react on CDN with version
     const REACT_CDN_PATH = '/cdn/React/17.0.1/';
 
-    let requireJsSubstitutions: Object = {
-        react: `${REACT_CDN_PATH}react.production.min`,
-        'react-dom': `${REACT_CDN_PATH}react-dom.production.min`,
-    };
-
     function getWsConfig(): RequireJsLoader.IWsConfig {
         return GLOBAL.wsConfig || (GLOBAL.wsConfig = {});
     }
@@ -658,26 +653,6 @@ define('RequireJsLoader/config', (() => {
                 }
             }
 
-            if (url && IS_SERVER_SCRIPT) {
-                let normalizedUrl = url.replace(EXTENSION_MATCH, '');
-
-                // url can be completed, e.g. /react.min.js or /react.js
-                // so we need to normalize it first to check in requirejs substitutions
-                // for a match
-                if (url.charAt(0) === '/') {
-                    normalizedUrl = normalizedUrl.substr(1);
-                }
-
-                // get normalized url if it's exceptional dependency that have
-                // special url in requirejs config.
-                // e.g. 'jquery' has an url '/cdn/JQuery/jquery/3.3.1/jquery-min.js'
-                // and getWithVersion function should return proper url according
-                // to this substitution
-                if (requireJsSubstitutions.hasOwnProperty(normalizedUrl)) {
-                    url = `${requireJsSubstitutions[normalizedUrl]}.js`;
-                }
-            }
-
             const versionSignature = pairs.length ? '?' + pairs.join('&') : '';
 
             // Inject version signature to the URL if it don't have it yet and can be modified this way
@@ -953,10 +928,6 @@ define('RequireJsLoader/config', (() => {
 
         const config = createConfig(appPath, wsPath, resourcesPath);
 
-        // set require js substitutions for exceptional modules(such as 'react',
-        // 'jquery' and requirejs plugins) to be further used to get correct url
-        // for this dependencies in getWithVersion function.
-        requireJsSubstitutions = config.paths;
         if (context) {
             config.context = context;
         }
