@@ -657,7 +657,7 @@ define('RequireJsLoader/config', (() => {
                     pairs.push('x_app=' + config.product);
                 }
 
-                if (url && !versions.name) {
+                if (url && IS_SERVER_SCRIPT) {
                     let normalizedUrl = url.replace(EXTENSION_MATCH, '');
 
                     // url can be completed, e.g. /react.min.js or /react.js
