@@ -56,7 +56,7 @@ define('RequireJsLoader/config', (() => {
     const BUILD_MODE: RequireJsLoader.BuildMode = GLOBAL.contents && GLOBAL.contents.buildMode || DEBUG_MODE;
 
     // Path to react on CDN with version
-    const REACT_CDN_PATH = '/cdn/React/17.0.1/';
+    const REACT_CDN_PATH = '/cdn/React/17.0.1.1/';
 
     function getWsConfig(): RequireJsLoader.IWsConfig {
         return GLOBAL.wsConfig || (GLOBAL.wsConfig = {});
