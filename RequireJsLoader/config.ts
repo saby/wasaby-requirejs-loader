@@ -28,7 +28,6 @@ interface IHandlersInternal {
  * This code should be executed before any other module load that's why it's a self-invoking function.
  */
 define('RequireJsLoader/config', (() => {
-    let requireJsSubstitutions: Object = {};
     // Superglobal root
     const GLOBAL: RequireJsLoader.IPatchedGlobal = (function(): RequireJsLoader.IPatchedGlobal {
         // tslint:disable-next-line:ban-comma-operator
@@ -652,26 +651,6 @@ define('RequireJsLoader/config', (() => {
                 if (versions.name && !versions.defined && config.product) {
                     pairs.push('x_app=' + config.product);
                 }
-
-                if (url && !versions.name) {
-                    let normalizedUrl = url.replace(EXTENSION_MATCH, '');
-
-                    // url can be completed, e.g. /react.min.js or /react.js
-                    // so we need to normalize it first to check in requirejs substitutions
-                    // for a match
-                    if (url.charAt(0) === '/') {
-                        normalizedUrl = normalizedUrl.substr(1);
-                    }
-
-                    // get normalized url if it's exceptional dependency that have
-                    // special url in requirejs config.
-                    // e.g. 'jquery' has an url '/cdn/JQuery/jquery/3.3.1/jquery-min.js'
-                    // and getWithVersion function should return proper url according
-                    // to this substitution
-                    if (requireJsSubstitutions.hasOwnProperty(normalizedUrl)) {
-                        url = `${requireJsSubstitutions[normalizedUrl]}.js`;
-                    }
-                }
             }
 
             const versionSignature = pairs.length ? '?' + pairs.join('&') : '';
@@ -949,10 +928,6 @@ define('RequireJsLoader/config', (() => {
 
         const config = createConfig(appPath, wsPath, resourcesPath);
 
-        // set require js substitutions for exceptional modules(such as 'react',
-        // 'jquery' and requirejs plugins) to be further used to get correct url
-        // for this dependencies in getWithVersion function.
-        requireJsSubstitutions = config.paths;
         if (context) {
             config.context = context;
         }
