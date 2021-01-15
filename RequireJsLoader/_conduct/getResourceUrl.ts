@@ -5,10 +5,11 @@ import {handlers} from 'RequireJsLoader/config';
  * @param url URL для обработки
  * @public
  */
-export default function getResourceUrl(url: string): string {
+export default function getResourceUrl(url: string, debugCookieValue?: string): string {
     return handlers.getWithDomain(
         handlers.getWithSuffix(
-            handlers.getWithVersion(url)
+            handlers.getWithVersion(url),
+            debugCookieValue
         )
     );
 }
