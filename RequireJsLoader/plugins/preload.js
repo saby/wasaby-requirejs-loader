@@ -5,7 +5,7 @@ define('preload', function() {
    'use strict';
 
    function noop() {
-       // Do nothing
+      // Do nothing
    }
 
    function clientLoader(name, require, onLoad) {

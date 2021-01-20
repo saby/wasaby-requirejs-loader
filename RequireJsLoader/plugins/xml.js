@@ -19,5 +19,5 @@ define('xml', ['text'], function(text) {
             load.error(err);
          }
       }
-   }
+   };
 });

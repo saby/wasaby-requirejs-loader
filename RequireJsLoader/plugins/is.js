@@ -112,14 +112,13 @@ define('is', [
    is.features.msIe = !!msIe;
    is.features.msIe8 = is.features.browser && navigator && !!navigator.appVersion.match(/MSIE 8/);
 
-   /**
+   /*
     * ПЛАГИН для тестов по веткам без режима совместимости, будет удален без предупреждения
     * в документацию не добавляется, используется в одном контроле
-    **/
+    */
    is.features.compatibleLayer = Env && Env.constants.compat;
 
    is.lookup = function(feature, complete) {
-
       if (is.features[feature] !== undefined) {
          complete(is.features[feature]);
          return;
@@ -127,7 +126,7 @@ define('is', [
 
       require([feature], function(_feature) {
          if (_feature !== true && _feature !== false) {
-            throw 'Feature module ' + feature + ' must return true or false.';
+            throw new Error('Feature module ' + feature + ' must return true or false.');
          }
 
          is.features[feature] = _feature;
@@ -152,8 +151,8 @@ define('is', [
                   load.error(err);
                });
             } else if (
-                (!_feature && f.type === 'load_if' && f.noModuleId) ||
-                (_feature && f.type === 'load_if_not' && f.noModuleId)
+               (!_feature && f.type === 'load_if' && f.noModuleId) ||
+               (_feature && f.type === 'load_if_not' && f.noModuleId)
             ) {
                require([f.noModuleId], load, function(err) {
                   load.error(err);

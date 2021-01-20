@@ -3,9 +3,9 @@ define('css', [
    'optional!UI/theme/controller',
    'optional!Env/Env'
 ], function(
-    extras,
-    controller,
-    Env
+   extras,
+   controller,
+   Env
 ) {
    'use strict';
 
