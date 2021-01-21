@@ -35,7 +35,15 @@ export default function getModuleUrl(module: string, loader: Require = requirejs
     ) {
         url = url.substr(config.APP_PATH.length);
         if (url && url[0] !== '/') {
-            url = '/' + url;
+
+            // On a server side APP_PATH and baseUrl are equal, so a current service
+            // name would be missed if APP_PATH is cut off. Therefore we should
+            // add any service name but '/'
+            if (config.appRoot !== '/' &&  config.appRoot.indexOf('/') === 0) {
+                url = `${config.appRoot}${url}`;
+            } else {
+                url = `/${url}`;
+            }
         }
     }
 
