@@ -4,9 +4,9 @@
  * see: http://github.com/jrburke/requirejs for details
  */
 
- /*jslint nomen: false, plusplus: false, strict: false */
+/* jslint nomen: false, plusplus: false, strict: false */
 
- /*global require: false, define: false, window: false, document: false,
+/* global require: false, define: false, window: false, document: false,
  setTimeout: false */
 
 // Specify that requirejs optimizer should wrap this code in a closure that
@@ -34,13 +34,13 @@ define('order', function() {
          ((window.opera &&
             Object.prototype.toString.call(window.opera) === '[object Opera]') ||
 
-            //If Firefox 2 does not have to be supported, then
-            //a better check may be:
-            //('mozIsLocallyAvailable' in window.navigator)
+            // If Firefox 2 does not have to be supported, then
+            // a better check may be:
+            // ('mozIsLocallyAvailable' in window.navigator)
             ('MozAppearance' in document.documentElement.style))),
 
-   // This test is true for IE browsers, which will load scripts but only
-   // execute them once the script is added to the DOM.
+      // This test is true for IE browsers, which will load scripts but only
+      // execute them once the script is added to the DOM.
       supportsLoadSeparateFromExecute = testScript &&
          testScript.readyState === 'uninitialized',
 
@@ -56,8 +56,8 @@ define('order', function() {
    // Callback used by the type="script/cache" callback that indicates a script
    // has finished downloading.
    function scriptCacheCallback(evt) {
-      var node = evt.currentTarget || evt.srcElement, i,
-         moduleName, resource;
+      var node = evt.currentTarget || evt.srcElement, i = 0,
+         moduleName, resource = cacheWaiting[i];
 
       if (evt.type === 'load' || readyRegExp.test(node.readyState)) {
          // ull out the name of the module and the context.
@@ -67,9 +67,11 @@ define('order', function() {
          cached[moduleName] = true;
 
          // Find out how many ordered modules have loaded
-         for (i = 0; (resource = cacheWaiting[i]); i++) {
+         while(resource) {
             if (cached[resource.name]) {
                resource.req([resource.name], resource.onLoad);
+               i++;
+               resource = cacheWaiting[i];
             } else {
                // Something in the ordered list is not loaded,
                // so wait.
@@ -98,20 +100,24 @@ define('order', function() {
     * DOM to trigger its execution.
     */
    function onFetchOnly(node) {
-      var i, loadedNode, resourceName;
-
       // Mark this script as loaded.
       node.setAttribute('data-orderloaded', 'loaded');
 
       // Cycle through waiting scripts. If the matching node for them
       // is loaded, and is in the right order, add it to the DOM
       // to execute the script.
-      for (i = 0; (resourceName = scriptWaiting[i]); i++) {
+      var i = 0;
+      var loadedNode;
+      var resourceName = scriptWaiting[i];
+
+      while(resourceName) {
          loadedNode = scriptNodes[resourceName];
          if (loadedNode &&
             loadedNode.getAttribute('data-orderloaded') === 'loaded') {
             delete scriptNodes[resourceName];
             require.addScriptToDom(loadedNode);
+            i++;
+            resourceName = scriptWaiting[i];
          } else {
             break;
          }
@@ -180,9 +186,9 @@ define('order', function() {
             req([name], onLoad);
          } else {
             cacheWaiting.push({
-                name: name,
-                req: req,
-                onLoad: onLoad
+               name: name,
+               req: req,
+               onLoad: onLoad
             });
             require.attach(url, null, name, scriptCacheCallback, 'script/cache');
          }

@@ -35,6 +35,8 @@ define('is-api', function() {
       if (f.type === 'load_if') {
          return f.feature + '?' + f.yesModuleId + (f.noModuleId ? ':' + f.noModuleId : '');
       }
+
+      return undefined;
    };
 
    /*
@@ -67,11 +69,11 @@ define('is-api', function() {
 
       var yesBuild = true;
       var noBuild = true;
-      if (yesModuleId && yesModuleId.substr(0, 1) == '[' && yesModuleId.substr(yesModuleId.length - 1, 1) === ']') {
+      if (yesModuleId && yesModuleId.substr(0, 1) === '[' && yesModuleId.substr(yesModuleId.length - 1, 1) === ']') {
          yesModuleId = yesModuleId.substr(1, yesModuleId.length - 2);
          yesBuild = false;
       }
-      if (noModuleId && noModuleId.substr(0, 1) == '[' && noModuleId.substr(noModuleId.length - 1, 1) === ']') {
+      if (noModuleId && noModuleId.substr(0, 1) === '[' && noModuleId.substr(noModuleId.length - 1, 1) === ']') {
          noModuleId = noModuleId.substr(1, noModuleId.length - 2);
          noBuild = false;
       }

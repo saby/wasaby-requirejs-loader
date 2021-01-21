@@ -20,21 +20,35 @@ define('wml', [
    var isServerSide = typeof window === 'undefined' && !(process && process.versions);
 
    function logError(tag, err) {
-      var logger = Env && Env.IoC.resolve('ILogger') || console;
+      var logger = (Env && Env.IoC.resolve('ILogger')) || console;
       logger.error(tag, err.message, err);
    }
 
    function showAlertOnTimeoutInBrowser(err) {
-      if (!err) { return false; }
-      if (showAlertOnTimeoutInBrowser.isFired) { return false; }
-      var REQUIRE_TIMEOUT_TYPE = 'timeout'
-      if (err.requireType !== REQUIRE_TIMEOUT_TYPE) { return false; }
-      if (typeof window === 'undefined') { return false; }
-      if (global.wsConfig && global.wsConfig.showAlertOnTimeoutInBrowser === false) { return false; }
-      var importantModules = err.requireModules.map(function (moduleName) {
+      if (!err) {
+         return false;
+      }
+      if (showAlertOnTimeoutInBrowser.isFired) {
+         return false;
+      }
+      var REQUIRE_TIMEOUT_TYPE = 'timeout';
+      if (err.requireType !== REQUIRE_TIMEOUT_TYPE) {
+         return false;
+      }
+      if (typeof window === 'undefined') {
+         return false;
+      }
+      if (global.wsConfig && global.wsConfig.showAlertOnTimeoutInBrowser === false) {
+         return false;
+      }
+      var importantModules = err.requireModules.map(function(moduleName) {
          return moduleName.substr(0, 4) !== 'css!';
       });
-      if (importantModules.length === 0) { return false; }
+      if (importantModules.length === 0) {
+         return false;
+      }
+
+      // eslint-disable-next-line no-alert
       alert('Произошла ошибка загрузки ресурса. Проверьте интернет соединение и повторите попытку.');
       showAlertOnTimeoutInBrowser.isFired = true;
       throw err;
@@ -42,7 +56,7 @@ define('wml', [
 
    function createLostFunction(err, ext) {
       logError(ext + '!', err.message, err);
-      var wrapper = function () {
+      var wrapper = function() {
          return '<div>' + err.message + '</div>';
       };
       wrapper.stable = true;
@@ -55,14 +69,15 @@ define('wml', [
          if (!conf.fileName) {
             conf.fileName = name;
          }
-         tmpl.getFile(html, conf, function (file) {
+         tmpl.getFile(html, conf, function(file) {
             if (load.fromTextFixed) {
                load.fromTextFixed(file);
             } else {
-               load.fromText(file)
+               load.fromText(file);
             }
+            // eslint-disable-next-line no-param-reassign
             load = undefined;
-         }, function (err) {
+         }, function(err) {
             err.message = 'Error while parsing template "' + name + '": ' + err.message;
             try {
                var timeoutAlert = showAlertOnTimeoutInBrowser(err);
@@ -78,13 +93,15 @@ define('wml', [
          err.message = 'Error while parsing template "' + name + '": ' + err.message;
          logError('Template', err.message, err);
          load.error(err);
+         // eslint-disable-next-line no-param-reassign
          load = undefined;
       }
    }
 
    function createLoader(name, require, load, conf, ext, needRequire, callback) {
-      var loader = function (html) {
+      var loader = function(html) {
          if (html && html.indexOf('define') === 0) {
+
             //Got template as compiled AMD module
             if (load.fromTextFixed) {
                load.fromTextFixed(html);
@@ -92,6 +109,7 @@ define('wml', [
                load.fromText(html);
             }
          } else {
+
             //Got template as string with markup
             try {
                needRequire.unshift('UI/Builder');
@@ -115,7 +133,7 @@ define('wml', [
          }
       };
 
-      loader.error = function (err) {
+      loader.error = function(err) {
          err.message = 'Error while loading template "' + name + '": ' + err.message;
          showAlertOnTimeoutInBrowser(err);
          logError('Template', err.message, err);
@@ -126,7 +144,7 @@ define('wml', [
    }
 
    var wmlObj = {
-      loadBase: function (name, require, load, ext, deps, callback){
+      loadBase: function(name, require, load, ext, deps, callback) {
          try {
             var path = name + '.' + ext;
             var conf = {
@@ -148,14 +166,14 @@ define('wml', [
                createLoader(name, require, load, conf, ext, deps, callback),
                conf
             );
-         } catch(err) {
+         } catch (err) {
             err.message = 'Error while resolving template "' + name + '": ' + err.message;
             logError('Template', err.message, err);
             load.error(err);
          }
       },
-      load: function (name, require, load) {
-          wmlObj.loadBase(name, require, load, 'wml', [], createTemplate);
+      load: function(name, require, load) {
+         wmlObj.loadBase(name, require, load, 'wml', [], createTemplate);
       },
       createLostFunction: createLostFunction,
       createLoader: createLoader

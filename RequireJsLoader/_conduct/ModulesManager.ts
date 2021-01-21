@@ -17,7 +17,7 @@ interface IOptions {
  * Менеджер модулей на основе RequireJS
  */
 export default class ModulesManager implements IModulesManager, IModulesManagerSync, IModulesHandler {
-    protected _moduleLoadCallbacks: Array<ModuleLoadCallback<unknown>> = [];
+    protected _moduleLoadCallbacks: ModuleLoadCallback<unknown>[] = [];
 
     protected _onModuleLoad: [OnResourceLoadCallback];
 

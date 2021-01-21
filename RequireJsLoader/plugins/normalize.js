@@ -39,7 +39,7 @@ define('normalize', ['require', 'module'], function() {
    };
 
    // given a relative URI, and two absolute base URIs, convert it from one base to another
-   var protocolRegEx = /[^\:\/]*:\/\/([^\/])*/;
+   var protocolRegEx = /[^:/]*:\/\/([^/])*/;
    function convertURIBase(inititalUri, fromBase, toBase) {
       var uri = inititalUri;
       if (uri.indexOf('data:') === 0) {
@@ -58,7 +58,7 @@ define('normalize', ['require', 'module'], function() {
       var toBaseProtocol = toBase.match(protocolRegEx);
       var fromBaseProtocol = fromBase.match(protocolRegEx);
       if (fromBaseProtocol && (
-         !toBaseProtocol || toBaseProtocol[1] != fromBaseProtocol[1] || toBaseProtocol[2] != fromBaseProtocol[2]
+         !toBaseProtocol || toBaseProtocol[1] !== fromBaseProtocol[1] || toBaseProtocol[2] !== fromBaseProtocol[2]
       )) {
          return absoluteURI(uri, fromBase);
       }
@@ -77,13 +77,15 @@ define('normalize', ['require', 'module'], function() {
 
       baseParts.pop();
 
-      var curPart;
-      while ((curPart = uriParts.shift())) {
+      var curPart = uriParts.shift();
+      while (curPart) {
          if (curPart === '..') {
             baseParts.pop();
          } else {
             baseParts.push(curPart);
          }
+
+         curPart = uriParts.shift();
       }
 
       return baseParts.join('/');
@@ -117,8 +119,10 @@ define('normalize', ['require', 'module'], function() {
       }
 
       // finally add uri parts
-      while ((curPart = uriParts.shift())) {
+      var curPart = uriParts.shift();
+      while (curPart) {
          out += curPart + '/';
+         curPart = uriParts.shift();
       }
 
       return out.substr(0, out.length - 1);
@@ -131,10 +135,11 @@ define('normalize', ['require', 'module'], function() {
       fromBase = removeDoubleSlashes(fromBase);
       toBase = removeDoubleSlashes(toBase);
 
-      var urlRegEx = /@import\s*("([^"]*)"|'([^']*)')|url\s*\(\s*(\s*"([^"]*)"|'([^']*)'|[^\)]*\s*)\s*\)/ig;
-      var result, url;
+      var urlRegEx = /@import\s*("([^"]*)"|'([^']*)')|url\s*\(\s*(\s*"([^"]*)"|'([^']*)'|[^)]*\s*)\s*\)/ig;
+      var result = urlRegEx.exec(source);
+      var url;
 
-      while ((result = urlRegEx.exec(source))) {
+      while (result) {
          url = result[3] || result[2] || result[5] || result[6] || result[4];
          var newUrl;
          if (cssBase && url.substr(0, 1) === '/') {
@@ -147,6 +152,8 @@ define('normalize', ['require', 'module'], function() {
             newUrl +
             source.substr(urlRegEx.lastIndex - quoteLen - 1);
          urlRegEx.lastIndex = urlRegEx.lastIndex + (newUrl.length - url.length);
+
+         result = urlRegEx.exec(source)
       }
 
       return source;

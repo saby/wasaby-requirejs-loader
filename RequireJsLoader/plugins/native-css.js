@@ -1,11 +1,11 @@
-/**
+/*
  * Require-CSS RequireJS css! loader plugin
  * 0.1.8
  * Guy Bedford 2014
  * MIT
- **/
+ */
 
-/**
+/*
  *
  * Usage:
  *  require(['css!./mycssFile']);
@@ -28,20 +28,26 @@
  * - http://www.phpied.com/when-is-a-stylesheet-really-loaded/
  * - https://github.com/cujojs/curl/blob/master/src/curl/plugin/css.js
  *
- **/
+ */
 
 define('native-css', [], function() {
    // >>excludeStart('excludeRequireCss', pragmas.excludeRequireCss)
    if (
-      typeof window           === typeof void 0 ||
-      typeof window.navigator === typeof void 0 ||
-      typeof document         === typeof void 0 ||
-      typeof document.getElementsByTagName === typeof void 0
+      typeof window === 'undefined' ||
+      typeof window.navigator === 'undefined' ||
+      typeof document === 'undefined' ||
+      typeof document.getElementsByTagName === 'undefined'
    ) {
-      return { load: function (n, r, load) { load() } };
+      return {
+         load: function(n, r, load) {
+            load();
+         }
+      };
    }
 
-   var inIFrame = (function() {return window.self !== window.top;})();
+   var inIFrame = (function() {
+      return window.self !== window.top;
+   })();
 
    var head = document.getElementsByTagName('head')[0];
 
@@ -73,12 +79,12 @@ define('native-css', [], function() {
 
    // <style> @import load method
    var curStyle, curSheet;
-   var createStyle = function () {
+   var createStyle = function() {
       curStyle = document.createElement('style');
       curStyle.setAttribute('type', 'text/css');
       head.appendChild(curStyle);
       curSheet = curStyle.styleSheet || curStyle.sheet;
-   }
+   };
    var ieCnt = 0;
    var ieLoads = [];
    var ieCurCallback;
@@ -88,10 +94,12 @@ define('native-css', [], function() {
 
       if (inIFrame) {
          setTimeout(function() {
-            processIeLoad();
+            processIeLoad(createIeLoad);
          }, 10);
       } else {
-         curStyle.onload = function(){ processIeLoad() };
+         curStyle.onload = function() {
+             processIeLoad(createIeLoad);
+         };
       }
 
       ieCnt++;
@@ -99,9 +107,9 @@ define('native-css', [], function() {
          createStyle();
          ieCnt = 0;
       }
-   }
+   };
 
-   var processIeLoad = function() {
+   var processIeLoad = function(creater) {
       ieCurCallback();
 
       var nextLoad = ieLoads.shift();
@@ -112,8 +120,8 @@ define('native-css', [], function() {
       }
 
       ieCurCallback = nextLoad[1];
-      createIeLoad(nextLoad[0]);
-   }
+      creater(nextLoad[0]);
+   };
 
    var importLoad = function(url, callback) {
       if (!curSheet || !curSheet.addImport) {
@@ -134,15 +142,15 @@ define('native-css', [], function() {
 
          var loadInterval = setInterval(function() {
             try {
-               curStyle.sheet.cssRules;
+               var a = curStyle.sheet.cssRules;
                clearInterval(loadInterval);
                callback();
-            } catch(e) {
-                // Do nothing
+            } catch (e) {
+               // Do nothing
             }
          }, 10);
       }
-   }
+   };
 
    var existsLink = function(url) {
       for (var i = 0; i < document.styleSheets.length; i++) {
@@ -161,13 +169,17 @@ define('native-css', [], function() {
       link.rel = 'stylesheet';
       if (useOnload) {
          link.onload = function() {
-            link.onload = function() {};
+            link.onload = function() {
+               // do nothing.
+            };
 
             // for style dimensions queries, a short delay can still be necessary
             setTimeout(callback, 7);
          };
          link.onerror = function() {
-            link.onerror = function() {};
+            link.onerror = function() {
+               // do nothing.
+            };
 
             // for style dimensions queries, a short delay can still be necessary
             setTimeout(callback, 7);
@@ -186,7 +198,7 @@ define('native-css', [], function() {
       // add data-vdomignore attribute so that vdom would ignore these link tags
       link.setAttribute('data-vdomignore', 'true');
       head.appendChild(link);
-   }
+   };
 
    // >>excludeEnd('excludeRequireCss')
    cssAPI.normalize = function(initialName, normalize) {
@@ -196,7 +208,7 @@ define('native-css', [], function() {
       }
 
       return normalize(name);
-   }
+   };
 
    // >>excludeStart('excludeRequireCss', pragmas.excludeRequireCss)
    cssAPI.load = function(inititalCssId, req, load) {
@@ -211,7 +223,7 @@ define('native-css', [], function() {
       } else {
          (useImportLoad ? importLoad : linkLoad)(url, load);
       }
-   }
+   };
 
    // >>excludeEnd('excludeRequireCss')
    return cssAPI;

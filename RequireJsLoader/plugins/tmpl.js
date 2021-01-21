@@ -19,7 +19,7 @@ define('tmpl', [
    function setToJsonForFunction(func, moduleName, path) {
       func.toJSON = function() {
          var serialized = {
-            $serialized$: 'func',
+            '$serialized$': 'func',
             module: moduleName
          };
          if (path) {
@@ -31,15 +31,17 @@ define('tmpl', [
 
    function createTemplate(name, html, tmpl, conf, load) {
       try {
-         tmpl.template(html, resolverControls, conf).handle(function (traversed) {
+         tmpl.template(html, resolverControls, conf).handle(function(traversed) {
             try {
                var templateFunction = tmpl.func(traversed, conf);
                Object.keys(templateFunction.includedFunctions).forEach(function(elem) {
                   setToJsonForFunction(templateFunction.includedFunctions[elem], 'tmpl!' + name, 'includedFunctions.' + elem);
                });
+
                // Чтобы отличать функции старого шаблонизатора от нового
                templateFunction.stable = true;
-               var closured = function () {
+               var closured = function() {
+                  // eslint-disable-next-line no-invalid-this
                   return templateFunction.apply(this, tmpl.addArgument(tClosure, arguments));
                };
                Object.defineProperty(closured, 'name', { 'value': templateFunction.name, configurable: true });
@@ -50,32 +52,36 @@ define('tmpl', [
                closured.reactiveProps = traversed.reactiveProps;
 
                load(closured);
+               // eslint-disable-next-line no-param-reassign
                load = undefined;
             } catch (err) {
                err.message = 'Error while traversing template "' + name + '": ' + err.message;
                load(wml.createLostFunction(err, 'tmpl'));
+               // eslint-disable-next-line no-param-reassign
                load = undefined;
             }
-         }, function (err) {
+         }, function(err) {
             err.message = 'Error while creating template "' + name + '": ' + err.message;
-            load(wml.createLostFunction(err,' tmpl'));
+            load(wml.createLostFunction(err, ' tmpl'));
+            // eslint-disable-next-line no-param-reassign
             load = undefined;
          });
       } catch (err) {
          err.message = 'Error while parsing template "' + name + '": ' + err.message;
          load(wml.createLostFunction(err, 'tmpl'));
+         // eslint-disable-next-line no-param-reassign
          load = undefined;
       }
    }
 
    return {
-      load: function (name, require, load) {
-          var deps = [
-              'is!compatibleLayer?Lib/Control/Control.compatible',
-              'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible',
-              'i18n!' + name.split('/')[0]
-          ];
-          wml.loadBase(name, require, load, 'tmpl', deps, createTemplate);
+      load: function(name, require, load) {
+         var deps = [
+            'is!compatibleLayer?Lib/Control/Control.compatible',
+            'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible',
+            'i18n!' + name.split('/')[0]
+         ];
+         wml.loadBase(name, require, load, 'tmpl', deps, createTemplate);
       }
    };
 });
