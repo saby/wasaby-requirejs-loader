@@ -34,16 +34,21 @@ export default function getModuleUrl(module: string, loader: Require = requirejs
         url.startsWith(config.APP_PATH)
     ) {
         url = url.substr(config.APP_PATH.length);
-        if (url && url[0] !== '/') {
 
-            // On a server side APP_PATH and baseUrl are equal, so a current service
-            // name would be missed if APP_PATH is cut off. Therefore we should
-            // add any service name but '/'
-            if (config.appRoot !== '/' &&  config.appRoot.indexOf('/') === 0) {
-                url = `${config.appRoot}${url}`;
-            } else {
-                url = `/${url}`;
-            }
+        // remove leading slash to get correct url with appRoot without any
+        // double slashes in it.
+        if (url && url.startsWith('/')) {
+            url = url.substr(1);
+        }
+
+        // On a server side APP_PATH and baseUrl are equal, so a current service
+        // name would be missed if APP_PATH is cut off. Therefore we should
+        // add any service name but '/'
+        if (url && config.appRoot !== '/' &&  config.appRoot.startsWith('/')) {
+            url = `${config.appRoot}${url}`;
+        }
+        if (url && url[0] !== '/') {
+            url = `/${url}`;
         }
     }
 
