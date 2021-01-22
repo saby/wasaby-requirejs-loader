@@ -54,6 +54,11 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
             getModuleUrl('/path/to/app/root/RequireJsLoader/conduct'),
             '/current-service/RequireJsLoader/conduct.js'
         );
+        wsConfig.APP_PATH = '/path/to/app/root';
+        assert.equal(
+            getModuleUrl('/path/to/app/root/RequireJsLoader/conduct'),
+            '/current-service/RequireJsLoader/conduct.js'
+        );
     });
 
     it('shouldn\'t cut off application root on client', () => {
