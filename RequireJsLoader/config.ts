@@ -878,6 +878,10 @@ define('RequireJsLoader/config', (() => {
                 xml: pathJoin(resourcesPath, 'RequireJsLoader/plugins/xml'),
                 react: `${REACT_CDN_PATH}${debug.isEnabled() ? 'react.development' : 'react.production.min'}`,
                 'react-dom': `${REACT_CDN_PATH}${debug.isEnabled() ? 'react-dom.development' : 'react-dom.production.min'}`,
+
+                // themes directory
+                themes: pathJoin(resourcesPath, 'themes'),
+
                 // jQuery must die
                 jquery: '/cdn/JQuery/jquery/3.3.1/jquery-min'
 
