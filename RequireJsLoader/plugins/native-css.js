@@ -89,26 +89,6 @@ define('native-css', [], function() {
    var ieLoads = [];
    var ieCurCallback;
 
-   var createIeLoad = function(url) {
-      curSheet.addImport(url);
-
-      if (inIFrame) {
-         setTimeout(function() {
-            processIeLoad(createIeLoad);
-         }, 10);
-      } else {
-         curStyle.onload = function() {
-             processIeLoad(createIeLoad);
-         };
-      }
-
-      ieCnt++;
-      if (ieCnt === 31) {
-         createStyle();
-         ieCnt = 0;
-      }
-   };
-
    var processIeLoad = function(creater) {
       ieCurCallback();
 
@@ -121,6 +101,26 @@ define('native-css', [], function() {
 
       ieCurCallback = nextLoad[1];
       creater(nextLoad[0]);
+   };
+
+   var createIeLoad = function(url) {
+      curSheet.addImport(url);
+
+      if (inIFrame) {
+         setTimeout(function() {
+            processIeLoad(createIeLoad);
+         }, 10);
+      } else {
+         curStyle.onload = function() {
+            processIeLoad(createIeLoad);
+         };
+      }
+
+      ieCnt++;
+      if (ieCnt === 31) {
+         createStyle();
+         ieCnt = 0;
+      }
    };
 
    var importLoad = function(url, callback) {
@@ -142,6 +142,8 @@ define('native-css', [], function() {
 
          var loadInterval = setInterval(function() {
             try {
+
+               // eslint-disable-next-line no-unused-vars
                var a = curStyle.sheet.cssRules;
                clearInterval(loadInterval);
                callback();

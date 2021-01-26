@@ -153,7 +153,7 @@ define('normalize', ['require', 'module'], function() {
             source.substr(urlRegEx.lastIndex - quoteLen - 1);
          urlRegEx.lastIndex = urlRegEx.lastIndex + (newUrl.length - url.length);
 
-         result = urlRegEx.exec(source)
+         result = urlRegEx.exec(source);
       }
 
       return source;
