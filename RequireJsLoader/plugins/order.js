@@ -67,7 +67,7 @@ define('order', function() {
          cached[moduleName] = true;
 
          // Find out how many ordered modules have loaded
-         while(resource) {
+         while (resource) {
             if (cached[resource.name]) {
                resource.req([resource.name], resource.onLoad);
                i++;
@@ -110,7 +110,7 @@ define('order', function() {
       var loadedNode;
       var resourceName = scriptWaiting[i];
 
-      while(resourceName) {
+      while (resourceName) {
          loadedNode = scriptNodes[resourceName];
          if (loadedNode &&
             loadedNode.getAttribute('data-orderloaded') === 'loaded') {

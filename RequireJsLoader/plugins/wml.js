@@ -101,16 +101,14 @@ define('wml', [
    function createLoader(name, require, load, conf, ext, needRequire, callback) {
       var loader = function(html) {
          if (html && html.indexOf('define') === 0) {
-
-            //Got template as compiled AMD module
+            // Got template as compiled AMD module
             if (load.fromTextFixed) {
                load.fromTextFixed(html);
             } else {
                load.fromText(html);
             }
          } else {
-
-            //Got template as string with markup
+            // Got template as string with markup
             try {
                needRequire.unshift('UI/Builder');
                require(needRequire, function(builder) {
