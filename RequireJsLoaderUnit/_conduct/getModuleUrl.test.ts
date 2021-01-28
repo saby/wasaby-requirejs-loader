@@ -36,6 +36,10 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
             getModuleUrl('css!RequireJsLoader/conduct'),
             '/RequireJsLoader/conduct.css'
         );
+        assert.equal(
+            getModuleUrl('css!themes/default'),
+            '/themes/default.css'
+        );
     });
 
     it('should cut off application root on server', () => {
