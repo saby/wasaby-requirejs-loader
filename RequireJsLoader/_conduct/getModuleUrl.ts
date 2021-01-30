@@ -29,7 +29,6 @@ export default function getModuleUrl(module: string, loader: Require = requirejs
 
     if (
         config.IS_SERVER_SCRIPT &&
-        config.APP_PATH &&
         !url.startsWith('//') &&
         url.startsWith(config.APP_PATH)
     ) {

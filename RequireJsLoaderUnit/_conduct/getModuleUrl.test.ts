@@ -40,6 +40,15 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
             getModuleUrl('css!themes/default'),
             '/themes/default.css'
         );
+
+        // create an environment of a local demo stand,
+        // specifically without appRoot and APP_PATH
+        wsConfig.APP_PATH = '';
+        defaultContext.config.baseUrl = '';
+        assert.equal(
+            getModuleUrl('css!themes/default'),
+            '/themes/default.css'
+        );
     });
 
     it('should cut off application root on server', () => {
