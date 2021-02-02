@@ -844,7 +844,11 @@ define('RequireJsLoader/config', (() => {
         // Normalize wsConfig
         const wsConfig = getWsConfig();
         wsConfig.APP_PATH = baseUrl;
-        wsConfig.RESOURCES_PATH = resourcesPath;
+
+        // builder configures RESOURCES_PATH by himself
+        if (!wsConfig.IS_BUILDER) {
+            wsConfig.RESOURCES_PATH = resourcesPath;
+        }
 
         // Build config
         const config: RequireConfig = {

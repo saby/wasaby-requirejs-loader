@@ -84,6 +84,23 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
         );
     });
 
+    it('should cut off application root in builder environment', () => {
+        defaultContext.config.baseUrl = '/path/to/app/root/';
+        wsConfig.APP_PATH = '/path/to/app/root/';
+        wsConfig.IS_SERVER_SCRIPT = false;
+        wsConfig.IS_BUILDER = true;
+        wsConfig.RESOURCES_PATH = '/';
+        assert.equal(
+            getModuleUrl('css!themes/default'),
+            '/themes/default.css'
+        );
+        wsConfig.RESOURCES_PATH = '/resources/';
+        assert.equal(
+            getModuleUrl('css!themes/default'),
+            '/resources/themes/default.css'
+        );
+    });
+
     it('should return URL with domain name', () => {
         wsConfig.staticDomains = {domains: ['foo.bar']};
         assert.equal(getModuleUrl('RequireJsLoader/conduct'), '//foo.bar/RequireJsLoader/conduct.js');

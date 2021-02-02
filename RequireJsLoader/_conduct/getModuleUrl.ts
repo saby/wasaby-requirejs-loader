@@ -27,6 +27,18 @@ export default function getModuleUrl(module: string, loader: Require = requirejs
     const config = getWsConfig();
     let url = loader.toUrl(info.basename + info.extension);
 
+    if (config.IS_BUILDER) {
+        url = url.substr(config.APP_PATH.length);
+
+        // remove leading slash to get correct url with appRoot without any
+        // double slashes in it.
+        if (url && url.startsWith('/')) {
+            url = url.substr(1);
+        }
+
+        url = `${config.RESOURCES_PATH}${url}`
+    }
+
     if (
         config.IS_SERVER_SCRIPT &&
         !url.startsWith('//') &&
