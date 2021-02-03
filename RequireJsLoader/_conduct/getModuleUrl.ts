@@ -7,13 +7,30 @@ interface IModuleInfo {
     extension: string;
 }
 
+// regex for third-party libraries
+const THIRD_PARTY = /^\/(cdn|rtpack|demo_src)\//;
+
+// list of plugins for third-party modules
+const CDN_PLUGINS = ['css', 'js'];
+
 function getModuleInfo(module: string): IModuleInfo {
     const plugins = module.split(/[!?]/);
     const basename = plugins.pop();
+    const isThirdParty = THIRD_PARTY.test(basename);
+    let extension = `.${plugins[0] || 'js'}`;
+    if (isThirdParty) {
+        if (!CDN_PLUGINS.includes(plugins[0])) {
+            extension = '.js';
+        }
+
+        if (basename.endsWith(extension)) {
+            extension = '';
+        }
+    }
     return {
         plugin: plugins.join(','),
         basename,
-        extension: '.' + (plugins[0] || 'js')
+        extension
     };
 }
 
