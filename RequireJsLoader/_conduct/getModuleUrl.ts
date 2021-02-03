@@ -7,16 +7,13 @@ interface IModuleInfo {
     extension: string;
 }
 
-// regex for third-party libraries
-const THIRD_PARTY = /^\/(cdn|rtpack|demo_src)\//;
-
 function getModuleInfo(module: string): IModuleInfo {
     const plugins = module.split(/[!?]/);
     const basename = plugins.pop();
     return {
         plugin: plugins.join(','),
         basename,
-        extension: THIRD_PARTY.test(basename) ? '' : `.${plugins[0] || 'js'}`
+        extension: '.' + (plugins[0] || 'js')
     };
 }
 
