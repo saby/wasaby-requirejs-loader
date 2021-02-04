@@ -51,6 +51,37 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
         );
     });
 
+    it('should return valid URL for third-party libraries(e.g. /cdn/)', () => {
+        assert.equal(
+            getModuleUrl('/cdn/library/production.js'),
+            '/cdn/library/production.js'
+        );
+        assert.equal(
+            getModuleUrl('browser!/cdn/library/production.js'),
+            '/cdn/library/production.js'
+        );
+        assert.equal(
+            getModuleUrl('browser!/cdn/library/production'),
+            '/cdn/library/production.js'
+        );
+        assert.equal(
+            getModuleUrl('css!/cdn/library/production'),
+            '/cdn/library/production.css'
+        );
+        assert.equal(
+            getModuleUrl('css!/cdn/library/production.css'),
+            '/cdn/library/production.css'
+        );
+        assert.equal(
+            getModuleUrl('/rtpack/current-package.js'),
+            '/rtpack/current-package.js'
+        );
+        assert.equal(
+            getModuleUrl('/demo_src/library/production.js'),
+            '/demo_src/library/production.js'
+        );
+    });
+
     it('should cut off application root on server', () => {
         defaultContext.config.baseUrl = '/path/to/app/root/';
         wsConfig.APP_PATH = '/path/to/app/root/';
