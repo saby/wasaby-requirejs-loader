@@ -55,9 +55,6 @@ define('RequireJsLoader/config', (() => {
     // Application build mode
     const BUILD_MODE: RequireJsLoader.BuildMode = GLOBAL.contents && GLOBAL.contents.buildMode || DEBUG_MODE;
 
-    // Path to react on CDN with version
-    const REACT_CDN_PATH = '/cdn/React/17.0.1.2/';
-
     function getWsConfig(): RequireJsLoader.IWsConfig {
         return GLOBAL.wsConfig || (GLOBAL.wsConfig = {});
     }
@@ -876,8 +873,10 @@ define('RequireJsLoader/config', (() => {
                 tmpl: pathJoin(resourcesPath, 'RequireJsLoader/plugins/tmpl'),
                 wml: pathJoin(resourcesPath, 'RequireJsLoader/plugins/wml'),
                 xml: pathJoin(resourcesPath, 'RequireJsLoader/plugins/xml'),
-                react: `${REACT_CDN_PATH}${debug.isEnabled() ? 'react.development' : 'react.production.min'}`,
-                'react-dom': `${REACT_CDN_PATH}${debug.isEnabled() ? 'react-dom.development' : 'react-dom.production.min'}`,
+                react: `${pathJoin(resourcesPath, 'UI/_react/third-party/')}${debug.isEnabled()
+                    ? 'react.development' : 'react.production.min'}`,
+                'react-dom': `${pathJoin(resourcesPath, 'UI/_react/third-party/')}${debug.isEnabled()
+                    ? 'react-dom.development' : 'react-dom.production.min'}`,
 
                 // themes directory
                 themes: pathJoin(resourcesPath, 'themes'),
