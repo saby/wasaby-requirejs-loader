@@ -928,6 +928,25 @@ define('RequireJsLoader/config', (() => {
             }
         }
 
+        // FIXME: не подменяем контрол пока нет серверной вёрстки на реакте
+        if (!IS_SERVER_SCRIPT) {
+            const cookie = getCookie();
+            if (cookie) {
+                /*
+                Пока в reactFeatures может быть ровно одно валидное значение: Control.
+                В итоге хочется предоставить людям набор флагов, которые позволят им постепенно готовить свой код.
+                Из идей пока такие:
+                1) Подмена базового контрола - текущая фича.
+                2) Проверка на чистоту defaultProps. defaultProps будут получаться дважды и если между ними будет разница, то в консоль будет падать ошибка.
+                 */
+                const matches = cookie.match(/reactFeatures=([^;]+)[;]?/);
+                if (matches && matches[1] === 'Control') {
+                    config.paths['UI/Base'] = pathJoin(resourcesPath, 'UI/BaseReact');
+                    config.paths['UI/_base/Control'] = pathJoin(resourcesPath, 'UI/_react/Control/ControlMirror');
+                }
+            }
+        }
+
         return config;
     }
 
