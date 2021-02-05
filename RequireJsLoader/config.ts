@@ -881,6 +881,10 @@ define('RequireJsLoader/config', (() => {
                     ? 'react.development' : 'react.production.min'}`,
                 'react-dom': `${pathJoin(resourcesPath, 'UI/_react/third-party/')}${debug.isEnabled()
                     ? 'react-dom.development' : 'react-dom.production.min'}`,
+                'react/jsx-runtime': `${pathJoin(resourcesPath, 'UI/_react/third-party/')}${debug.isEnabled()
+                    ? 'react-jsx-runtime.development' : 'react-jsx-runtime.production.min'}`,
+                'react/jsx-dev-runtime': `${pathJoin(resourcesPath, 'UI/_react/third-party/')}${debug.isEnabled()
+                    ? 'react-jsx-dev-runtime.development' : 'react-jsx-dev-runtime.production.min'}`,
 
                 // themes directory
                 themes: pathJoin(resourcesPath, 'themes'),
