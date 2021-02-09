@@ -935,16 +935,16 @@ define('RequireJsLoader/config', (() => {
             }
         }
 
-        // FIXME: не подменяем контрол пока нет серверной вёрстки на реакте
+        // FIXME: we don't replace control on the server until we support SSR with react
         if (!IS_SERVER_SCRIPT) {
             const cookie = getCookie();
             if (cookie) {
                 /*
-                Пока в reactFeatures может быть ровно одно валидное значение: Control.
-                В итоге хочется предоставить людям набор флагов, которые позволят им постепенно готовить свой код.
-                Из идей пока такие:
-                1) Подмена базового контрола - текущая фича.
-                2) Проверка на чистоту defaultProps. defaultProps будут получаться дважды и если между ними будет разница, то в консоль будет падать ошибка.
+                For now, reactFeatures can accept only one valid value: Control.
+                Eventually, we want to provide a variety of flags to help people prepare for migration to react.
+                Some ideas for flags:
+                1) Replace UI/Base:Control with React.Component.
+                2) Purity check for defaultProps. Get defaultProps twice and if there's a difference - log an error.
                  */
                 const matches = cookie.match(/reactFeatures=([^;]+)[;]?/);
                 if (matches && matches[1] === 'Control') {
