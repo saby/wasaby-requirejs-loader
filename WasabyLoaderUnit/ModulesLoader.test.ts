@@ -16,11 +16,11 @@ describe('WasabyLoader/ModulesLoader', () => {
             assert.include(getModuleUrl('WasabyLoaderUnit/Foo:bar'), '/WasabyLoaderUnit/Foo.js');
         });
 
-        it('should return valid module URL', () => {
+        it('should return valid module URL with debug cookie', () => {
             assert.include(getModuleUrl('WasabyLoaderUnit/Foo/bar', 'true'), '/WasabyLoaderUnit/Foo/bar.js');
         });
 
-        it('should return valid library URL', () => {
+        it('should return valid library URL with debug cookie', () => {
             assert.include(getModuleUrl('WasabyLoaderUnit/Foo:bar', 'true'), '/WasabyLoaderUnit/Foo.js');
         });
     });
