@@ -48,9 +48,9 @@ export function isLoaded(name: string): boolean {
  * @param name Имя модуля в обычном (Foo/bar) или библиотечном (Foo/bar:baz) синтаксисе
  * @protected
  */
-export function getModuleUrl(name: string): string {
+export function getModuleUrl(name: string, debugCookieValue?: string): string {
     const parsedInfo: IParsedName = parse(name);
-    return getModuleUrlBase(parsedInfo.name);
+    return getModuleUrlBase(parsedInfo.name, undefined, debugCookieValue);
 }
 
 /**
