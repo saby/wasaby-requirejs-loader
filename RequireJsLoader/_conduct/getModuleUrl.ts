@@ -39,7 +39,7 @@ function getModuleInfo(module: string): IModuleInfo {
  * @param module Имя модуля
  * @public
  */
-export default function getModuleUrl(module: string, loader: Require = requirejs): string {
+export default function getModuleUrl(module: string, loader: Require = requirejs, debugCookieValue?: string): string {
     const info = getModuleInfo(module);
     const config = getWsConfig();
     let url = loader.toUrl(info.basename + info.extension);
@@ -80,5 +80,5 @@ export default function getModuleUrl(module: string, loader: Require = requirejs
         }
     }
 
-    return getResourceUrl(url);
+    return getResourceUrl(url, debugCookieValue);
 }
