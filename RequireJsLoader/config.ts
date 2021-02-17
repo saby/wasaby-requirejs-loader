@@ -216,15 +216,25 @@ define('RequireJsLoader/config', (() => {
         const contents = getContents();
         const wsCoreIncluded = contents?.modules?.['WS.Core'];
 
+        // dependencies that should be loaded in every possible module
+        const IMPORTANT_DEPENDENCIES = [
+            // Force load polyfills in every possible module
+            IS_SERVER_SCRIPT ? '' : (wsCoreIncluded ? 'Core/polyfill' : '')
+        ];
+
         // Returns required dependencies for candidate
-        function needDependencyFor(name: string, candidateDeps: string[], skipNamespace: string): string[] {
+        function needDependencyFor(name: string, strictDependencies: string[], candidateDeps: string[], skipNamespace: string): string[] {
             if (
                 typeof name !== 'string' || // Don't add to anonymous
                 name.indexOf('/') === -1 || // Don't add to special names
-                candidateDeps.indexOf(name) > -1 || // Don't add to each other
-                name.substr(0, skipNamespace.length) === skipNamespace // Break cycles we know about
+                candidateDeps.indexOf(name) > -1 // Don't add to each other
             ) {
                 return [];
+            }
+
+            // Break cycles we know about
+            if (name.substr(0, skipNamespace.length) === skipNamespace) {
+                return strictDependencies;
             }
 
             return candidateDeps.filter((depName) => {
@@ -234,9 +244,9 @@ define('RequireJsLoader/config', (() => {
 
         // Adds extra dependencies for every defined module to force their loading
         function patchedDefine(name: string, deps?: string[], callback?: Function): void {
-            const toAdd = needDependencyFor(name, [
-                // Force load polyfills
-                IS_SERVER_SCRIPT ? '' : (wsCoreIncluded ? 'Core/polyfill' : ''),
+            const toAdd = needDependencyFor(name, IMPORTANT_DEPENDENCIES, [
+                ...IMPORTANT_DEPENDENCIES,
+
                 // Force load extra patches for RequireJS
                 'RequireJsLoader/autoload'
 
