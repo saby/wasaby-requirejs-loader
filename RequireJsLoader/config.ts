@@ -248,8 +248,6 @@ define('RequireJsLoader/config', (() => {
         // Adds extra dependencies for every defined module to force their loading
         function patchedDefine(name: string, deps?: string[], callback?: Function): void {
             const toAdd = needDependencyFor(name, IMPORTANT_DEPENDENCIES, [
-                ...IMPORTANT_DEPENDENCIES,
-
                 // Force load extra patches for RequireJS
                 'RequireJsLoader/autoload'
 
@@ -259,7 +257,7 @@ define('RequireJsLoader/config', (() => {
                  * from each other. All dependencies of the modules should be strictly declared
                  * from the beginning.
                  */
-            ], 'RequireJsLoader/');
+            ].concat(IMPORTANT_DEPENDENCIES), 'RequireJsLoader/');
 
             let finalDeps = deps;
             let finalCallback = callback;
