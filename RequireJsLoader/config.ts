@@ -848,7 +848,7 @@ define('RequireJsLoader/config', (() => {
     ): RequireConfig {
         // Normalize wsConfig
         const wsConfig = getWsConfig();
-        const reactPath = pathJoin(resourcesPath, 'UI/_react/third-party/');
+        const reactPath = pathJoin(resourcesPath, 'React/third-party/');
         wsConfig.APP_PATH = baseUrl;
 
         // builder configures RESOURCES_PATH by himself
