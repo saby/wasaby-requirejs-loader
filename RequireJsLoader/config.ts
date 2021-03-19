@@ -848,7 +848,8 @@ define('RequireJsLoader/config', (() => {
     ): RequireConfig {
         // Normalize wsConfig
         const wsConfig = getWsConfig();
-        const reactPath = pathJoin(resourcesPath, 'UI/_react/third-party/');
+        const reactPath = pathJoin(resourcesPath, 'React/third-party/react/');
+        const reactDomPath = pathJoin(resourcesPath, 'React/third-party/react-dom/');
         wsConfig.APP_PATH = baseUrl;
 
         // builder configures RESOURCES_PATH by himself
@@ -887,10 +888,10 @@ define('RequireJsLoader/config', (() => {
                 wml: pathJoin(resourcesPath, 'RequireJsLoader/plugins/wml'),
                 xml: pathJoin(resourcesPath, 'RequireJsLoader/plugins/xml'),
                 react: `${reactPath}${debug.isEnabled() ? 'react.development' : 'react.production.min'}`,
-                'react-dom': `${reactPath}${debug.isEnabled() ? 'react-dom.development' : 'react-dom.production.min'}`,
-                'react/jsx-runtime': `${reactPath}${debug.isEnabled()
+                'react-dom': `${reactDomPath}${debug.isEnabled() ? 'react-dom.development' : 'react-dom.production.min'}`,
+                'react/jsx-runtime': `${reactPath}jsx-runtime/${debug.isEnabled()
                     ? 'react-jsx-runtime.development' : 'react-jsx-runtime.production.min'}`,
-                'react/jsx-dev-runtime': `${reactPath}${debug.isEnabled()
+                'react/jsx-dev-runtime': `${reactPath}jsx-dev-runtime/${debug.isEnabled()
                     ? 'react-jsx-dev-runtime.development' : 'react-jsx-dev-runtime.production.min'}`,
 
                 // themes directory
