@@ -889,6 +889,7 @@ define('RequireJsLoader/config', (() => {
                 xml: pathJoin(resourcesPath, 'RequireJsLoader/plugins/xml'),
                 react: `${reactPath}${debug.isEnabled() ? 'react.development' : 'react.production.min'}`,
                 'react-dom': `${reactDomPath}${debug.isEnabled() ? 'react-dom.development' : 'react-dom.production.min'}`,
+                'react-dom/server': `${reactDomPath}server/${debug.isEnabled() ? 'react-dom-server.browser.development' : 'react-dom-server.browser.production.min'}`,
                 'react/jsx-runtime': `${reactPath}jsx-runtime/${debug.isEnabled()
                     ? 'react-jsx-runtime.development' : 'react-jsx-runtime.production.min'}`,
                 'react/jsx-dev-runtime': `${reactPath}jsx-dev-runtime/${debug.isEnabled()
