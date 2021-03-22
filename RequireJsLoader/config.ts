@@ -227,6 +227,7 @@ define('RequireJsLoader/config', (() => {
             if (
                 typeof name !== 'string' || // Don't add to anonymous
                 name.indexOf('/') === -1 || // Don't add to special names
+                name.indexOf('Core/polyfill') === 0 || // Don't add any dependencies to Core/polyfill namespace
                 candidateDeps.indexOf(name) > -1 // Don't add to each other
             ) {
                 return [];
