@@ -12,6 +12,12 @@ describe('WasabyLoader/ModulesLoader', () => {
             assert.include(getModuleUrl('WasabyLoaderUnit/Foo/bar'), '/WasabyLoaderUnit/Foo/bar.js');
         });
 
+        it('should return valid module URL with its own extension', () => {
+            assert.include(getModuleUrl('WasabyLoaderUnit/Foo/bar.svg'), '/WasabyLoaderUnit/Foo/bar.svg');
+            assert.include(getModuleUrl('WS.Core/res/js/revive-controls'), '/WS.Core/res/js/revive-controls.js');
+            assert.include(getModuleUrl('Types/lang/ru/ru.json'), '/Types/lang/ru/ru.json.js');
+        });
+
         it('should return valid library URL', () => {
             assert.include(getModuleUrl('WasabyLoaderUnit/Foo:bar'), '/WasabyLoaderUnit/Foo.js');
         });

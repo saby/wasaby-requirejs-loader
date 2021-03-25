@@ -13,11 +13,28 @@ const THIRD_PARTY = /^\/(cdn|rtpack|demo_src)\//;
 // list of plugins for third-party modules
 const CDN_PLUGINS = ['css', 'js'];
 
+// fake extensions that are actually parts of a module name
+// For json there is a .json.js file
+const NAME_PARTS = ['package', 'json'];
+
 function getModuleInfo(module: string): IModuleInfo {
     const plugins = module.split(/[!?]/);
     const basename = plugins.pop();
     const isThirdParty = THIRD_PARTY.test(basename);
-    let extension = `.${plugins[0] || 'js'}`;
+    let extension = '';
+
+    // if there is a plugin, get it as an extension
+    if (plugins.length > 0) {
+        extension = "." + plugins[0];
+    } else {
+        const fileName = basename.split('/').pop();
+        const basenameParts = fileName.split('.');
+
+        // use an actual extension only if it's not a part of current module name
+        if (basenameParts.length === 1 || NAME_PARTS.includes(basenameParts.pop())) {
+            extension = '.js';
+        }
+    }
     if (isThirdParty) {
         if (!CDN_PLUGINS.includes(plugins[0])) {
             extension = '.js';

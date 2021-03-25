@@ -31,6 +31,21 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
         );
     });
 
+    it('should return valid module URL with its own extension', () => {
+        assert.equal(
+            getModuleUrl('RequireJsLoader/picture.svg'),
+            '/RequireJsLoader/picture.svg'
+        );
+        assert.equal(
+            getModuleUrl('WS.Core/res/js/revive-controls'),
+            '/WS.Core/res/js/revive-controls.js'
+        );
+        assert.equal(
+            getModuleUrl('Types/lang/ru/ru.json'),
+            '/Types/lang/ru/ru.json.js'
+        );
+    });
+
     it('should return valid URL for css! plugin', () => {
         assert.equal(
             getModuleUrl('css!RequireJsLoader/conduct'),
