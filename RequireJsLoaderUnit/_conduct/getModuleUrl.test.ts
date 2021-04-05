@@ -120,6 +120,15 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
         );
     });
 
+    it('should cut off application path and version header and add application root on server', () => {
+        wsConfig.APP_PATH = '/path/to/app/root/';
+        wsConfig.appRoot = '/current-service/';
+        assert.equal(
+            getModuleUrl('/path/to/app/root/RequireJsLoader/conduct.js?x_module=test'),
+            '/current-service/RequireJsLoader/conduct.js'
+        );
+    });
+
     it('shouldn\'t cut off application root on client', () => {
         defaultContext.config.baseUrl = '/path/to/app/root/assets/';
         wsConfig.APP_PATH = '/path/to/app/root/';
