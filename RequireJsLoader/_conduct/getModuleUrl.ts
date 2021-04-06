@@ -19,13 +19,20 @@ const NAME_PARTS = ['package', 'json'];
 
 function getModuleInfo(module: string): IModuleInfo {
     const plugins = module.split(/[!?]/);
-    const basename = plugins.pop();
+    let basename = plugins.pop();
     const isThirdParty = THIRD_PARTY.test(basename);
     let extension = '';
 
     // if there is a plugin, get it as an extension
     if (plugins.length > 0) {
-        extension = "." + plugins[0];
+        // if there is a dot in a plugin name,
+        // it's a file path that was taken by mistake
+        // e.g. MyModule/file.js?someHeaders
+        if (plugins[0].includes('.')) {
+            basename = plugins[0];
+        } else {
+            extension = "." + plugins[0];
+        }
     } else {
         const fileName = basename.split('/').pop();
         const basenameParts = fileName.split('.');
@@ -79,6 +86,13 @@ export default function getModuleUrl(module: string, loader: Require = requirejs
         url.startsWith(config.APP_PATH)
     ) {
         url = url.substr(config.APP_PATH.length);
+
+        // cut off x_module parameter on a server side because on a server it has a global version because
+        // of an absolute path to current resource.
+        const versionHeaderIndex = url.indexOf('?x_module');
+        if (versionHeaderIndex !== -1) {
+            url = url.substr(0, versionHeaderIndex);
+        }
 
         // remove leading slash to get correct url with appRoot without any
         // double slashes in it.
