@@ -18,7 +18,7 @@ interface IHandlersInternal {
     getModuleNameFromUrl: (url: string) => string;
     getModulesPrefixes: IGetModulePrefixes;
     checkModule: (url: string) => void;
-    getWithDomain: (url: string) => string;
+    getWithDomain: (url: string, skipDomains?: boolean) => string;
     getWithSuffix: (url: string, debugCookieValue?: string) => string;
     getWithVersion: (url: string) => string;
     getWithUserDefined?: (url: string) => string;
@@ -579,8 +579,8 @@ define('RequireJsLoader/config', (() => {
         }
 
         // Injects domain signature to the URL if necessary
-        function getWithDomain(url: string): string {
-            if (!url) {
+        function getWithDomain(url: string, skipDomains?: boolean): string {
+            if (!url || skipDomains) {
                 return url;
             }
 

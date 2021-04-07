@@ -34,6 +34,11 @@ describe('RequireJsLoader/_conduct/getResourceUrl', () => {
         assert.equal(getResourceUrl('/path/to/resource.js'), '//foo.bar/path/to/resource.js');
     });
 
+    it('should ignore domain name if it\'s disabled by user', () => {
+        wsConfig.staticDomains = {domains: ['foo.bar', 'foo.baz']};
+        assert.equal(getResourceUrl('/path/to/resource.js', undefined, true), '/path/to/resource.js');
+    });
+
     it('should add domain name for absolute URL use array syntax', () => {
         wsConfig.staticDomains = ['foo.bar', 'foo.baz'];
         assert.equal(getResourceUrl('/path/to/resource.js'), '//foo.bar/path/to/resource.js');

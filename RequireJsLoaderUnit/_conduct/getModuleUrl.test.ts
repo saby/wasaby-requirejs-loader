@@ -161,6 +161,11 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
         assert.equal(getModuleUrl('RequireJsLoader/conduct'), '//foo.bar/RequireJsLoader/conduct.js');
     });
 
+    it('shouldn\'t return URL with domain name even though domain is selected if this is disabled by user', () => {
+        wsConfig.staticDomains = {domains: ['foo.bar']};
+        assert.equal(getModuleUrl('RequireJsLoader/conduct', undefined, undefined, true), '/RequireJsLoader/conduct.js');
+    });
+
     it('should return URL with domain name', () => {
         defaultContext.nameToUrl = () => '//foo.bar/RequireJsLoader/conduct.js';
         wsConfig.APP_PATH = '/';
