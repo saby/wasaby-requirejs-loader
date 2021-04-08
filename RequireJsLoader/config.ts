@@ -580,7 +580,7 @@ define('RequireJsLoader/config', (() => {
 
         // Injects domain signature to the URL if necessary
         function getWithDomain(url: string, skipDomains?: boolean): string {
-            if (!url || skipDomains) {
+            if (!url || skipDomains || (debug.isEnabled() && !IS_SERVER_SCRIPT)) {
                 return url;
             }
 
