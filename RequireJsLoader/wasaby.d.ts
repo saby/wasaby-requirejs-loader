@@ -59,4 +59,5 @@ interface IModule {
     path?: string;
     dict?: string[];
     service?: string;
+    staticServer?: string;
 }
