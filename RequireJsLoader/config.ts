@@ -373,6 +373,15 @@ define('RequireJsLoader/config', (() => {
                     debug.MODULES = debug.MODULES.concat('Core/', 'Lib/', 'Ext/', 'Helpers/', 'Transport/');
                 }
             }
+
+            // enable hot reload client event stream server if it's enabled by user with a cookie
+            const hotReloadMatches = cookie.match(/s3HotReload=([^;]+)[;]?/);
+            if (hotReloadMatches) {
+                if (GLOBAL.contents?.modules['HotReload']) {
+                    GLOBAL.contents.modules['HotReload'].staticServer = `localhost:${hotReloadMatches[1]}`;
+                }
+
+            }
         }
     }
 
