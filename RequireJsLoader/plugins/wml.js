@@ -19,9 +19,9 @@ define('wml', [
    var global = extras.utils.global;
    var isServerSide = typeof window === 'undefined' && !(process && process.versions);
 
-   function logError(tag, err) {
+   function logError(error) {
       var logger = (Env && Env.IoC.resolve('ILogger')) || console;
-      logger.error(tag, err.message, err);
+      logger.error('Template compiler: ' + error.message);
    }
 
    function showAlertOnTimeoutInBrowser(err) {
@@ -54,10 +54,10 @@ define('wml', [
       throw err;
    }
 
-   function createLostFunction(err, ext) {
-      logError(ext + '!', err.message, err);
+   function createLostFunction(error) {
+      logError(error);
       var wrapper = function() {
-         return '<div>' + err.message + '</div>';
+         return '<div>' + error.message + '</div>';
       };
       wrapper.stable = true;
       wrapper.includedFunctions = {};
@@ -77,22 +77,22 @@ define('wml', [
             }
             // eslint-disable-next-line no-param-reassign
             load = undefined;
-         }, function(err) {
-            err.message = 'Error while parsing template "' + name + '": ' + err.message;
+         }, function(error) {
+            error.message = 'Error while parsing template "' + name + '": ' + error.message;
             try {
-               var timeoutAlert = showAlertOnTimeoutInBrowser(err);
+               var timeoutAlert = showAlertOnTimeoutInBrowser(error);
                if (!timeoutAlert) {
-                  logError('Template', err.message, err);
+                  logError(error);
                }
-            } catch (terr) {
-               logError('Template', terr.message, terr);
+            } catch (e) {
+               logError(e);
             }
-            load.error(err);
+            load.error(error);
          }, ext);
-      } catch (err) {
-         err.message = 'Error while parsing template "' + name + '": ' + err.message;
-         logError('Template', err.message, err);
-         load.error(err);
+      } catch (error) {
+         error.message = 'Error while parsing template "' + name + '": ' + error.message;
+         logError(error);
+         load.error(error);
          // eslint-disable-next-line no-param-reassign
          load = undefined;
       }
@@ -117,25 +117,25 @@ define('wml', [
                      extras.checkCircularDependencies(ext + '!' + name, builder.Tmpl.getComponents(html, conf));
 
                      callback(name, html, builder.Tmpl, conf, load, ext);
-                  } catch (err) {
-                     err.message = 'Error while parsing template "' + name + '": ' + err.message;
-                     logError('Template', err.message, err);
-                     load.error(err);
+                  } catch (error) {
+                     error.message = 'Error while parsing template "' + name + '": ' + error.message;
+                     logError(error);
+                     load.error(error);
                   }
                });
-            } catch (err) {
-               err.message = 'Error while loading builder for template "' + name + '": ' + err.message;
-               logError('Template', err.message, err);
-               load.error(err);
+            } catch (error) {
+               error.message = 'Error while loading builder for template "' + name + '": ' + error.message;
+               logError(error);
+               load.error(error);
             }
          }
       };
 
-      loader.error = function(err) {
-         err.message = 'Error while loading template "' + name + '": ' + err.message;
-         showAlertOnTimeoutInBrowser(err);
-         logError('Template', err.message, err);
-         load.error(err);
+      loader.error = function(error) {
+         error.message = 'Error while loading template "' + name + '": ' + error.message;
+         showAlertOnTimeoutInBrowser(error);
+         logError(error);
+         load.error(error);
       };
 
       return loader;
@@ -164,10 +164,10 @@ define('wml', [
                createLoader(name, require, load, conf, ext, deps, callback),
                conf
             );
-         } catch (err) {
-            err.message = 'Error while resolving template "' + name + '": ' + err.message;
-            logError('Template', err.message, err);
-            load.error(err);
+         } catch (error) {
+            error.message = 'Error while resolving template "' + name + '": ' + error.message;
+            logError(error);
+            load.error(error);
          }
       },
       load: function(name, require, load) {
