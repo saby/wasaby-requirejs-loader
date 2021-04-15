@@ -135,7 +135,6 @@ define('wml', [
          error.message = 'Error while loading template "' + name + '": ' + error.message;
          showAlertOnTimeoutInBrowser(error);
          logError(error);
-         load.error(error);
       };
 
       return loader;
