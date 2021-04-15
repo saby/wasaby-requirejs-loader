@@ -306,6 +306,10 @@ define('text', ['module'], function (module) {
             fetch(url, {
                 credentials: 'include'
             }).then(function(response) {
+                if (!response.ok) {
+                    errback(new Error('response is not ok: ' + response.status + ' (' + response.statusText + ')'));
+                    return;
+                }
                 response.text().then(callback).catch(errback);
             }).catch(errback);
         };
