@@ -1,6 +1,6 @@
 {
    "name": "wasaby-requirejs-loader",
-   "version": "21.3000.0",
+   "version": "21.4000.0",
    "description": "Мальцев А. А.",
    "scripts": {
       "build": "npm run build:install && npm run build:typescript && npm run build:app",
@@ -36,6 +36,6 @@
       "WasabyLoader/*"
    ],
    "devDependencies": {
-      "wasaby-cli": "git+https://platform-git.sbis.ru/saby/wasaby-cli.git#rc-21.3000"
+      "wasaby-cli": "git+https://platform-git.sbis.ru/saby/wasaby-cli.git#rc-21.4000"
    }
 }
