@@ -858,8 +858,9 @@ define('RequireJsLoader/config', (() => {
     ): RequireConfig {
         // Normalize wsConfig
         const wsConfig = getWsConfig();
-        const reactPath = pathJoin(resourcesPath, 'React/third-party/react/');
-        const reactDomPath = pathJoin(resourcesPath, 'React/third-party/react-dom/');
+        const reactRoot = pathJoin(resourcesPath, 'React/third-party/');
+        const reactPostfix = debug.isEnabled() ? '.development' : '.production.min';
+
         wsConfig.APP_PATH = baseUrl;
 
         // builder configures RESOURCES_PATH by himself
@@ -897,13 +898,16 @@ define('RequireJsLoader/config', (() => {
                 tmpl: pathJoin(resourcesPath, 'RequireJsLoader/plugins/tmpl'),
                 wml: pathJoin(resourcesPath, 'RequireJsLoader/plugins/wml'),
                 xml: pathJoin(resourcesPath, 'RequireJsLoader/plugins/xml'),
-                react: `${reactPath}${debug.isEnabled() ? 'react.development' : 'react.production.min'}`,
-                'react-dom': `${reactDomPath}${debug.isEnabled() ? 'react-dom.development' : 'react-dom.production.min'}`,
-                'react-dom/server': `${reactDomPath}server/${debug.isEnabled() ? 'react-dom-server.browser.development' : 'react-dom-server.browser.production.min'}`,
-                'react/jsx-runtime': `${reactPath}jsx-runtime/${debug.isEnabled()
-                    ? 'react-jsx-runtime.development' : 'react-jsx-runtime.production.min'}`,
-                'react/jsx-dev-runtime': `${reactPath}jsx-dev-runtime/${debug.isEnabled()
-                    ? 'react-jsx-dev-runtime.development' : 'react-jsx-dev-runtime.production.min'}`,
+
+                // React packages
+                react: pathJoin(reactRoot, `react/react${reactPostfix}`),
+                'react/jsx-dev-runtime': pathJoin(reactRoot, `react/jsx-dev-runtime/react-jsx-dev-runtime${reactPostfix}`),
+                'react/jsx-runtime': pathJoin(reactRoot, `react/jsx-runtime${reactPostfix}`),
+                'react-dom': pathJoin(reactRoot, `react-dom/react-dom${reactPostfix}`),
+                'react-dom/server': pathJoin(reactRoot, `react-dom/server/react-dom-server.browser${reactPostfix}`),
+                'react-dom/test-utils': pathJoin(reactRoot, `react-dom/test-utils/react-dom-test-utils${reactPostfix}`),
+                'react-dom/testing': pathJoin(reactRoot, `react-dom/testing/react-dom-testing${reactPostfix}`),
+                'react-test-renderer': pathJoin(reactRoot, `react-test-renderer/react-test-renderer${reactPostfix}`),
 
                 // themes directory
                 themes: pathJoin(resourcesPath, 'themes'),
