@@ -902,7 +902,7 @@ define('RequireJsLoader/config', (() => {
                 // React packages
                 react: pathJoin(reactRoot, `react/react${reactPostfix}`),
                 'react/jsx-dev-runtime': pathJoin(reactRoot, `react/jsx-dev-runtime/react-jsx-dev-runtime${reactPostfix}`),
-                'react/jsx-runtime': pathJoin(reactRoot, `react/jsx-runtime${reactPostfix}`),
+                'react/jsx-runtime': pathJoin(reactRoot, `react/jsx-runtime/react-jsx-runtime${reactPostfix}`),
                 'react-dom': pathJoin(reactRoot, `react-dom/react-dom${reactPostfix}`),
                 'react-dom/server': pathJoin(reactRoot, `react-dom/server/react-dom-server.browser${reactPostfix}`),
                 'react-dom/test-utils': pathJoin(reactRoot, `react-dom/test-utils/react-dom-test-utils${reactPostfix}`),
