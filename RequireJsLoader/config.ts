@@ -652,9 +652,13 @@ define('RequireJsLoader/config', (() => {
             const pairs = [];
 
             if (versions) {
+                // Has module version
                 if (versions.module) {
-                    // Has module version
-                    pairs.push('x_module=' + versions.module);
+                    const moduleHeader = 'x_module=' + versions.module;
+
+                    if (url.indexOf(moduleHeader) === -1) {
+                        pairs.push(moduleHeader);
+                    }
                 }
 
                 if (versions.context) {

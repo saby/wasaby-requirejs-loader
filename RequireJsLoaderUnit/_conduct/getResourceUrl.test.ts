@@ -115,6 +115,19 @@ describe('RequireJsLoader/_conduct/getResourceUrl', () => {
         assert.equal(getResourceUrl('/foo/bar.png'), '/foo/bar.png?x_module=x.y.z');
     });
 
+    it('should not add module version to the absolute URL if it is already there', () => {
+        wsConfig.resourceRoot = '/';
+        contents.buildnumber = 'x.y.z';
+        assert.equal(
+            getResourceUrl('/irregular/path/RequireJsLoader/test.js?x_app=test123&x_module=x.y.z'),
+            '/irregular/path/RequireJsLoader/test.js?x_app=test123&x_module=x.y.z'
+        );
+        assert.equal(
+            getResourceUrl('/irregular/path/RequireJsLoader/test.png?x_app=test123&x_module=x.y.z'),
+            '/irregular/path/RequireJsLoader/test.png?x_app=test123&x_module=x.y.z'
+        );
+    });
+
     it('should add application version to the absolute URL with query string and without moduleName', () => {
         wsConfig.resourceRoot = '/assets/';
         contents.buildnumber = 'x.y.z';
