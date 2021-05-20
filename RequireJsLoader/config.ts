@@ -867,6 +867,15 @@ define('RequireJsLoader/config', (() => {
             wsConfig.RESOURCES_PATH = resourcesPath;
         }
 
+        let themesRoot;
+
+        // in auth
+        if(wsConfig.appRoot && wsConfig.appRoot.indexOf('/auth') === 0) {
+            themesRoot = pathJoin(resourcesPath, wsConfig.appRoot, 'themes');
+        } else {
+            themesRoot = pathJoin(resourcesPath, 'themes');
+        }
+
         // Build config
         const config: RequireConfig = {
             baseUrl,
@@ -906,7 +915,7 @@ define('RequireJsLoader/config', (() => {
                     ? 'react-jsx-dev-runtime.development' : 'react-jsx-dev-runtime.production.min'}`,
 
                 // themes directory
-                themes: pathJoin(resourcesPath, 'themes'),
+                themes: themesRoot,
 
                 // jQuery must die
                 jquery: '/cdn/JQuery/jquery/3.3.1/jquery-min'
