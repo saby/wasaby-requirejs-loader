@@ -10,11 +10,13 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
     const defaultContext = (requirejs as IRequireExt).s.contexts._;
     const originalConfig = {...defaultContext.config};
     const originalNameToUrl = defaultContext.nameToUrl;
+    const defaultPaths = Object.assign({}, defaultContext.config.paths);
 
     let wsConfig: IWsConfig;
 
     beforeEach(() => {
         wsConfig = global.wsConfig = Object.assign({}, originalWsConfig);
+        defaultContext.config.paths = Object.assign({}, defaultPaths);
     });
 
     afterEach(() => {
@@ -63,6 +65,29 @@ describe('RequireJsLoader/_conduct/getModuleUrl', () => {
         assert.equal(
             getModuleUrl('css!themes/default'),
             '/themes/default.css'
+        );
+    });
+
+    it('should return valid URL for css! plugin for auth applications with virtual service', () => {
+        assert.equal(
+            getModuleUrl('css!themes/default'),
+            '/themes/default.css'
+        );
+
+        // create an environment of an auth application with virtual service,
+        // it must have appRoot and custom themes path(which contains in its resources
+        // url of service with themes inside along with root themes), e.g.
+        // e.g.
+        // /auth/resources/themes/ - root themes path
+        // /auth/resources/auth-online/ - themes path for /auth-online/ virtual service
+        // /auth/resources/auth-retail/ - themes path for /auth-retail/ virtual service
+        wsConfig.appRoot = '/auth/';
+        wsConfig.resourceRoot = '/auth/resources/';
+        defaultContext.config.baseUrl = '/auth/';
+        defaultContext.config.paths['themes'] = '/auth/resources/auth/themes';
+        assert.equal(
+            getModuleUrl('css!themes/default'),
+            '/auth/resources/auth/themes/default.css'
         );
     });
 
