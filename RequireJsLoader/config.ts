@@ -870,8 +870,12 @@ define('RequireJsLoader/config', (() => {
         let themesRoot;
 
         // in auth
-        if(wsConfig.appRoot && wsConfig.appRoot.indexOf('/auth') === 0) {
-            themesRoot = pathJoin(resourcesPath, wsConfig.appRoot, 'themes');
+        if(wsConfig.defaultServiceUrl && wsConfig.defaultServiceUrl.indexOf('/auth') === 0) {
+            const serviceName = wsConfig.defaultServiceUrl
+                .split('/')
+                .filter(part => !!part)
+                .shift();
+            themesRoot = pathJoin(resourcesPath, serviceName, 'themes');
         } else {
             themesRoot = pathJoin(resourcesPath, 'themes');
         }
