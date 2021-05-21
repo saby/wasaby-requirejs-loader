@@ -39,6 +39,7 @@ export interface IWsConfig {
     showAlertOnTimeoutInBrowser?: boolean;
     wsRoot?: string;
     versioning?: boolean;
+    defaultServiceUrl?: string;
 }
 
 export interface IContents {
