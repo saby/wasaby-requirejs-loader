@@ -870,9 +870,14 @@ define('RequireJsLoader/config', (() => {
 
         let themesRoot;
 
-        // in auth
-        if(wsConfig.appRoot && wsConfig.appRoot.indexOf('/auth') === 0) {
-            themesRoot = pathJoin(resourcesPath, wsConfig.appRoot, 'themes');
+        // in auth ew can differ virtual services from each other by defaultServiceUrl parameter
+        // its an actual path for service BL and each virtual service has its own one.
+        if(wsConfig.defaultServiceUrl && wsConfig.defaultServiceUrl.indexOf('/auth') === 0) {
+            const serviceName = wsConfig.defaultServiceUrl
+                .split('/')
+                .filter(part => !!part)
+                .shift();
+            themesRoot = pathJoin(resourcesPath, serviceName, 'themes');
         } else {
             themesRoot = pathJoin(resourcesPath, 'themes');
         }
