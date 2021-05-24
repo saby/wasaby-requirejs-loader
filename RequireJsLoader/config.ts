@@ -648,41 +648,42 @@ define('RequireJsLoader/config', (() => {
 
         // Injects version signature to the URL if necessary
         function getWithVersion(url: string): string {
-            const versions = getVersions(url);
-            const pairs = [];
+            if (typeof url === 'string') {
+                const versions = getVersions(url);
+                const pairs = [];
 
-            if (versions) {
-                // Has module version
-                if (versions.module) {
-                    const moduleHeader = 'x_module=' + versions.module;
+                if (versions) {
+                    // Has module version
+                    if (versions.module) {
+                        const moduleHeader = 'x_module=' + versions.module;
 
-                    if (url.indexOf(moduleHeader) === -1) {
-                        pairs.push(moduleHeader);
+                        if (url.indexOf(moduleHeader) === -1) {
+                            pairs.push(moduleHeader);
+                        }
+                    }
+
+                    if (versions.context) {
+                        // Has context version
+                        pairs.push('x_version=' + versions.context);
+                    }
+
+                    // Add parameter to files in resourceRoot to make their URL unique for different applications
+                    if (versions.name && !versions.defined && config.product) {
+                        pairs.push('x_app=' + config.product);
                     }
                 }
 
-                if (versions.context) {
-                    // Has context version
-                    pairs.push('x_version=' + versions.context);
+                const versionSignature = pairs.length ? '?' + pairs.join('&') : '';
+
+                // Inject version signature to the URL if it don't have it yet and can be modified this way
+                if (
+                    versionSignature &&
+                    url.indexOf(versionSignature) === -1 &&
+                    WITH_VERSION_MATCH.test(url)
+                ) {
+                    const parts = url.split('?', 2);
+                    return parts[0] + versionSignature + (parts[1] ? '&' + parts[1] : '');
                 }
-
-                // Add parameter to files in resourceRoot to make their URL unique for different applications
-                if (versions.name && !versions.defined && config.product) {
-                    pairs.push('x_app=' + config.product);
-                }
-            }
-
-            const versionSignature = pairs.length ? '?' + pairs.join('&') : '';
-
-            // Inject version signature to the URL if it don't have it yet and can be modified this way
-            if (
-                versionSignature &&
-                typeof url === 'string' &&
-                url.indexOf(versionSignature) === -1 &&
-                WITH_VERSION_MATCH.test(url)
-            ) {
-                const parts = url.split('?', 2);
-                return parts[0] + versionSignature + (parts[1] ? '&' + parts[1] : '');
             }
 
             return url;
