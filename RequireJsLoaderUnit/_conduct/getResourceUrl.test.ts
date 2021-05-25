@@ -242,6 +242,12 @@ describe('RequireJsLoader/_conduct/getResourceUrl', () => {
         assert.equal(getResourceUrl('/assets/index.js'), '/assets/index.js?x_app=foo');
     });
 
+    it('should add product name to the URL and preserve order in case there is already a x_module in headers', () => {
+        wsConfig.resourceRoot = '/assets/';
+        wsConfig.product = 'foo';
+        assert.equal(getResourceUrl('/assets/index.js?x_module=test'), '/assets/index.js?x_module=test&x_app=foo');
+    });
+
     it('should not add product name to the URL if it is already there', () => {
         wsConfig.resourceRoot = '/assets/';
         wsConfig.product = 'foo';
