@@ -662,14 +662,20 @@ define('RequireJsLoader/config', (() => {
                         }
                     }
 
+                    // Has context version
                     if (versions.context) {
-                        // Has context version
-                        pairs.push('x_version=' + versions.context);
+                        const versionHeader = 'x_version=' + versions.context;
+                        if (url.indexOf(versionHeader) === -1) {
+                            pairs.push(versionHeader);
+                        }
                     }
 
                     // Add parameter to files in resourceRoot to make their URL unique for different applications
                     if (versions.name && !versions.defined && config.product) {
-                        pairs.push('x_app=' + config.product);
+                        const appHeader = 'x_app=' + config.product;
+                        if (url.indexOf(appHeader) === -1) {
+                            pairs.push('x_app=' + config.product);
+                        }
                     }
                 }
 
