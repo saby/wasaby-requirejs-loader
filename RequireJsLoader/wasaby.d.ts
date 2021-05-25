@@ -10,6 +10,7 @@ export interface IPatchedGlobal {
     requirejs: IRequireExt;
     wsConfig: IWsConfig;
     rtpackModuleNames: string;
+    product?: string;
 }
 
 export interface IPatchedWindow extends Window, IPatchedGlobal {
