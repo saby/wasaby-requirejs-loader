@@ -204,6 +204,17 @@ describe('RequireJsLoader/_conduct/getResourceUrl', () => {
         assert.equal(getResourceUrl('/assets/foo/bar.js'), '/assets/foo/bar.js?x_module=a.b.c&x_version=e.f');
     });
 
+    it('should not add context version to the URL if it is already there', () => {
+        wsConfig.resourceRoot = '/assets/';
+        contents.modules = {
+            foo: {
+                buildnumber: 'a.b.c',
+                contextVersion: 'e.f'
+            }
+        };
+        assert.equal(getResourceUrl('/assets/foo/bar.js?x_module=a.b.c&x_version=e.f'), '/assets/foo/bar.js?x_module=a.b.c&x_version=e.f');
+    });
+
     it('should add module version to the URL if resourceRoot is included twice', () => {
         wsConfig.resourceRoot = '/assets/';
         contents.modules = {
@@ -229,6 +240,12 @@ describe('RequireJsLoader/_conduct/getResourceUrl', () => {
         wsConfig.resourceRoot = '/assets/';
         wsConfig.product = 'foo';
         assert.equal(getResourceUrl('/assets/index.js'), '/assets/index.js?x_app=foo');
+    });
+
+    it('should not add product name to the URL if it is already there', () => {
+        wsConfig.resourceRoot = '/assets/';
+        wsConfig.product = 'foo';
+        assert.equal(getResourceUrl('/assets/index.js?x_module=test&x_app=foo'), '/assets/index.js?x_module=test&x_app=foo');
     });
 
     it('shouldn\'t add product name to the module URL', () => {
