@@ -679,16 +679,25 @@ define('RequireJsLoader/config', (() => {
                     }
                 }
 
-                const versionSignature = pairs.length ? '?' + pairs.join('&') : '';
+                const versionSignature = pairs.length ? pairs.join('&') : '';
 
                 // Inject version signature to the URL if it don't have it yet and can be modified this way
                 if (
                     versionSignature &&
-                    url.indexOf(versionSignature) === -1 &&
+                    url.indexOf('?' + versionSignature) === -1 &&
                     WITH_VERSION_MATCH.test(url)
                 ) {
                     const parts = url.split('?', 2);
-                    return parts[0] + versionSignature + (parts[1] ? '&' + parts[1] : '');
+                    let result = parts[0] + '?';
+                    if (parts[1]) {
+                        // x_module should be at the beginning of the headers part of the url
+                        // otherwise push it at the end of headers list
+                        if (parts[1].indexOf('x_module') === -1) {
+                            return result + versionSignature + '&' + parts[1];
+                        }
+                        result += parts[1] + '&';
+                    }
+                    return result + versionSignature;
                 }
             }
 
@@ -1050,6 +1059,10 @@ define('RequireJsLoader/config', (() => {
     }
 
     const localWsConfig = getWsConfig();
+
+    // check also global object for product name, in old WS3 pages in could be inserted
+    // before wsConfig initialization.
+    localWsConfig.product = localWsConfig.product || GLOBAL.product || '';
 
     // Build URL handlers
     const handlers = buildHandlers(localWsConfig);
