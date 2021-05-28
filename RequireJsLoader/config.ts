@@ -939,9 +939,6 @@ define('RequireJsLoader/config', (() => {
                 'react/jsx-runtime': pathJoin(reactRoot, `react/jsx-runtime/react-jsx-runtime${reactPostfix}`),
                 'react-dom': pathJoin(reactRoot, `react-dom/react-dom${reactPostfix}`),
                 'react-dom/server': pathJoin(reactRoot, `react-dom/server/react-dom-server.browser${reactPostfix}`),
-                'react-dom/test-utils': pathJoin(reactRoot, `react-dom/test-utils/react-dom-test-utils${reactPostfix}`),
-                'react-dom/testing': pathJoin(reactRoot, `react-dom/testing/react-dom-testing${reactPostfix}`),
-                'react-test-renderer': pathJoin(reactRoot, `react-test-renderer/react-test-renderer${reactPostfix}`),
 
                 // themes directory
                 themes: themesRoot,
