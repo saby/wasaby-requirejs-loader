@@ -9,7 +9,11 @@ import {handlers} from 'RequireJsLoader/config';
  *    // '//cdn.sbis.ru/RequireJsLoader/conduct.min.js?x_module=21.2220-75'
  *    console.log(getResourceUrl('/RequireJsLoader/conduct.js'));
  * </pre>
- * @param {string} url URL для обработки
+ * Данную функцию следует применять, когда у вас есть URL, но требуется проставить
+ * заголовки версионирования и cdn-домен для правильного кеширования вашего запроса.
+ * @param {string} url URL адрес для обработки.
+ * @param {string} debugCookieValue текущее значение куки debug. Необходимо, чтобы получить url для загрузки в режиме debug.
+ * @param {string} skipDomains параметр, определяющий, проставлять ли cdn-домен в готовый URL или нет.
  * @returns {string} обработанный URL с доменом и версией
  * @author Колбешин Ф.А.
  * @public
