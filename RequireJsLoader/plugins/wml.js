@@ -149,6 +149,12 @@ define('wml', [
                fileName: path
             };
 
+            // transmit useReact option through templates processor for
+            // React-based applications.
+            if (Env.constants.useReact) {
+               conf.useReact = true;
+            }
+
             // для Сервиса Представлений необходимы именно сбилженные шаблоны(для здоровья локализации)
             // Также проверяем наличие process - на Серверном скрипте должны просится шаблоны без .min
             if (isServerSide && Env && Env.constants.buildMode === 'release' && Env.constants.isServerSide) {
