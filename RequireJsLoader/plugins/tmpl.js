@@ -12,8 +12,7 @@ define('tmpl', [
       load: function(name, require, load) {
          var deps = [
             'is!compatibleLayer?Lib/Control/Control.compatible',
-            'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible',
-            'i18n!' + name.split('/')[0]
+            'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible'
          ];
          wml.loadBase(name, require, load, 'tmpl', deps);
       }
