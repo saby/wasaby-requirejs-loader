@@ -17,7 +17,7 @@ define('wml', [
 
    function logError(error) {
       var logger = (Env && Env.IoC.resolve('ILogger')) || console;
-      logger.error('Template compiler: ' + error.message);
+      logger.error(error.message);
    }
 
    function showAlertOnTimeoutInBrowser(err) {
