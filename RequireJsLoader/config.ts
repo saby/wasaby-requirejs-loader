@@ -770,7 +770,7 @@ define('RequireJsLoader/config', (() => {
 
         function isDebugModule(name: string) {
             if (debug.IS_OVERALL) {
-                return;
+                return true;
             }
 
             return debug.MODULES.some(function(moduleName) {
