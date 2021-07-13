@@ -801,7 +801,9 @@ define('RequireJsLoader/config', (() => {
         function moduleHasBundles(moduleName: string) {
             const modulesList = getContents().modules;
 
-            return modulesList.hasOwnProperty(moduleName) && modulesList[moduleName].hasOwnProperty('hasBundles');
+            return modulesList
+                && modulesList.hasOwnProperty(moduleName)
+                && modulesList[moduleName].hasOwnProperty('hasBundles');
         }
 
         function loadPackage(name: string, url: string, require: RequireJsLoader.IRequireExt) {
@@ -847,7 +849,17 @@ define('RequireJsLoader/config', (() => {
         }
 
         function prepareRequiredModules(callback: () => void) {
+            bundlesMap[requiredModule] = {};
+
             if (bundlesMap.hasOwnProperty(requiredModule)) {
+                callback();
+
+                return;
+            }
+
+            if (!moduleHasBundles(requiredModule)) {
+                bundlesMap[requiredModule] = {};
+
                 callback();
 
                 return;
