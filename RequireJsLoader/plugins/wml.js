@@ -4,10 +4,12 @@
 define('wml', [
    'text',
    'RequireJsLoader/extras',
+   'RequireJsLoader/config',
    'optional!Env/Env'
 ], function(
    text,
    extras,
+   requireConfig,
    Env
 ) {
    'use strict';
@@ -150,7 +152,9 @@ define('wml', [
          }
       },
       load: function(name, require, load) {
-         wmlObj.loadBase(name, require, load, 'wml', []);
+          requireConfig.bundleController.load(name, function() {
+              wmlObj.loadBase(name, require, load, 'wml', []);
+          });
       },
       createLostFunction: createLostFunction,
       createLoader: createLoader
