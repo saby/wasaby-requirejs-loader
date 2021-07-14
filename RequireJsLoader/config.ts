@@ -765,8 +765,6 @@ define('RequireJsLoader/config', (() => {
 
     function createBundlesController() {
         const bundlesMap = {};
-        const blackList = ['RequireJsLoader'];
-        const requiredModule = 'Superbundles';
 
         function isDebugModule(name: string) {
             if (debug.IS_OVERALL) {
@@ -790,12 +788,8 @@ define('RequireJsLoader/config', (() => {
             return bundlesMap[moduleName].hasOwnProperty(name);
         }
 
-        function isExclude(moduleName: string, name: string) {
-            return blackList.includes(moduleName)
-                || IS_SERVER_SCRIPT
-                || isDebugModule(name)
-                || isBundlesMap(name)
-                || isPackage(name);
+        function isExclude(name: string) {
+            return IS_SERVER_SCRIPT || isDebugModule(name) || isBundlesMap(name) || isPackage(name);
         }
 
         function moduleHasBundles(moduleName: string) {
@@ -820,12 +814,8 @@ define('RequireJsLoader/config', (() => {
             }
         }
 
-        function processModule(name: string, moduleName: string, load: () => void) {
-            if (bundlesMap[requiredModule].hasOwnProperty(name)) {
-                loadPackage(name, bundlesMap[requiredModule][name], requirejs);
-
-                return;
-            }
+        function processModule(name: string, load: () => void) {
+            const moduleName = name.split('/')[0];
 
             if (bundlesMap.hasOwnProperty(moduleName)) {
                 loadModule(moduleName, name, requirejs, load);
@@ -848,40 +838,14 @@ define('RequireJsLoader/config', (() => {
             load();
         }
 
-        function prepareRequiredModules(callback: () => void) {
-            if (bundlesMap.hasOwnProperty(requiredModule)) {
-                callback();
-
-                return;
-            }
-
-            if (!moduleHasBundles(requiredModule)) {
-                bundlesMap[requiredModule] = {};
-
-                callback();
-
-                return;
-            }
-
-            requirejs([requiredModule + '/packageMap.json'], function(bundles) {
-                bundlesMap[requiredModule] = bundles;
-
-                callback();
-            });
-        }
-
         function load(name: string, load: () => void) {
-            const moduleName = name.split('/')[0];
-
-            if (isExclude(moduleName, name)) {
+            if (isExclude(name)) {
                 load();
 
                 return;
             }
 
-            prepareRequiredModules(function() {
-                processModule(name, moduleName, load);
-            });
+            processModule(name, load);
         }
 
         return {
