@@ -24,6 +24,11 @@ interface IHandlersInternal {
     getWithUserDefined?: (url: string) => string;
 }
 
+interface IBundlesController {
+    load: (name: string, require: RequireJsLoader.IRequireContext, load: () => void) => void;
+    moduleHasBundles: (moduleName: string) => boolean;
+}
+
 /**
  * This code should be executed before any other module load that's why it's a self-invoking function.
  */
@@ -758,6 +763,135 @@ define('RequireJsLoader/config', (() => {
         };
     }
 
+    function createBundlesController() {
+        const bundlesMap = {};
+        const blackList = ['RequireJsLoader'];
+        const requiredModule = 'Superbundles';
+
+        function isDebugModule(name: string) {
+            if (debug.IS_OVERALL) {
+                return true;
+            }
+
+            return debug.MODULES.some(function(moduleName) {
+                return name.indexOf(moduleName) === 0;
+            });
+        }
+
+        function isPackage(name: string) {
+            return name.split('.').pop() === 'package';
+        }
+
+        function isBundlesMap(name) {
+            return name.split('/').pop() === 'packageMap.json';
+        }
+
+        function isBundle(moduleName: string, name: string) {
+            return bundlesMap[moduleName].hasOwnProperty(name);
+        }
+
+        function isExclude(moduleName: string, name: string) {
+            return blackList.includes(moduleName)
+                || IS_SERVER_SCRIPT
+                || isDebugModule(name)
+                || isBundlesMap(name)
+                || isPackage(name);
+        }
+
+        function moduleHasBundles(moduleName: string) {
+            const modulesList = getContents().modules;
+
+            return modulesList
+                && modulesList.hasOwnProperty(moduleName)
+                && modulesList[moduleName].hasOwnProperty('hasBundles');
+        }
+
+        function loadPackage(name: string, url: string, require: RequireJsLoader.IRequireExt) {
+            const contexts = require.s.contexts._;
+
+            contexts.load(name, contexts.nameToUrl(url.replace('.js', '')), true);
+        }
+
+        function loadModule(moduleName: string, name: string, require: RequireJsLoader.IRequireExt, load: () => void) {
+            if (isBundle(moduleName, name)) {
+                loadPackage(name, bundlesMap[moduleName][name], require);
+            } else {
+                load();
+            }
+        }
+
+        function processModule(name: string, moduleName: string, load: () => void) {
+            if (bundlesMap[requiredModule].hasOwnProperty(name)) {
+                loadPackage(name, bundlesMap[requiredModule][name], requirejs);
+
+                return;
+            }
+
+            if (bundlesMap.hasOwnProperty(moduleName)) {
+                loadModule(moduleName, name, requirejs, load);
+
+                return;
+            }
+
+            if (moduleHasBundles(moduleName)) {
+                requirejs([moduleName + '/packageMap.json'], function(bundles) {
+                    bundlesMap[moduleName] = bundles;
+
+                    loadModule(moduleName, name, requirejs, load);
+                });
+
+                return;
+            }
+
+            bundlesMap[moduleName] = {};
+
+            load();
+        }
+
+        function prepareRequiredModules(callback: () => void) {
+            bundlesMap[requiredModule] = {};
+
+            if (bundlesMap.hasOwnProperty(requiredModule)) {
+                callback();
+
+                return;
+            }
+
+            if (!moduleHasBundles(requiredModule)) {
+                bundlesMap[requiredModule] = {};
+
+                callback();
+
+                return;
+            }
+
+            requirejs([requiredModule + '/packageMap.json'], function(bundles) {
+                bundlesMap[requiredModule] = bundles;
+
+                callback();
+            });
+        }
+
+        function load(name: string, load: () => void) {
+            const moduleName = name.split('/')[0];
+
+            if (isExclude(moduleName, name)) {
+                load();
+
+                return;
+            }
+
+            prepareRequiredModules(function() {
+                processModule(name, moduleName, load);
+            });
+        }
+
+        return {
+            load,
+            moduleHasBundles
+        }
+    }
+
     /**
      * Patches nameToUrl method of specified context as decorator with URL post processing
      * @param context RequireJS context to patch
@@ -828,13 +962,25 @@ define('RequireJsLoader/config', (() => {
              * Process the request to load a module.
              * @param id The name of the module.
              * @param url The URL to the module.
+             * @param disableBundlesController Disable bundles controller.
              */
-            context.load = function loadDecorator(id: string, url: string): void {
+            context.load = function loadDecorator(id: string, url: string, disableBundlesController: boolean): void {
                 if (rtPack.isPacked(id)) {
                     return;
                 }
+
                 withHandlers.checkModule(url);
-                return originalLoad(id, url);
+
+
+                if (disableBundlesController) {
+                    originalLoad(id, url);
+
+                    return;
+                }
+
+                bundleController.load(id, function() {
+                    originalLoad(id, url);
+                });
             };
         }
 
@@ -1067,6 +1213,8 @@ define('RequireJsLoader/config', (() => {
     // Build URL handlers
     const handlers = buildHandlers(localWsConfig);
 
+    const bundleController = createBundlesController();
+
     // Prevent from several initializations because RT packing could grab this module
     if (!localWsConfig.IS_INITIALIZED) {
         // Normalize wsConfig
@@ -1095,7 +1243,8 @@ define('RequireJsLoader/config', (() => {
         createConfig,
         applyConfig,
         prepareEnvironment,
-        handlers
+        handlers,
+        bundleController
     });
 })());
 
@@ -1114,6 +1263,8 @@ declare module 'RequireJsLoader/config' {
     export const debug: IDebug;
 
     export const handlers: IHandlersInternal;
+
+    export const bundleController: IBundlesController;
 
     export function patchContext(
         context: RequireJsLoader.IRequireContext,
