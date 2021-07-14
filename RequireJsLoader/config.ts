@@ -849,8 +849,6 @@ define('RequireJsLoader/config', (() => {
         }
 
         function prepareRequiredModules(callback: () => void) {
-            bundlesMap[requiredModule] = {};
-
             if (bundlesMap.hasOwnProperty(requiredModule)) {
                 callback();
 
