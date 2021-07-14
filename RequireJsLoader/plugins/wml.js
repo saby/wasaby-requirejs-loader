@@ -5,25 +5,21 @@ define('wml', [
    'text',
    'RequireJsLoader/extras',
    'RequireJsLoader/config',
-   'optional!UI/BuilderConfig',
    'optional!Env/Env'
 ], function(
    text,
    extras,
    requireConfig,
-   BuilderConfig,
    Env
 ) {
    'use strict';
-
-   var config = BuilderConfig && BuilderConfig.Config;
 
    var global = extras.utils.global;
    var isServerSide = typeof window === 'undefined' && !(process && process.versions);
 
    function logError(error) {
       var logger = (Env && Env.IoC.resolve('ILogger')) || console;
-      logger.error('Template compiler: ' + error.message);
+      logger.error(error.message);
    }
 
    function showAlertOnTimeoutInBrowser(err) {
@@ -66,72 +62,51 @@ define('wml', [
       return wrapper;
    }
 
-   function createTemplate(name, html, tmpl, conf, load, ext) {
-      try {
-         if (!conf.fileName) {
-            conf.fileName = name;
-         }
-         tmpl.getFile(html, conf, function(file) {
-            if (load.fromTextFixed) {
-               load.fromTextFixed(file);
-            } else {
-               load.fromText(file);
-            }
-            // eslint-disable-next-line no-param-reassign
-            load = undefined;
-         }, function(error) {
-            error.message = 'Error while parsing template "' + name + '": ' + error.message;
-            try {
-               var timeoutAlert = showAlertOnTimeoutInBrowser(error);
-               if (!timeoutAlert) {
-                  logError(error);
+   function createLoader(name, require, load, conf, ext, needRequire) {
+       var loader = function(html) {
+           if (html && html.indexOf('define') === 0) {
+               // Got template as compiled AMD module
+               if (load.fromTextFixed) {
+                   load.fromTextFixed(html);
+                   return;
                }
-            } catch (e) {
-               logError(e);
-            }
-            load.error(error);
-         }, ext);
-      } catch (error) {
-         error.message = 'Error while parsing template "' + name + '": ' + error.message;
-         logError(error);
-         load.error(error);
-         // eslint-disable-next-line no-param-reassign
-         load = undefined;
-      }
-   }
-
-   function createLoader(name, require, load, conf, ext, needRequire, callback) {
-      var loader = function(html) {
-         if (html && html.indexOf('define') === 0) {
-            // Got template as compiled AMD module
-            if (load.fromTextFixed) {
-               load.fromTextFixed(html);
-            } else {
                load.fromText(html);
-            }
-         } else {
-            // Got template as string with markup
-            try {
-               needRequire.unshift('UI/Builder');
-               require(needRequire, function(builder) {
-                  try {
-                     // Check for circular dependencies before we go
-                     extras.checkCircularDependencies(ext + '!' + name, builder.Tmpl.getComponents(html, conf));
+               return;
+           }
+           // Got template as string with markup
+           try {
+               needRequire.unshift('Compiler/Compiler');
+               require(needRequire, function(CompilerLib) {
+                   try {
+                       var compiler = new CompilerLib.Compiler();
+                       var artifact = compiler.compileSync(html, conf);
 
-                     callback(name, html, builder.Tmpl, conf, load, ext);
-                  } catch (error) {
-                     error.message = 'Error while parsing template "' + name + '": ' + error.message;
-                     logError(error);
-                     load.error(error);
-                  }
+                       if (!artifact.stable) {
+                           logError(artifact.errors[0]);
+                           load.error(artifact.errors[0]);
+                           return;
+                       }
+
+                       // Check for circular dependencies before we go
+                       extras.checkCircularDependencies(ext + '!' + name, artifact.dependencies);
+
+                       if (load.fromTextFixed) {
+                           load.fromTextFixed(artifact.text);
+                           return;
+                       }
+                       load.fromText(artifact.text);
+                   } catch (error) {
+                       error.message = 'Error while parsing template "' + name + '": ' + error.message;
+                       logError(error);
+                       load.error(error);
+                   }
                });
-            } catch (error) {
+           } catch (error) {
                error.message = 'Error while loading builder for template "' + name + '": ' + error.message;
                logError(error);
                load.error(error);
-            }
-         }
-      };
+           }
+       };
 
       loader.error = function(error) {
          error.message = 'Error while loading template "' + name + '": ' + error.message;
@@ -143,11 +118,10 @@ define('wml', [
    }
 
    var wmlObj = {
-      loadBase: function(name, require, load, ext, deps, callback) {
+      loadBase: function(name, require, load, ext, deps) {
          try {
             var path = name + '.' + ext;
             var conf = {
-               config: config,
                fileName: path
             };
 
@@ -168,7 +142,7 @@ define('wml', [
             text.load(
                path,
                require,
-               createLoader(name, require, load, conf, ext, deps, callback),
+               createLoader(name, require, load, conf, ext, deps),
                conf
             );
          } catch (error) {
@@ -179,7 +153,7 @@ define('wml', [
       },
       load: function(name, require, load) {
           requireConfig.bundleController.load(name, function() {
-              wmlObj.loadBase(name, require, load, 'wml', [], createTemplate);
+              wmlObj.loadBase(name, require, load, 'wml', []);
           });
       },
       createLostFunction: createLostFunction,
