@@ -764,7 +764,7 @@ define('RequireJsLoader/config', (() => {
     }
 
     function logger(moduleName, name, status) {
-        if (moduleName === 'SBIS3.CONTROLS' && !IS_SERVER_SCRIPT) {
+        if (!IS_SERVER_SCRIPT && moduleName === 'SBIS3.CONTROLS') {
             console.log(`${moduleName}: module ${name} ${status}`);
         }
     }
@@ -795,6 +795,11 @@ define('RequireJsLoader/config', (() => {
         }
 
         function isExclude(name: string) {
+            logger(name.split('/')[0], name,
+                `isDebugModule: ${isDebugModule(name)};
+                 isBundlesMap: ${isBundlesMap(name)};
+                  isPackage: ${isPackage(name)}`);
+
             return IS_SERVER_SCRIPT || isDebugModule(name) || isBundlesMap(name) || isPackage(name);
         }
 
