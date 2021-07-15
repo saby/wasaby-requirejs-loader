@@ -152,7 +152,7 @@ define('wml', [
          }
       },
       load: function(name, require, load) {
-          requireConfig.bundleController.load(name, function() {
+          requireConfig.bundleController.load(name, 'wml', function() {
               wmlObj.loadBase(name, require, load, 'wml', []);
           });
       },
