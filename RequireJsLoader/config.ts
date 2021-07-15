@@ -763,6 +763,12 @@ define('RequireJsLoader/config', (() => {
         };
     }
 
+    function logger(moduleName, name, status) {
+        if (moduleName === 'SBIS3.CONTROLS' && !IS_SERVER_SCRIPT) {
+            console.log(`${moduleName}: module ${name} ${status}`);
+        }
+    }
+
     function createBundlesController() {
         const bundlesMap = {};
 
@@ -802,14 +808,22 @@ define('RequireJsLoader/config', (() => {
 
         function loadPackage(name: string, url: string, require: RequireJsLoader.IRequireExt) {
             const contexts = require.s.contexts._;
+            const moduleName = name.split('/')[0];
+            const urlPackage = contexts.nameToUrl(url.replace('.js', ''));
 
-            contexts.load(name, contexts.nameToUrl(url.replace('.js', '')), true);
+            logger(moduleName, name, `package ${bundlesMap[moduleName][name]} will load by url ${urlPackage}`);
+            contexts.load(name, urlPackage, true);
         }
 
         function loadModule(moduleName: string, name: string, require: RequireJsLoader.IRequireExt, load: () => void) {
+            logger(moduleName, name, `should load`);
+
             if (isBundle(moduleName, name)) {
+                logger(moduleName, name, `is package ${bundlesMap[moduleName][name]}`);
+
                 loadPackage(name, bundlesMap[moduleName][name], require);
             } else {
+                logger(moduleName, name, `is not package call default loader`);
                 load();
             }
         }
@@ -817,14 +831,20 @@ define('RequireJsLoader/config', (() => {
         function processModule(name: string, load: () => void) {
             const moduleName = name.split('/')[0];
 
+            logger(moduleName, name, 'is process');
             if (bundlesMap.hasOwnProperty(moduleName)) {
+                logger(moduleName, name, 'packageMap.json.js is ready');
                 loadModule(moduleName, name, requirejs, load);
 
                 return;
             }
 
             if (moduleHasBundles(moduleName)) {
+
+                logger(moduleName, name, 'packageMap.json.js should load');
                 requirejs([moduleName + '/packageMap.json'], function(bundles) {
+
+                    logger(moduleName, name, `packageMap.json.js is load ${JSON.stringify(bundles, null, 3)}`);
                     bundlesMap[moduleName] = bundles;
 
                     loadModule(moduleName, name, requirejs, load);
@@ -833,13 +853,18 @@ define('RequireJsLoader/config', (() => {
                 return;
             }
 
+            logger(moduleName, name, 'is not has bundles call default loader');
             bundlesMap[moduleName] = {};
 
             load();
         }
 
         function load(name: string, load: () => void) {
+            const moduleName = name.split('/')[0];
+            logger(moduleName, name, 'is require');
+
             if (isExclude(name)) {
+                logger(moduleName, name, 'is exclude');
                 load();
 
                 return;
@@ -935,11 +960,14 @@ define('RequireJsLoader/config', (() => {
 
 
                 if (disableBundlesController) {
+                    logger(id.split('/')[0], id, `call context.load() from bundlesController by ${url}`);
+
                     originalLoad(id, url);
 
                     return;
                 }
 
+                logger(id.split('/')[0], id, `call context.load() from require ${url}`);
                 bundleController.load(id, function() {
                     originalLoad(id, url);
                 });
