@@ -765,7 +765,7 @@ define('RequireJsLoader/config', (() => {
 
     function logger(moduleName, name, status) {
         if (!IS_SERVER_SCRIPT && moduleName === 'SBIS3.CONTROLS') {
-            console.log(`${moduleName}: module ${name} ${status}`);
+            console.log(`${moduleName}: module "${name}" ${status}`);
         }
     }
 
