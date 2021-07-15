@@ -765,6 +765,7 @@ define('RequireJsLoader/config', (() => {
 
     function createBundlesController() {
         const bundlesMap = {};
+        const extPackage = /.js|.css$/;
 
         function isDebugModule(name: string) {
             if (debug.IS_OVERALL) {
@@ -803,22 +804,30 @@ define('RequireJsLoader/config', (() => {
         function loadPackage(name: string, url: string, require: RequireJsLoader.IRequireExt) {
             const contexts = require.s.contexts._;
 
-            contexts.load(name, contexts.nameToUrl(url.replace('.js', '')), true);
+            contexts.load(name, contexts.nameToUrl(url.replace(extPackage, '')), true);
         }
 
-        function loadModule(moduleName: string, name: string, require: RequireJsLoader.IRequireExt, load: () => void) {
-            if (isBundle(moduleName, name)) {
-                loadPackage(name, bundlesMap[moduleName][name], require);
+        function loadModule(
+            moduleName: string,
+            name: string,
+            plugin: string,
+            require: RequireJsLoader.IRequireExt,
+            load: () => void
+        ) {
+            const requireName = `${plugin ? `${plugin}!` : ''}${name}`;
+
+            if (isBundle(moduleName, requireName)) {
+                loadPackage(name, bundlesMap[moduleName][requireName], require);
             } else {
                 load();
             }
         }
 
-        function processModule(name: string, load: () => void) {
+        function processModule(name: string, plugin: string, load: () => void) {
             const moduleName = name.split('/')[0];
 
             if (bundlesMap.hasOwnProperty(moduleName)) {
-                loadModule(moduleName, name, requirejs, load);
+                loadModule(moduleName, name, plugin, requirejs, load);
 
                 return;
             }
@@ -827,7 +836,7 @@ define('RequireJsLoader/config', (() => {
                 requirejs([moduleName + '/packageMap.json'], function(bundles) {
                     bundlesMap[moduleName] = bundles;
 
-                    loadModule(moduleName, name, requirejs, load);
+                    loadModule(moduleName, name, plugin, requirejs, load);
                 });
 
                 return;
@@ -838,14 +847,14 @@ define('RequireJsLoader/config', (() => {
             load();
         }
 
-        function load(name: string, load: () => void) {
+        function load(name: string, plugin: string, load: () => void) {
             if (isExclude(name)) {
                 load();
 
                 return;
             }
 
-            processModule(name, load);
+            processModule(name, plugin, load);
         }
 
         return {
@@ -940,7 +949,7 @@ define('RequireJsLoader/config', (() => {
                     return;
                 }
 
-                bundleController.load(id, function() {
+                bundleController.load(id, '', function() {
                     originalLoad(id, url);
                 });
             };
