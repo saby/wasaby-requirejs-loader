@@ -21,9 +21,9 @@ define('tmpl', [
    return {
       load: function(name, require, load) {
 
-          logger(name.split('/')[0], name, `call load in plugin tmpl`);
+          logger(name.split('/')[0], name, 'call load in plugin tmpl');
           requireConfig.bundleController.load(name, function() {
-              logger(name.split('/')[0], name, `is not has plugin load to tmpl plugin`);
+              logger(name.split('/')[0], name, 'is not has plugin load to tmpl plugin');
 
               var deps = [
                   'is!compatibleLayer?Lib/Control/Control.compatible',
