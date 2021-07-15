@@ -88,7 +88,7 @@ define('css', [
    var _ignoredModules = global._ignoredModules;
    return {
       load: function(name, require, load, conf) {
-          requireConfig.bundleController.load(name, function() {
+          requireConfig.bundleController.load(name, 'css', function() {
               loadStyle(name, require, load, conf);
           });
       }

@@ -12,7 +12,7 @@ define('tmpl', [
 
    return {
       load: function(name, require, load) {
-          requireConfig.bundleController.load(name, function() {
+          requireConfig.bundleController.load(name, 'tmpl', function() {
               var deps = [
                   'is!compatibleLayer?Lib/Control/Control.compatible',
                   'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible'
