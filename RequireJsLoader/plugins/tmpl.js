@@ -14,7 +14,7 @@ define('tmpl', [
 
     function logger(moduleName, name, status) {
         if (moduleName === 'SBIS3.CONTROLS' && !IS_SERVER_SCRIPT) {
-            console.log(`${moduleName}: module ${name} ${status}`);
+            console.log(moduleName + ': module "' + name + '" ' + status);
         }
     }
 
