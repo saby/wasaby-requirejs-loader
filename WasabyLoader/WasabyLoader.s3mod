@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ui_module for_cdn="0" id="37e402f1-2fb0-4b73-81c5-113cf94dbf1c" name="WasabyLoader" required="1" package="Presentation" responsible="Колбешин Ф.А." version="1.00">
+
+  <description/>
+
+  <depends>
+      <module id="7e8aabad-d60f-4c48-aa74-f29d78fd8be2" name="RequireJsLoader"/>
+  </depends>
+
+  <load_after/>
+
+  <parameters/>
+
+  <resources/>
+
+  <preload/>
+
+</ui_module>
