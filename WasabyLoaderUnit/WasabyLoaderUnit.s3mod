@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ui_module id="e7ee4ba7-5b66-473c-9a12-a11f08f59f01" name="WasabyLoaderUnit" package="Wasaby" responsible="Колбешин Ф.А." required="1" version="1.00">
+
+  <description>Unit tests for WasabyLoaderUnit</description>
+
+  <depends>
+      <module id="37e402f1-2fb0-4b73-81c5-113cf94dbf1c" name="WasabyLoader"/>
+  </depends>
+
+  <test framework="Mocha" environment="NodeJS" />
+
+  <load_after/>
+
+  <parameters/>
+
+  <resources/>
+
+  <preload/>
+
+</ui_module>
