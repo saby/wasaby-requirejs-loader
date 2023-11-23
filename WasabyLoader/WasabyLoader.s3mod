@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ui_module for_cdn="0" id="37e402f1-2fb0-4b73-81c5-113cf94dbf1c" name="WasabyLoader" kaizen_zone="5017257c-1747-4764-aaf4-b5a7bfa8014e" required="1" package="Wasaby" responsible="Колбешин Ф.А." responsible_uuid="a433a212-4d92-4900-bc18-dca37052b171" version="1.00">
+
+  <description/>
+
+  <depends>
+      <module id="7e8aabad-d60f-4c48-aa74-f29d78fd8be2" name="RequireJsLoader"/>
+  </depends>
+
+  <load_after/>
+
+  <parameters/>
+
+  <resources/>
+
+  <preload/>
+
+  <typescript>
+    <arg key="typecheck" value="0"/>
+  </typescript>
+</ui_module>
