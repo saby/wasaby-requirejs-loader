@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ui_module id="8cf67cca-ae29-4aaa-b97b-3d54348cd542" name="RequireJsLoaderUnit" package="Wasaby" responsible="Колбешин Ф.А." required="1" version="1.00">
+
+  <description>Unit tests for RequireJsLoaderUnit</description>
+
+  <depends>
+      <module id="7e8aabad-d60f-4c48-aa74-f29d78fd8be2" name="RequireJsLoader"/>
+  </depends>
+
+  <test framework="Mocha" environment="NodeJS" />
+
+  <load_after/>
+
+  <parameters/>
+
+  <resources/>
+
+  <preload/>
+
+  <typescript>
+    <arg key="typecheck" value="0"/>
+  </typescript>
+</ui_module>
