@@ -1,0 +1,46 @@
+{
+   "name": "wasaby-requirejs-loader",
+   "version": "24.1200.0",
+   "description": "Колбешин Ф.А.",
+   "scripts": {
+      "prepare": "npm run update-cli-store && npm run initTypescript && wasaby-cli initGitHooks",
+      "update-cli-store": "wasaby-cli loadProject",
+      "initTypescript": "wasaby-cli initTSEnv",
+      "build": "wasaby-cli buildProject --release",
+      "build:watch": "wasaby-cli buildProject --watcher",
+      "build:require-min": "npm install uglify-js@3.4.10 && node node_modules/uglify-js/bin/uglifyjs --compress --mangle -o RequireJsLoader/require.min.js -- RequireJsLoader/require.js",
+      "start": "wasaby-cli runUnitTests --server",
+      "test": "wasaby-cli runUnitTests --NodeJS --report=console",
+      "test:coverage": "wasaby-cli runUnitTests --NodeJS --coverage",
+      "prettier": "prettier --write ."
+   },
+   "wasaby-cli": {
+      "umd": true,
+      "copy": true,
+      "preCommitHooks": [
+         "Prettier",
+         "ESLint",
+         "Stylelint"
+      ]
+   },
+   "repository": {
+      "type": "git",
+      "url": "git+https://git.sbis.ru/saby/wasaby-requirejs-loader.git"
+   },
+   "author": "",
+   "license": "MIT",
+   "bugs": {
+      "url": "https://git.sbis.ru/saby/wasaby-requirejs-loader/issues"
+   },
+   "homepage": "https://git.sbis.ru/saby/wasaby-requirejs-loader#readme",
+   "files": [
+      "RequireJsLoader/*",
+      "WasabyLoader/*"
+   ],
+   "devDependencies": {
+      "wasaby-cli": "git+https://git.sbis.ru/saby/wasaby-cli.git#rc-24.1200"
+   },
+   "dependencies": {
+      "uglify-js": "^3.4.10"
+   }
+}
