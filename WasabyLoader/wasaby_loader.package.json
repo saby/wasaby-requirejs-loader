@@ -1,0 +1,6 @@
+{
+  "include": [
+    "WasabyLoader/*"
+  ],
+  "output": "online-superbundle.package.js"
+}
