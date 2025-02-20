@@ -1,0 +1,25 @@
+[{
+  "include": [
+    "browser",
+    "cdn",
+    "css",
+    "html",
+    "is",
+    "is-api",
+    "js",
+    "json",
+    "native-css",
+    "preload",
+    "remote",
+    "text",
+    "tmpl",
+    "wml",
+
+    "RequireJsLoader/autoload",
+    "RequireJsLoader/loadFont",
+    "RequireJsLoader/conduct",
+    "RequireJsLoader/extras",
+    "RequireJsLoader/plugins/*"
+  ],
+  "output": "online-superbundle.package.js"
+}]
