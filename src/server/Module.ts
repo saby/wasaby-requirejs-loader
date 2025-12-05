@@ -1,0 +1,255 @@
+import { ITensorFunction, requireCallback } from 'RequireJsLoader/requireTypes';
+import type { availableLoaders, IModuleInfo, IRequire } from '../main/BaseRequire';
+import BaseModule, { TLoader, NO_EXPORTS } from '../main/Module';
+import RequireError from '../main/RequireError';
+import logger from './logger';
+
+import wml from './loaders/wml';
+import js from './loaders/js';
+import tmpl from './loaders/tmpl';
+import css from './loaders/css';
+import i18n from './loaders/i18n';
+import json from './loaders/json';
+import text from './loaders/text';
+import html from './loaders/html';
+
+interface ISerializableFunction extends Function {
+    toJSON: Function;
+}
+
+const MAX_SERIALIZATION_LOOKUP_DEPTH = 4;
+const loaders: Record<availableLoaders, TLoader<void, Module>> = {
+    wml,
+    js,
+    tmpl,
+    css,
+    i18n,
+    json,
+    text,
+    html,
+};
+
+function isClass(objt: object): objt is Record<string, object> {
+    return !!objt.constructor;
+}
+
+export default class Module extends BaseModule {
+    protected loader: IRequire<Module>;
+
+    constructor(name: string, loader: IRequire<Module>) {
+        super(name);
+
+        this.loader = loader;
+    }
+
+    load() {
+        try {
+            const moduleInfo =
+                this.loader.modulesInfo.get(this.rootDir) ||
+                (this.loader.modulesInfo.get('$default$') as IModuleInfo);
+
+            loaders[this.extension](this, moduleInfo, this.loader);
+        } catch (err) {
+            if (RequireError.isReqiureError(err)) {
+                throw err;
+            }
+
+            throw new RequireError(
+                `Failed to load module "${this.name}" file by url "${this.url}".`,
+                {
+                    cause: err as Error,
+                    type: 'load',
+                }
+            );
+        }
+    }
+
+    getExports() {
+        if (this.exports !== NO_EXPORTS) {
+            return this.exports;
+        }
+
+        if ((this.deps as string[]).length === 0) {
+            this.exports = (this.callback as requireCallback)();
+        } else {
+            // Необходма для того чтобы require смог разрещить относительные пути.
+            this.loader.context = this;
+
+            this.loader.require(
+                this.deps as string[],
+                (...depsExport) => {
+                    // В этой точке конетекст может быть перебить зависимостями, поэтому выставялем его снова.
+                    // Внутри колбека могут вызывать синхроный require с относительным именем.
+                    this.loader.context = this;
+
+                    this.exports = (this.callback as requireCallback)(depsExport);
+
+                    this.loader.context = null;
+
+                    if (!this.exports) {
+                        this.exports = this.extractExports(depsExport);
+                    }
+
+                    if (this.extension === 'js' && this.exports) {
+                        BaseModule.injectModuleName(this.exports, this.name);
+                        Module.injectToJson(this.exports, this.name);
+                    }
+                },
+                (err) => {
+                    if (RequireError.isReqiureError(err)) {
+                        throw err;
+                    }
+
+                    throw new RequireError(
+                        `Failed to execute  callback function for module "${this.name}" loaded by url "${this.url}".`,
+                        {
+                            cause: err as Error,
+                            type: 'Executing callback',
+                        }
+                    );
+                }
+            );
+
+            return this.exports;
+        }
+    }
+
+    static makeFunctionSerializable(func: ISerializableFunction, resolver: Function): void {
+        func.toJSON = () => {
+            const [moduleName, path]: string[] = resolver(func);
+            return {
+                $serialized$: 'func',
+                module: moduleName,
+                path: path || undefined,
+            };
+        };
+    }
+
+    static makeArraySerializable(
+        arr: object[],
+        moduleName: string,
+        initialPrefix?: string,
+        depth?: number
+    ): void {
+        const arrLength = arr.length;
+        const prefix = initialPrefix ? `${initialPrefix}.` : '';
+
+        for (let i = 0; i < arrLength; i++) {
+            Module.makeSerializable(depth || 0, arr[i], moduleName, prefix + i);
+        }
+    }
+
+    static makeObjectSerializable(
+        obj: Record<string, object>,
+        resolver: Function,
+        depth?: number
+    ): void {
+        const [moduleName, resolvedPrefix]: string[] = resolver(obj);
+        const prefix = resolvedPrefix ? `${resolvedPrefix}.` : '';
+
+        Object.keys(obj).forEach((prop) => {
+            // Go through data descriptors only
+            const descriptor = Object.getOwnPropertyDescriptor(obj, prop) || {};
+
+            if (!('value' in descriptor)) {
+                return;
+            }
+
+            try {
+                Module.makeSerializable(depth || 0, obj[prop], moduleName, prefix + prop);
+            } catch (err) {
+                logger.error(
+                    `resourceLoadHandler: something went wrong during '${
+                        prefix + prop
+                    }' property serialization in module '${moduleName}'`,
+                    (err as Error).message,
+                    err as string
+                );
+            }
+        });
+    }
+
+    /*
+     * После require js модуля на все функции навешивается toJSON
+     * функции ищутся рекурсивно вглубь объектов.
+     * Модуль А: { f1 : function(){} }
+     * Модуль В: { K :  {
+     *                          someFunction: A.f1
+     *                        }
+     *                }
+     * При require модуля B с зависимостью модулем А сначала toJSON будет вызван для
+     * функции f1 от объекта А (при загрузке зависимостей)
+     * А при загрузке самого модуля В, toJSON для f1 будет вызван от объекта B.K
+     * соответственно правильная ссылка будет потеряна.
+     */
+    static makeSerializable(
+        initialDepth: number,
+        obj: object | Function,
+        moduleName: string,
+        prefix?: string
+    ): void {
+        if (initialDepth === 0) {
+            return;
+        }
+
+        const depth = initialDepth - 1;
+
+        switch (typeof obj) {
+            case 'function': {
+                const getNameAndPath = (func: ITensorFunction) => {
+                    let name = moduleName;
+                    let path = prefix;
+                    let moduleNameFromProto;
+
+                    if (func.prototype) {
+                        moduleNameFromProto =
+                            func.prototype.hasOwnProperty('_moduleName') &&
+                            func.prototype._moduleName;
+                    } else {
+                        moduleNameFromProto = func._moduleName;
+                    }
+
+                    if (moduleNameFromProto) {
+                        moduleNameFromProto = String(moduleNameFromProto);
+
+                        if (moduleNameFromProto.indexOf(':') > -1) {
+                            [name, path] = moduleNameFromProto.split(':', 2);
+                        }
+                    }
+
+                    return [name, path];
+                };
+
+                // Firstly go through the original function/class properties
+                if (isClass(obj)) {
+                    Module.makeObjectSerializable(obj, getNameAndPath, depth);
+                }
+
+                // Secondly add a new property and this way prevent to go through it
+                if (!obj.hasOwnProperty('toJSON')) {
+                    Module.makeFunctionSerializable(obj as ISerializableFunction, getNameAndPath);
+                }
+
+                break;
+            }
+            case 'object': {
+                const isObject = (objt: object): objt is Record<string, object> => {
+                    return Object.getPrototypeOf(objt) === Object.prototype;
+                };
+
+                if (Array.isArray(obj)) {
+                    Module.makeArraySerializable(obj, moduleName, prefix, depth);
+                } else if (isObject(obj)) {
+                    // is plain Object
+                    Module.makeObjectSerializable(obj, () => [moduleName, prefix], depth);
+                }
+
+                break;
+            }
+        }
+    }
+
+    static injectToJson(exports: unknown, moduleName: string): void {
+        Module.makeSerializable(MAX_SERIALIZATION_LOOKUP_DEPTH, exports as object, moduleName);
+    }
+}
