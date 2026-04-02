@@ -1,0 +1,1513 @@
+//# allFunctionsCalledOnLoad
+(function () {
+    'use strict';
+
+    /**
+     * Функционал для работы ошибок от Require-а
+     * @author Кудрявцев И.С.
+     */
+    /**
+     * Класс для ошибки от Require
+     */
+    class RequireError extends Error {
+        constructor(message, options) {
+            // TODO Пришлось оставить тип описан для ES5, убрать как поднимем версию для TS.
+            // @ts-ignore
+            super(message, options);
+            this.requireError = true;
+            // TODO Пришлось оставить тип описан для ES5, убрать как поднимем версию для TS.
+            // @ts-ignore
+            if (options === null || options === void 0 ? void 0 : options.cause) {
+                const cause = options.cause;
+                this.message += `\nCaused by: ${cause.message} \nStack: ${cause.stack}`;
+            }
+            this.type = (options === null || options === void 0 ? void 0 : options.type) || '';
+        }
+        /**
+         * Проверка что это ошибка от Require
+         * @param err Проверяемая ошибка
+         */
+        static isReqiureError(err) {
+            // Не убирать явную проверку на true, отвалятся юниты из-за .ccs.json,
+            // они там прокси возвращают, который просто имя запращиваемого поля вернёт.
+            return (err === null || err === void 0 ? void 0 : err.requireError) === true;
+        }
+    }
+
+    const IS_BROWSER = typeof window !== 'undefined';
+    const ALIAS_MAP = new Map(Object.entries({
+        WS: ['WS.Core', 'WS.Core'],
+        Core: ['WS.Core', 'WS.Core/core'],
+        Lib: ['WS.Core', 'WS.Core/lib'],
+        Ext: ['WS.Core', 'WS.Core/lib/Ext'],
+        Helpers: ['WS.Core', 'WS.Core/core/helpers'],
+        Transport: ['WS.Core', 'WS.Core/transport'],
+        Deprecated: ['WS.Deprecated', 'WS.Deprecated'],
+    }));
+    /**
+     * Базовый класс require-а
+     */
+    class BaseRequire {
+        constructor(config) {
+            this.buildMode = config.buildMode || 'debug';
+            this.loadingTimeout = config.loadingTimeout;
+            this.modulesResolution = config.modulesResolution || new Map();
+            this.modulesInfo = new Map();
+            this.modules = new Map();
+            this.loadableModules = new Map();
+            this.cache = new Map();
+            this.parseNameCache = new Map();
+            this.listenerOnLoad = new Set();
+            this.debugModules = new Set();
+            this.compatibleMode = false;
+            this.context = null;
+            this.enablePagexPackage = false;
+        }
+        /**
+         * Добавялет обрабтчик на события загрузки модуля
+         * @param callback Функция обработчик
+         */
+        onLoadModule(callback) {
+            this.listenerOnLoad.add(callback);
+        }
+        /**
+         * Удаляет обрабтчик на события загрузки модуля
+         * @param callback Функция обработчик
+         */
+        offLoadModule(callback) {
+            this.listenerOnLoad.delete(callback);
+        }
+        /**
+         * Возвращает модуль из хранилища, если его ещё нет, создаёт.
+         * @param name Имя модуля
+         * @param context Require в контексте которого получаем модуль.
+         */
+        getModule(name, context) {
+            const module = this.modules.get(name);
+            if (module) {
+                return module;
+            }
+            const newModule = context.createModule(name);
+            this.modules.set(name, newModule);
+            return newModule;
+        }
+        defined(name) {
+            if (name && typeof name === 'string') {
+                const fileInfo = this.parseName(name);
+                const [type] = this.extractCache(name, fileInfo);
+                return type === 'hit';
+            }
+            return false;
+        }
+        loaded(name) {
+            if (name && typeof name === 'string') {
+                const fileInfo = this.parseName(name);
+                const module = this.modules.get(fileInfo.defineName);
+                if (module) {
+                    return module.defined;
+                }
+            }
+            return false;
+        }
+        /**
+         * Приводит имя к нормальному виду.
+         * @param name Имя модуля
+         */
+        normalizeName(name) {
+            if (name[0] === '.' && this.context) {
+                return this.context.getRelName(name);
+            }
+            return name;
+        }
+        /**
+         * Функция парсит имя модуля, преобразуя его в обект с информацией о модуле.
+         * @param moduleName Имя модуля
+         */
+        parseName(moduleName) {
+            const normalizeName = this.normalizeName(moduleName);
+            const cache = this.parseNameCache.get(normalizeName);
+            if (cache) {
+                return cache;
+            }
+            const result = {
+                defineName: '',
+                filePath: '',
+                extension: 'js',
+                rootDir: '',
+                needLoad: true,
+                ignoreError: false,
+                chain: [],
+            };
+            let isRootDir = true;
+            let isChain = false;
+            let hasOptional = false;
+            let hasIs = false;
+            let part = '';
+            for (const symbol of normalizeName) {
+                if (symbol === '/' && isRootDir) {
+                    // Откидываем лидирующий слеш для пути, но нужно оставить для имени define-а.
+                    if (part === '') {
+                        result.defineName = `${result.defineName}${symbol}`;
+                        continue;
+                    }
+                    const normalizeRoot = ALIAS_MAP.get(part);
+                    result.defineName = `${result.defineName}${part}`;
+                    if (normalizeRoot) {
+                        result.rootDir = normalizeRoot[0];
+                        result.filePath = normalizeRoot[1];
+                    }
+                    else {
+                        result.rootDir = part;
+                        result.filePath = part;
+                    }
+                    if (hasOptional) {
+                        result.needLoad = this.modulesInfo.has(result.rootDir);
+                    }
+                    // Убираем root из обрабатываемой строки и добаялем слеш.
+                    part = symbol;
+                    isRootDir = false;
+                    continue;
+                }
+                if (symbol === '!') {
+                    if (part === 'optional') {
+                        hasOptional = true;
+                        result.ignoreError = true;
+                    }
+                    else if (part === 'is') {
+                        hasIs = true;
+                    }
+                    else if (part === 'browser') {
+                        result.needLoad = IS_BROWSER;
+                    }
+                    else {
+                        result.extension = part;
+                        part = `${part}${symbol}`;
+                        result.defineName = `${result.defineName}${part}`;
+                    }
+                    part = '';
+                    continue;
+                }
+                if (symbol === '?') {
+                    if (hasIs) {
+                        if (part === 'compatibleLayer') {
+                            result.needLoad = this.compatibleMode;
+                        }
+                        if (part === 'browser') {
+                            result.needLoad = IS_BROWSER;
+                        }
+                    }
+                    part = '';
+                    continue;
+                }
+                if (symbol === ':') {
+                    result.filePath = `${result.filePath}${part}`;
+                    result.defineName = `${result.defineName}${part}`;
+                    part = '';
+                    isChain = true;
+                    continue;
+                }
+                if (symbol === '.' && isChain) {
+                    result.chain.push(part);
+                    part = '';
+                    continue;
+                }
+                part = `${part}${symbol}`;
+            }
+            if (isChain) {
+                result.chain.push(part);
+            }
+            else {
+                result.filePath = `${result.filePath}${part}`;
+                result.defineName = `${result.defineName}${part}`;
+            }
+            if (isRootDir) {
+                result.rootDir = result.filePath;
+            }
+            const resolvedName = this.modulesResolution.get(result.defineName);
+            if (resolvedName) {
+                result.rootDir = resolvedName[0];
+                result.filePath = resolvedName[1];
+            }
+            this.parseNameCache.set(normalizeName, result);
+            return result;
+        }
+        /**
+         * Резоливит промисс на require-инг модулей. Если есть ошибки, то режектит только первую.
+         * @param results Список модулей.
+         * @param errors Список ошибок.
+         */
+        firePromise(results, errors) {
+            if (errors.length === 0) {
+                return Promise.resolve(results);
+            }
+            return Promise.reject(errors[0]);
+        }
+        /**
+         * Вызывает обрбаотчики require-инг модулей.
+         * @param results Список модулей.
+         * @param errors Список ошибок.
+         * @param successCallback Обработчик на успех.
+         * @param errorCallback Обрабочик на ошибку.
+         */
+        fireCallbacks(results, errors, successCallback, errorCallback) {
+            if (errors.length === 0) {
+                successCallback(...results);
+                return;
+            }
+            if (errorCallback) {
+                for (const err of errors) {
+                    errorCallback(err);
+                }
+            }
+        }
+        /**
+         * Извлекает модуль из кеша, либо отдаёт сигнал что его нет в кеше.
+         * @param fullName Полное имя, как его зарейкварили
+         * @param defineName Имя с котормы его должны дефайнить
+         * @param needLoad Необходимо ли грузить модуль, если его нет.
+         * @param chain Цепочка для получения результата.
+         * @param ignoreError Игнорировать ли ошибку.
+         */
+        extractCache(fullName, { defineName, needLoad, chain, ignoreError }) {
+            // Обработка для служебного зависимости exports, отдаём объект,
+            // который будет наполнен експортируемыми сущностями.
+            if (fullName === 'exports') {
+                return ['hit', {}];
+            }
+            // TODO Сомвестимсоть со старым.
+            //  В архи старых модулях юзат зависимость "module", которая возвращает в объект с полем export,
+            //  в него и склыдвают, что должен возрвращать модуль.
+            //  Поэтому придёться обработь сия кейс и забирать от туда результат.
+            //  Чтобы откатазать от этого кейса надо все переписать на простой return
+            if (fullName === 'module') {
+                return [
+                    'hit',
+                    {
+                        exports: {},
+                    },
+                ];
+            }
+            // Проверим сначал кеш по имени, которое передали в require
+            if (this.cache.has(fullName)) {
+                return this.extractResult(this.cache.get(fullName));
+            }
+            // Если запросили модуль с условиям, например, только для браузера и оно не прошло,
+            // то можно отдать сразу null и не пытаться ничего грузить.
+            if (!needLoad) {
+                return ['hit', null];
+            }
+            // Проверяем нет ли в кеши модуля по имене, которое указано у него в define.
+            if (this.cache.has(defineName)) {
+                return this.extractResult(this.cache.get(defineName), ignoreError, chain);
+            }
+            return ['miss', undefined];
+        }
+        /**
+         * Извлекает нужные данные.
+         * @param module Имя модуля
+         * @param ignoreError Необходимо ли грузить модуль, если его нет.
+         * @param chain Цепочка для получения результата.
+         */
+        extractResult(module, ignoreError, chain) {
+            if (RequireError.isReqiureError(module)) {
+                if (ignoreError && module.type === 'load') {
+                    return ['hit', null];
+                }
+                return ['error', module];
+            }
+            if (chain && chain.length !== 0) {
+                let result = module;
+                for (const nameProp of chain) {
+                    const typeResult = typeof result;
+                    if (typeResult && (typeResult === 'object' || typeResult === 'function')) {
+                        result = result[nameProp];
+                        continue;
+                    }
+                    return [
+                        'error',
+                        new RequireError(`Chain access failed at '${nameProp}' for module ${module}.`, {
+                            type: 'ChainError',
+                        }),
+                    ];
+                }
+                return ['hit', result];
+            }
+            return ['hit', module];
+        }
+    }
+
+    const EMPTY_FUNC = function () { };
+    const NO_EXPORTS = Symbol('no-exports');
+    /**
+     * Базовый класс модуля
+     */
+    let Module$1 = class Module {
+        constructor(name) {
+            this.name = name;
+            this.defined = false;
+            this.url = '';
+            this.rootDir = '';
+            this.extension = 'js';
+            this.path = '';
+            this.deps = [];
+            this.callback = EMPTY_FUNC;
+            this.exports = NO_EXPORTS;
+            this.onDefine = null;
+            this.loading = null;
+        }
+        define(deps, callback) {
+            var _a;
+            if (this.defined) {
+                return;
+            }
+            this.defined = true;
+            if (typeof deps === 'function') {
+                this.callback = deps;
+            }
+            else {
+                this.callback = callback || EMPTY_FUNC;
+                this.deps = deps;
+            }
+            (_a = this.onDefine) === null || _a === void 0 ? void 0 : _a.call(this);
+            this.loading = null;
+            this.onDefine = null;
+        }
+        /**
+         * Извлекает экспортируюмую сущность из модуля.
+         * @param depsValue Экспорты зависимостей
+         */
+        extractExports(depsValue) {
+            const module = depsValue[this.deps.indexOf('module')];
+            const exports = depsValue[this.deps.indexOf('exports')];
+            if (exports) {
+                if (module && Object.keys(exports).length === 0) {
+                    // @ts-ignore
+                    return module.exports;
+                }
+                return exports;
+            }
+            // TODO Сомвестимсоть со старым.
+            //  В архи старых модулях юзат зависимость "module", которая возвращает в объект с полем export,
+            //  в него и склыдвают, что должен возрвращать модуль.
+            //  Поэтому придёться обработь сия кейс и забирать от туда результат.
+            //  Чтобы откатазать от этого кейса надо все переписать на просто return
+            if (module) {
+                // @ts-ignore
+                return module.exports;
+            }
+        }
+        /**
+         * Резолвит относительную зависимость до полноценного имени модуля.
+         * @param relName
+         */
+        getRelName(relName) {
+            const result = this.name.split('/');
+            const splitRelName = relName.split('/');
+            result.pop();
+            for (const dirName of splitRelName) {
+                if (dirName === '.') {
+                    continue;
+                }
+                if (dirName === '..') {
+                    result.pop();
+                    continue;
+                }
+                result.push(dirName);
+            }
+            return result.join('/');
+        }
+        /**
+         * Проверяет, что экспортируюмая сущность это объект.
+         * @param exports
+         */
+        isObject(exports) {
+            return Object.getPrototypeOf(exports) === Object.prototype;
+        }
+        /**
+         * Внедряет имя модуля в поле _moduleName в экспортируюмую сущность.
+         * @param obj Экспортируемая сущность
+         * @param moduleName Имя модуля.
+         */
+        injectModuleName(obj, moduleName) {
+            const exports = obj.__esModule && obj.default ? obj.default : obj;
+            if (typeof exports === 'function') {
+                // Give _moduleName to each class and BTW mark private classes
+                const proto = exports.prototype;
+                const isPrivateModule = moduleName.indexOf('/_') !== -1;
+                if (proto) {
+                    if (!proto.hasOwnProperty('_moduleName')) {
+                        proto._moduleName = moduleName;
+                        proto._isPrivateModule = isPrivateModule || undefined;
+                    }
+                    // arrow function has no prototype
+                }
+                else {
+                    if (!exports.hasOwnProperty('_moduleName')) {
+                        exports._moduleName = moduleName;
+                        exports._isPrivateModule = isPrivateModule || undefined;
+                    }
+                }
+            }
+            else if (
+            // Give _moduleName to each private or unnamed class in public library
+            typeof exports === 'object' &&
+                this.isObject(exports) &&
+                moduleName.indexOf('/_') === -1) {
+                Object.keys(exports).forEach((name) => {
+                    const module = exports[name];
+                    if (typeof module === 'function') {
+                        const proto = module.prototype;
+                        if (proto) {
+                            if (proto._isPrivateModule || !proto.hasOwnProperty('_moduleName')) {
+                                proto._moduleName = moduleName + ':' + name;
+                            }
+                            // arrow function has no prototype
+                        }
+                        else {
+                            if (module._isPrivateModule ||
+                                !module.hasOwnProperty('_moduleName')) {
+                                module._moduleName = moduleName + ':' + name;
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    };
+
+    /**
+     * Логгер для серверного Require-а
+     * @author Кудрявцев И.С.
+     */
+    /**
+     * Вызывает нативную консоль
+     * @param level Уровень логирования
+     * @param args Аргументы
+     */
+    function globalConsole(level, args) {
+        /* eslint-disable-next-line no-console */
+        if (typeof console === 'object' && typeof console[level] === 'function') {
+            /* eslint-disable-next-line no-console */
+            console[level].apply(undefined, args);
+        }
+    }
+    /**
+     * Класс серверного логгера
+     */
+    class ServerConsole {
+        /**
+         * Логирования на уровне информационного сообщения
+         * @param args
+         */
+        info(...args) {
+            if (typeof sbis === 'object' && typeof sbis.LogMsg === 'function') {
+                sbis.LogMsg(2, `[js][info]: ${this.argsToString(args)}`);
+            }
+            globalConsole('info', args);
+        }
+        /**
+         * Логирования на уровне обычного сообщения
+         * @param args
+         */
+        log(...args) {
+            if (typeof sbis === 'object' && typeof sbis.LogMsg === 'function') {
+                sbis.LogMsg(2, `[js][log]: ${this.argsToString(args)}`);
+            }
+            globalConsole('log', args);
+        }
+        /**
+         * Логирования на уровне предупреждения
+         * @param args
+         */
+        warn(...args) {
+            if (typeof sbis === 'object' && typeof sbis.WarningMsg === 'function') {
+                sbis.WarningMsg(`[js]: ${this.argsToString(args)}`);
+            }
+            globalConsole('warn', args);
+        }
+        /**
+         * Логирования на уровне ошибки
+         * @param args
+         */
+        error(...args) {
+            if (typeof sbis === 'object' && typeof sbis.ErrorMsg === 'function') {
+                sbis.ErrorMsg(`[js]: ${this.argsToString(args)}`);
+            }
+            globalConsole('error', args);
+        }
+        /**
+         * Конвертурет аргументы в строку
+         * @param args
+         */
+        argsToString(args) {
+            return args.map(this.dataToString).join(', ');
+        }
+        /**
+         * Конвертурет данные в строку
+         * @param value
+         * @private
+         */
+        dataToString(value) {
+            if (typeof value === 'string') {
+                return value;
+            }
+            if (typeof value === 'function') {
+                return value.toString();
+            }
+            if (value instanceof Error) {
+                return `[${value.name}] message: ${value.message} \n stack: ${value.stack}`;
+            }
+            return JSON.stringify(value);
+        }
+    }
+    var logger = new ServerConsole();
+
+    /**
+     * Серверный загрузчик модуля в строковом представление
+     * @author Кудрявцев И.С.
+     */
+    let load$1;
+    if (typeof TextRequest !== 'undefined') {
+        load$1 = TextRequest;
+    }
+    else {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const readFileSync = require('node:fs').readFileSync;
+        load$1 = (url) => {
+            return readFileSync(url, 'utf8');
+        };
+    }
+    var loadString = load$1;
+
+    let load;
+    const filesOfWithoutDefine = [
+        '/cdn/Punycode/1.0.0/punycode.js',
+        '/cdn/JQuery/jquery-cookie/04-04-2014/jquery-cookie-min.js',
+        '/cdn/JQuery/jquery-ui/1.12.1.3/jquery-ui-position-min.js',
+        'Controls-Calculator/_view/third-party/big',
+        '/cdn/AceEditor/1.2.3/src-min/ace.js',
+        '/cdn/StaffCDN/PixiSpine/v1/spine-pixi-v8.min.js',
+        '/cdn/AudioPlayerCDN/libs/id3-reader/v1.0.0-patched/id3-minimized.js',
+        '/cdn/Codemirror/5.58.1.15/diff-min.js',
+        '/cdn/Codemirror/5.58.1.14/linters-min.js',
+        'SBIS3.CONTROLS/ColorPicker/resources/colpick',
+        '/cdn/BankCDN/qr-code-styling/1.5.0/source.min.js',
+        '/cdn/BankCDN/21.01.21/qrcode.js',
+        'SbisUI/polyfill/polyfill-ioBundle',
+    ];
+    if (typeof importScripts !== 'undefined') {
+        load = (module) => {
+            importScripts(module.url);
+            if (!module.defined && filesOfWithoutDefine.includes(module.name)) {
+                module.define([], () => null);
+            }
+        };
+    }
+    else {
+        const nodeRequire = require;
+        load = (module) => {
+            let result;
+            try {
+                result = nodeRequire(module.url);
+            }
+            catch (err) {
+                try {
+                    // Если мы не смогли получить файл по вычисленому пути,
+                    // возможно это чисто node-ая зависимость, попробуем зарейкварить её по имени.
+                    result = nodeRequire(module.name);
+                }
+                catch (_e) {
+                    throw err;
+                }
+            }
+            if (!module.defined) {
+                module.exports = result;
+                module.prepareExports();
+                module.defined = true;
+            }
+        };
+    }
+    /**
+     * Загружает модули с именем ${ModuleName}
+     * @param module Модуль
+     * @param buildPath Функция для формирования пути до файла
+     */
+    var js = (module, { buildPath }) => {
+        module.url = buildPath(module.path, 'js');
+        load(module);
+    };
+
+    // TODO https://rollupjs.org/troubleshooting/#eval2-eval
+    // eslint-disable-next-line no-eval
+    const eval2$1 = eval;
+    /**
+     * Загружает модули с именем wml!${ModuleName}
+     * @param module Модуль
+     * @param moduleInfo Информация о UI модулей, в котором живём модуль.
+     * @param context Require
+     * @param ext Расширение файла
+     * @param deps Доп зависмости, которые надо загрузить
+     */
+    function wml (module, moduleInfo, context, ext = 'wml', deps = []) {
+        const { buildPath, templateExtension, ESVersion } = moduleInfo;
+        if (templateExtension === 'js') {
+            module.path = `${module.path}.${ext}`;
+            return js(module, moduleInfo);
+        }
+        if (context.buildMode === 'release') {
+            module.url = buildPath(module.path, `min.${ext}`);
+        }
+        else {
+            module.url = buildPath(module.path, ext);
+        }
+        const html = loadString(module.url);
+        const isCompiledModule = html && (html.startsWith('define') || html.startsWith('(function('));
+        if (isCompiledModule) {
+            eval2$1(html);
+            return;
+        }
+        for (const dep of deps) {
+            context.require(dep);
+        }
+        const CompilerLib = context.require('Compiler/Compiler');
+        const compiler = new CompilerLib.Compiler();
+        const artifact = compiler.compileSync(html, {
+            fileName: `${module.path}.${ext}`,
+            ESVersion,
+        });
+        if (!artifact.stable) {
+            throw artifact.errors[0];
+        }
+        eval2$1(artifact.text);
+    }
+
+    /**
+     * Загружает модули с именем tmpl!${ModuleName}
+     * @param module Модуль
+     * @param moduleInfo Информация о UI модулей, в котором живём модуль.
+     * @param context Require
+     */
+    function tmpl (module, moduleInfo, context) {
+        return wml(module, moduleInfo, context, 'tmpl', [
+            'is!compatibleLayer?Lib/Control/Control.compatible',
+            'is!compatibleLayer?Lib/Control/AreaAbstract/AreaAbstract.compatible',
+        ]);
+    }
+
+    /**
+     * Загружает и дефанит модули с именем css!${ModuleName}
+     * @param module Модуль
+     */
+    async function css (module) {
+        module.define([], () => null);
+    }
+
+    /**
+     * Загружает модули с именем i18n!${ModuleName}
+     * @param module Модуль
+     * @param _moduleInfo
+     * @param context Require
+     */
+    function i18n (module, _moduleInfo, context) {
+        const { controller, Translator } = context.require('I18n/singletonI18n');
+        if (module.path === 'I18n/controller') {
+            controller.addRegion('RU', context.require('LocalizationConfigs/localization_configs/region/RU.json'), false);
+            controller.addRegion('KZ', context.require('LocalizationConfigs/localization_configs/region/KZ.json'), false);
+            controller.addRegion('UZ', context.require('LocalizationConfigs/localization_configs/region/UZ.json'), false);
+            controller.addRegion('TM', context.require('LocalizationConfigs/localization_configs/region/TM.json'), false);
+            //@ts-ignore
+            controller.addLang('en', context.require('I18n/locales/en').default, false);
+            //@ts-ignore
+            controller.addLang('ru', context.require('I18n/locales/ru').default, false);
+            //@ts-ignore
+            controller.addLang('ar', context.require('I18n/locales/ar').default, false);
+            //@ts-ignore
+            controller.addLang('he', context.require('I18n/locales/he').default, false);
+            //@ts-ignore
+            controller.addLang('fr', context.require('I18n/locales/fr').default, false);
+            //@ts-ignore
+            controller.addLang('kk', context.require('I18n/locales/kk').default, false);
+            //@ts-ignore
+            controller.addLang('uz', context.require('I18n/locales/uz').default, false);
+            //@ts-ignore
+            controller.addLang('tk', context.require('I18n/locales/tk').default, false);
+            module.define([], () => controller);
+            return;
+        }
+        const emptyTranslator = new Translator({}, controller);
+        const defaultTranslator = (key, context, pluralNumber, isTemplate) => {
+            return emptyTranslator.translate(key, context, pluralNumber, isTemplate);
+        };
+        if (!controller.isEnabled) {
+            module.define([], () => defaultTranslator);
+            return;
+        }
+        const contextName = module.rootDir;
+        if (!contextName) {
+            module.define([], () => defaultTranslator);
+            return;
+        }
+        if (controller.translators.hasOwnProperty(contextName)) {
+            const translator = controller.translators[contextName];
+            module.define([], () => translator.translate.bind(translator));
+            return;
+        }
+        const translator = controller.getTranslatorSync(contextName);
+        module.define([], () => translator.translate.bind(translator));
+        return;
+    }
+
+    /**
+     * Загружает модули с именем json!${ModuleName}
+     * @param module Модуль
+     * @param buildPath Функция для формирования пути до файла
+     */
+    function json (module, { buildPath }) {
+        module.url = buildPath(module.path, 'json');
+        const result = JSON.parse(loadString(module.url));
+        module.define([], () => result);
+    }
+
+    /**
+     * Загружает модули с именем text!${ModuleName}
+     * @param module Модуль
+     * @param buildPath Функция для формирования пути до файла
+     */
+    function text (module, { buildPath }) {
+        const splitName = module.path.split('.');
+        const ext = splitName.pop();
+        const path = splitName.join('.');
+        module.url = buildPath(path, ext);
+        const result = loadString(module.url);
+        module.define([], () => result);
+    }
+
+    // TODO https://rollupjs.org/troubleshooting/#eval2-eval
+    // eslint-disable-next-line no-eval
+    const eval2 = eval;
+    /**
+     * Компилирует шаблон
+     * @param f
+     * @param name
+     */
+    function mkTemplate(f, name) {
+        const fname = name.replace(/[^a-z0-9]/gi, '_');
+        // Создается именованая функция с понятным названием чтобы из стэка можно было понять битый шаблон
+        // eslint-disable-next-line no-new-func
+        const factory = new Function('f', 'return function ' + fname + '(){ return f.apply(this, arguments); }');
+        const result = factory(f);
+        result.toJSON = function () {
+            const serialized = {
+                $serialized$: 'func',
+                module: 'html!' + name,
+            };
+            return serialized;
+        };
+        return result;
+    }
+    /**
+     * Загружает модули с именем html!${ModuleName}
+     * @param module Модуль
+     * @param buildPath Функция для формирования пути до файла
+     * @param context Require
+     */
+    function html (module, { buildPath }, context) {
+        if (context.buildMode === 'release') {
+            module.url = buildPath(module.path, 'min.xhtml');
+        }
+        else {
+            module.url = buildPath(module.path, 'xhtml');
+        }
+        context.require('i18n!' + module.url.split('/')[0]);
+        const html = loadString(module.url);
+        const isCompiledModule = html && html.startsWith('define');
+        if (isCompiledModule) {
+            eval2(html);
+            return;
+        }
+        const doT = context.require('optional!Core/js-template-doT');
+        const config = doT.getSettings();
+        config.strip = false;
+        const result = mkTemplate(doT.template(html, config, undefined, undefined, module.path), module.path);
+        module.define([], () => result);
+    }
+
+    const MAX_SERIALIZATION_LOOKUP_DEPTH = 4;
+    const loaders = {
+        wml,
+        js,
+        tmpl,
+        css,
+        i18n,
+        json,
+        text,
+        html,
+    };
+    const nodeJSExportProto = 
+    // @ts-ignore убрать когда придумаю кк подцепить Node.js типы
+    typeof module !== 'undefined' ? Object.getPrototypeOf(module.exports) : null;
+    function isClass(objt) {
+        return !!objt.constructor;
+    }
+    /**
+     * Серверный класс модуля
+     */
+    class Module extends Module$1 {
+        constructor(name, loader) {
+            super(name);
+            this.loader = loader;
+        }
+        /**
+         * Загрузка модуля
+         */
+        load() {
+            try {
+                const moduleInfo = this.loader.modulesInfo.get(this.rootDir) ||
+                    this.loader.modulesInfo.get('$default$');
+                loaders[this.extension](this, moduleInfo, this.loader);
+            }
+            catch (err) {
+                if (RequireError.isReqiureError(err)) {
+                    throw err;
+                }
+                throw new RequireError(`Failed to load module "${this.name}" file by url "${this.url}".`, {
+                    cause: err,
+                    type: 'load',
+                });
+            }
+        }
+        /**
+         * Получить экспорты для зависимостей
+         */
+        getDepsExports() {
+            const result = [];
+            for (const dep of this.deps) {
+                // Необходма для того чтобы require смог разрещить относительные пути.
+                this.loader.context = this;
+                result.push(this.loader.require(dep));
+            }
+            return result;
+        }
+        /**
+         * Производит модификацию экспорта.
+         */
+        prepareExports() {
+            if (this.extension === 'js' && this.exports) {
+                this.injectModuleName(this.exports, this.name);
+                Module.injectToJson(this.exports, this.name);
+            }
+        }
+        /**
+         * Получить экспорт модуля
+         */
+        getExports() {
+            if (this.exports !== NO_EXPORTS) {
+                return this.exports;
+            }
+            try {
+                if (this.deps.length === 0) {
+                    this.executeCallback();
+                }
+                else {
+                    const depsExport = this.getDepsExports();
+                    this.executeCallback(depsExport);
+                    if (!this.exports) {
+                        this.exports = this.extractExports(depsExport);
+                    }
+                }
+                this.prepareExports();
+                return this.exports;
+            }
+            catch (err) {
+                if (RequireError.isReqiureError(err)) {
+                    throw err;
+                }
+                throw new RequireError(`Failed to execute  callback function for module "${this.name}" loaded by url "${this.url}".`, {
+                    cause: err,
+                    type: 'Executing callback',
+                });
+            }
+        }
+        /**
+         * Выполяем обработчик из define, чтобы получит жкспорт модуля.
+         * @param depsExports
+         */
+        executeCallback(depsExports = []) {
+            // В этой точке конетекст может быть перебить зависимостями, поэтому выставялем его снова.
+            // Внутри колбека могут вызывать синхроный require с относительным именем.
+            this.loader.context = this;
+            this.exports = this.callback(...depsExports);
+            // В этой точке конетекст может быть перебить зависимостями, поэтому выставялем его снова.
+            // Внутри колбека могут вызывать синхроный require с относительным именем.
+            this.loader.context = null;
+        }
+        /**
+         * Проверяет, что экспорт это объект
+         * @param exports
+         */
+        isObject(exports) {
+            if (super.isObject(exports)) {
+                return true;
+            }
+            return nodeJSExportProto && nodeJSExportProto === Object.getPrototypeOf(exports);
+        }
+        /**
+         * Добавялем в функцию метод toJSON, чтобы она сериализовывалась
+         * @param func Функция
+         * @param resolver Резолвер для toJSON
+         */
+        static makeFunctionSerializable(func, resolver) {
+            func.toJSON = () => {
+                const [moduleName, path] = resolver(func);
+                return {
+                    $serialized$: 'func',
+                    module: moduleName,
+                    path: path || undefined,
+                };
+            };
+        }
+        /**
+         * Делает массив сериализуемым
+         * @param arr Массив
+         * @param moduleName Имя модуля
+         * @param initialPrefix
+         * @param depth Глубина
+         */
+        static makeArraySerializable(arr, moduleName, initialPrefix, depth) {
+            const arrLength = arr.length;
+            const prefix = initialPrefix ? `${initialPrefix}.` : '';
+            for (let i = 0; i < arrLength; i++) {
+                Module.makeSerializable(depth || 0, arr[i], moduleName, prefix + i);
+            }
+        }
+        /**
+         * Делает объект сериализуемым
+         * @param obj
+         * @param resolver
+         * @param depth
+         */
+        static makeObjectSerializable(obj, resolver, depth) {
+            const [moduleName, resolvedPrefix] = resolver(obj);
+            const prefix = resolvedPrefix ? `${resolvedPrefix}.` : '';
+            Object.keys(obj).forEach((prop) => {
+                // Go through data descriptors only
+                const descriptor = Object.getOwnPropertyDescriptor(obj, prop) || {};
+                if (!('value' in descriptor)) {
+                    return;
+                }
+                try {
+                    Module.makeSerializable(depth || 0, obj[prop], moduleName, prefix + prop);
+                }
+                catch (err) {
+                    logger.error(`resourceLoadHandler: something went wrong during '${prefix + prop}' property serialization in module '${moduleName}'`, err.message, err);
+                }
+            });
+        }
+        /**
+         * После require js модуля на все функции навешивается toJSON
+         * функции ищутся рекурсивно вглубь объектов.
+         * Модуль А: { f1 : function(){} }
+         * Модуль В: { K :  {
+         *                          someFunction: A.f1
+         *                        }
+         *                }
+         * При require модуля B с зависимостью модулем А сначала toJSON будет вызван для
+         * функции f1 от объекта А (при загрузке зависимостей)
+         * А при загрузке самого модуля В, toJSON для f1 будет вызван от объекта B.K
+         * соответственно правильная ссылка будет потеряна.
+         * @param initialDepth
+         * @param obj
+         * @param moduleName
+         * @param prefix
+         */
+        static makeSerializable(initialDepth, obj, moduleName, prefix) {
+            if (initialDepth === 0) {
+                return;
+            }
+            const depth = initialDepth - 1;
+            switch (typeof obj) {
+                case 'function': {
+                    const getNameAndPath = (func) => {
+                        let name = moduleName;
+                        let path = prefix;
+                        let moduleNameFromProto;
+                        if (func.prototype) {
+                            moduleNameFromProto =
+                                func.prototype.hasOwnProperty('_moduleName') &&
+                                    func.prototype._moduleName;
+                        }
+                        else {
+                            moduleNameFromProto = func._moduleName;
+                        }
+                        if (moduleNameFromProto) {
+                            moduleNameFromProto = String(moduleNameFromProto);
+                            if (moduleNameFromProto.indexOf(':') > -1) {
+                                [name, path] = moduleNameFromProto.split(':', 2);
+                            }
+                        }
+                        return [name, path];
+                    };
+                    // Firstly go through the original function/class properties
+                    if (isClass(obj)) {
+                        Module.makeObjectSerializable(obj, getNameAndPath, depth);
+                    }
+                    // Secondly add a new property and this way prevent to go through it
+                    if (!obj.hasOwnProperty('toJSON')) {
+                        Module.makeFunctionSerializable(obj, getNameAndPath);
+                    }
+                    break;
+                }
+                case 'object': {
+                    const isObject = (objt) => {
+                        return objt && Object.getPrototypeOf(objt) === Object.prototype;
+                    };
+                    if (Array.isArray(obj)) {
+                        Module.makeArraySerializable(obj, moduleName, prefix, depth);
+                    }
+                    else if (isObject(obj)) {
+                        // is plain Object
+                        Module.makeObjectSerializable(obj, () => [moduleName, prefix], depth);
+                    }
+                    break;
+                }
+            }
+        }
+        /**
+         * Внедряет в экспорт toJSON чтобы он серализовывался
+         * @param exports Экспорт
+         * @param moduleName Имя модуля
+         */
+        static injectToJson(exports, moduleName) {
+            Module.makeSerializable(MAX_SERIALIZATION_LOOKUP_DEPTH, exports, moduleName);
+        }
+    }
+
+    /**
+     * Возвращает карту для резолвинга коротких имён модулей
+     * @author Кудрявцев И.С.
+     * @param reactVersion Версия реакта
+     */
+    function getModuleResolution(reactVersion) {
+        const reactRoot = 'React/third-party';
+        const cdnName = 'cdn/';
+        const useExternalNameSpace = `use-sync-external-store/use-sync-external-store`;
+        const map = {
+            tslib: 'Typescript/tslib',
+            text: 'RequireJsLoader/plugins/text',
+            'native-css': 'RequireJsLoader/plugins/native-css',
+            // TODO Юзает биллинг, убрать не можем.
+            bootup: 'WS.Core/res/js/bootup',
+            'bootup-min': 'WS.Core/res/js/bootup-min',
+            'old-bootup': 'WS.Core/res/js/old-bootup',
+            // React
+            react: `${reactRoot}/v${reactVersion}/react/react`,
+            'react/jsx-dev-runtime': `${reactRoot}/v${reactVersion}/react/jsx-dev-runtime/react-jsx-dev-runtime`,
+            'react/jsx-runtime': `${reactRoot}/v${reactVersion}/react/jsx-runtime/react-jsx-runtime`,
+            'react/react-server': `${reactRoot}/v${reactVersion}/react/react-server`,
+            'react-compiler-runtime': `${reactRoot}/v${reactVersion}/react/react-compiler-runtime`,
+            // React DOM
+            'react-dom': `${reactRoot}/v${reactVersion}/react-dom/react-dom`,
+            'react-dom/client': `${reactRoot}/v${reactVersion}/react-dom/client/react-dom-client`,
+            'react-dom/server': `${reactRoot}/v${reactVersion}/react-dom/server/react-dom-server-legacy.browser`,
+            'react-dom/test-utils': `${reactRoot}/v${reactVersion}/react-dom/test-utils/react-dom-test-utils`,
+            'react-dom/testing': 'v17/react-dom/testing/react-dom-testing',
+            'react-dom/profiling': `${reactRoot}/v${reactVersion}/react-dom/react-dom-profiling`,
+            // React Test Renderer
+            'react-test-renderer': 'v17/react-test-renderer/react-test-renderer',
+            // React Is, Cache, Refresh, Server
+            'react-is': `${reactRoot}/v${reactVersion}/react-is/react-is`,
+            'react-cache': `${reactRoot}/v${reactVersion}/react-cache/react-cache`,
+            'react-refresh/babel': `${reactRoot}/v19/react-refresh/react-refresh-babel`,
+            'react-refresh/runtime': `${reactRoot}/v${reactVersion}/react-refresh/react-refresh-runtime`,
+            'react-server': `${reactRoot}/v${reactVersion}/react-server/react-server`,
+            // Scheduler
+            'scheduler-react': `${reactRoot}/v${reactVersion}/scheduler/scheduler`,
+            'scheduler-react/unstable_mock': `${reactRoot}/v${reactVersion}/scheduler/scheduler-unstable_mock`,
+            'scheduler-react/unstable_post_task': `${reactRoot}/v${reactVersion}/scheduler/scheduler-unstable_post_task`,
+            'scheduler-react/native': 'v19/scheduler/scheduler.native',
+            scheduler: `${reactRoot}/v${reactVersion}/scheduler/scheduler`,
+            'scheduler/unstable_mock': `${reactRoot}/v${reactVersion}/scheduler/scheduler-unstable_mock`,
+            'scheduler/unstable_post_task': `${reactRoot}/v${reactVersion}/scheduler/scheduler-unstable_post_task`,
+            'scheduler/native': 'v19/scheduler/scheduler.native',
+            // use-subscription, use-sync-external-store
+            'use-subscription': `${reactRoot}/v${reactVersion}/use-subscription/use-subscription`,
+            'use-sync-external-store': `${reactRoot}/v${reactVersion}/${useExternalNameSpace}`,
+            'use-sync-external-store/shim': `${reactRoot}/v${reactVersion}/${useExternalNameSpace}-shim`,
+            'use-sync-external-store/shim/with-selector': `${reactRoot}/v${reactVersion}/${useExternalNameSpace}-shim-with-selector`,
+            'use-sync-external-store/with-selector': `${reactRoot}/v${reactVersion}/${useExternalNameSpace}-with-selector`,
+            'use-sync-external-store/shim/index.native': `${reactRoot}/v${reactVersion}/${useExternalNameSpace}-shim.native`,
+            clsx: 'Clsx/third-party/clsx',
+            // pixi libraries
+            pixi: `${cdnName}PixiJS/6.5.10-p3/pixi.min.js`,
+            'pixi-react': `${cdnName}PixiReact/6.8.0-p2/pixi-react.min.js`,
+            pixi8: `${cdnName}PixiJS/8.7.2-p1/pixi.min.js`,
+            'pixi-react7': `${cdnName}PixiReact/7.1.3-p1/pixi-react.min.js`,
+            'pixi-react8': `${cdnName}PixiReact/8.0.3/pixi-react.min.js`,
+            // jQuery must die
+            jquery: `${cdnName}JQuery/jquery/3.3.1/jquery-min.js`,
+        };
+        const result = new Map();
+        for (const [defineName, path] of Object.entries(map)) {
+            result.set(defineName, [path.split('/')[0], path]);
+        }
+        return result;
+    }
+
+    /**
+     * Возвращает домен для статики, если он есть
+     */
+    function getStaticsDomain() {
+        var _a, _b;
+        // @ts-ignore
+        const globalEnv = globalThis;
+        let domain = '';
+        if (Array.isArray(globalEnv.wsConfig.staticDomains)) {
+            domain = globalEnv.wsConfig.staticDomains[0];
+        }
+        else {
+            // @ts-ignore
+            domain = (_b = (_a = globalEnv.wsConfig.staticDomains) === null || _a === void 0 ? void 0 : _a.domains) === null || _b === void 0 ? void 0 : _b[0];
+        }
+        return domain ? `//${domain}` : '';
+    }
+
+    /**
+     * Возвращает шардированый домен, если он есть
+     */
+    function getShardDomain() {
+        // @ts-ignore
+        const globalEnv = globalThis;
+        return globalEnv.wsConfig.shardDomain || '';
+    }
+
+    /**
+     * Серверная версия require.js. Испольуется в сервисе представления, демо-стенде wasaby-cli
+     * @author Кудрявцев И.С.
+     */
+    //TODO надо это вывернут ьв обратну сторону, списко тог очто надо минифицировать куда меньше,
+    // плюс убрать в констаны, чтобын не дублировать между web и server
+    const EXTENSION_WITHOUT_MIN = new Set([
+        'txt',
+        'woff2',
+        'webp',
+        'jpg',
+        'jpeg',
+        'png',
+        'svg',
+        'xsl',
+        'gif',
+        'ico',
+    ]);
+    let loadingModule;
+    /**
+     * Класс реальзует Require.js с сервой логикой. Полностью синхроный.
+     */
+    class ServerRequire extends BaseRequire {
+        constructor(config) {
+            super(config);
+            if (config.buildMode === 'debug') {
+                this.debugModules = new Set(Object.keys(config.modules));
+            }
+            if (config.isDebugReact) ;
+            this.buildConfig(config);
+            this.cache.set('require', this.require.bind(this));
+        }
+        /**
+         * Получить список дебажный модулей.
+         */
+        currentDebugModule() {
+            var _a, _b, _c;
+            if (this.debugModules.size !== 0) {
+                return this.debugModules;
+            }
+            // @ts-ignore
+            const debug = ((_c = (_b = (_a = process === null || process === void 0 ? void 0 : process.domain) === null || _a === void 0 ? void 0 : _a.req) === null || _b === void 0 ? void 0 : _b.cookies) === null || _c === void 0 ? void 0 : _c.s3debug) || null;
+            if (debug) {
+                if (debug === 'true') {
+                    return new Set(this.modulesInfo.keys());
+                }
+                return new Set([...debug.split(','), 'React']);
+            }
+            return new Set();
+        }
+        /**
+         * Собирает кофиги для UI-модулей, заранее вычисляя всё, что статично.
+         * @param root Папка для всех ресурсов
+         * @param resourcesRoot Папка где лежат UI модули
+         * @param cdnPath Папка где лежат cdn модули
+         * @param modules Список UI модулей
+         * @param staticsRoot URL путь до UI модулей
+         * @param metaRoot URL путь до метафайлов(Сервис представления)
+         * @param cdnRoot URL путь до CDN модулей
+         * @param contents Оглавление, которое доставляеться через contents.js
+         */
+        // 1) мы не можем использовать cdn-домены для svg. Svg <use> элементы имеют ограничения на кросс-доменные
+        // запросы, допускается только same-origin
+        // https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Element/use#usage_notes
+        // есть решение данной проблемы через тег <feImage>
+        // https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Element/use#usage_notes
+        // но внедрить его пока не можем из-за того, что данная технология работает только начиная с
+        // Chrome 118, Safari 17.2 и тд, данный костыль и переход сможем сделать после поднятия в Тензоре
+        // минимально поддерживаемых версий браузеров
+        // 2) we can't use domains for contents/router meta requests, cdn domain may contain contents/router
+        // meta from another application.
+        // 3) we can't use domains for manifest.json requests because manifest uses relative urls
+        // and with cdn-domain there will be cross domain request for this manifest, but cross domain
+        buildConfig({ root = '', resourcesRoot = '/', modules, staticsRoot = '/resources/', metaRoot = '', cdnPath = '/cdn', cdnRoot = '/cdn/', contents, }) {
+            const { extensionForTemplate: templateExtension, buildnumber: defaultVersion = '99.9999-1', ESVersion: defaultESVersions, } = contents;
+            for (const [name, moduleConfig] of Object.entries(modules)) {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                const { from_ps, buildnumber, path, hasTailwind, ESVersion } = moduleConfig;
+                const rootUrl = path ? path.slice(0, path.lastIndexOf('/') + 1) : staticsRoot;
+                const rootPath = path
+                    ? path.slice(0, path.lastIndexOf('/') + 1)
+                    : `${root}${resourcesRoot}`;
+                const queryParams = `?x_module=${buildnumber || defaultVersion}`;
+                const serverQueryParams = path ? queryParams : '';
+                const enableDebug = () => {
+                    return this.currentDebugModule().has(name);
+                };
+                const getDirection = () => {
+                    //@ts-ignore
+                    return this.require('I18n/i18n:controller').currentLocaleConfig.directionality;
+                };
+                const info = {
+                    buildUrl(filePath, extension) {
+                        const postfixForMinVersion = enableDebug() ? '' : '.min';
+                        const domain = from_ps === 'true' ? '' : getStaticsDomain();
+                        if (extension === 'svg') {
+                            return `${rootUrl}${filePath}.${extension}${queryParams}`;
+                        }
+                        if (EXTENSION_WITHOUT_MIN.has(extension)) {
+                            return `${domain}${rootUrl}${filePath}.${extension}${queryParams}`;
+                        }
+                        if (extension === 'css' && !filePath.endsWith('.rtl')) {
+                            const rtl = getDirection() === 'rtl' ? '.rtl' : '';
+                            return `${domain}${rootUrl}${filePath}${rtl}${postfixForMinVersion}.${extension}${queryParams}`;
+                        }
+                        return `${domain}${rootUrl}${filePath}${postfixForMinVersion}.${extension}${queryParams}`;
+                    },
+                    buildPath(filePath, extension) {
+                        return `${rootPath}${filePath}.${extension}${serverQueryParams}`;
+                    },
+                    hasTailwind,
+                    templateExtension,
+                    ESVersion: ESVersion || defaultESVersions,
+                };
+                this.modulesInfo.set(name, info);
+            }
+            const CDNDirPath = cdnPath || '/cdn';
+            this.modulesInfo.set('cdn', {
+                buildUrl: (moduleName, extension) => {
+                    const cdnFilePath = moduleName.replace('cdn/', '');
+                    let domainForStatics = '';
+                    if (extension !== 'svg' && !moduleName.endsWith('manifest.json')) {
+                        domainForStatics = getStaticsDomain();
+                    }
+                    if (cdnFilePath.endsWith(extension)) {
+                        return `${domainForStatics}${cdnRoot}${cdnFilePath}`;
+                    }
+                    return `${domainForStatics}${cdnRoot}${cdnFilePath}.${extension}`;
+                },
+                buildPath(filePath, extension) {
+                    const cdnFilePath = filePath.replace('cdn/', '');
+                    if (filePath.endsWith(extension)) {
+                        return `${CDNDirPath}/${cdnFilePath}`;
+                    }
+                    return `${CDNDirPath}/${cdnFilePath}.${extension}`;
+                },
+                ESVersion: defaultESVersions,
+            });
+            const postfixForMinVersion = this.debugModules.size === 0 ? '.min' : '';
+            this.modulesInfo.set('$default$', {
+                buildUrl(filePath, extension) {
+                    return `${getShardDomain()}${metaRoot}${filePath}${postfixForMinVersion}.${extension}?x_module=${defaultVersion}`;
+                },
+                buildPath(filePath, extension) {
+                    if (filePath.startsWith('resources/')) {
+                        return `${root}${resourcesRoot}${filePath.replace('resources/', '')}.${extension}`;
+                    }
+                    return `${root}${resourcesRoot}${filePath}.${extension}`;
+                },
+            });
+        }
+        /**
+         * Создает серверный модуль.
+         * @param name
+         */
+        createModule(name) {
+            return new Module(name, this);
+        }
+        /**
+         * Грузит модуль.
+         * @param fileInfo Информация о модуле
+         */
+        loadModule(fileInfo) {
+            const { defineName, ignoreError, chain, extension, filePath, rootDir } = fileInfo;
+            loadingModule = defineName;
+            const module = this.getModule(defineName, this);
+            module.path = filePath;
+            module.rootDir = rootDir;
+            module.extension = extension;
+            if (!module.defined) {
+                try {
+                    module.load();
+                }
+                catch (err) {
+                    this.cache.set(defineName, err);
+                    this.loadableModules.delete(defineName);
+                    const [typeCache, value] = this.extractResult(err, ignoreError);
+                    if (typeCache === 'hit') {
+                        return value;
+                    }
+                    else {
+                        throw value;
+                    }
+                }
+            }
+            try {
+                const exports = module.getExports();
+                for (const callback of this.listenerOnLoad) {
+                    callback(defineName, exports);
+                }
+                const [typeCache, value] = this.extractResult(exports, ignoreError, chain);
+                if (typeCache === 'hit') {
+                    this.cache.set(defineName, exports);
+                    this.loadableModules.delete(defineName);
+                    return value;
+                }
+                else {
+                    throw value;
+                }
+            }
+            catch (err) {
+                this.cache.set(defineName, err);
+                this.loadableModules.delete(defineName);
+                throw err;
+            }
+        }
+        require(moduleNames, successCallback, errorCallback) {
+            // Если передали только имя модуля, то пытемся извлечь, его из кеша, если не получиться выкидываем ошмбку.
+            if (typeof moduleNames === 'string') {
+                const info = this.parseName(moduleNames);
+                const [cacheType, value] = this.extractCache(moduleNames, info);
+                if (cacheType === 'hit') {
+                    return value;
+                }
+                if (cacheType === 'error') {
+                    throw value;
+                }
+                return this.loadModule(info);
+            }
+            const results = [];
+            const errors = [];
+            for (const moduleName of moduleNames || []) {
+                // TODO Это полный дурдом, но оригинальый require умеет обрабатывать [''] и [undefined] и [function].
+                //  Пока что такой кейс всплалыл moduleStub и в старых демках, но фиг знает где оно ещё всплывёт,
+                //  поэтому придёться поддержать сия кейс. Но надо будет это спиливать.
+                if (!(moduleName && typeof moduleName === 'string')) {
+                    results.push(undefined);
+                    continue;
+                }
+                const info = this.parseName(moduleName);
+                const [cacheType, value] = this.extractCache(moduleName, info);
+                if (cacheType === 'hit') {
+                    results.push(value);
+                    continue;
+                }
+                if (cacheType === 'error') {
+                    errors.push(value);
+                    continue;
+                }
+                if (cacheType === 'miss') {
+                    results.push(this.loadModule(info));
+                }
+            }
+            if (typeof successCallback === 'function') {
+                return this.fireCallbacks(results, errors, successCallback, errorCallback);
+            }
+            return this.firePromise(results, errors);
+        }
+        define(name, deps, callback) {
+            let defineName = name;
+            let dependencies = deps;
+            let callbackFn = callback;
+            // Если модуль анонимный будем искать его по url.
+            if (typeof name !== 'string') {
+                defineName = loadingModule;
+                dependencies = name;
+                callbackFn = deps;
+            }
+            const module = this.getModule(defineName, this);
+            //@ts-ignore
+            module.define(dependencies, callbackFn);
+        }
+    }
+    // @ts-ignore
+    const globalEnv = globalThis;
+    /**
+     * Глоабльаня функция для иницилизации сервеного require в глобальном окружение.
+     * @param root Папка для всех ресурсов
+     * @param resourcesRoot Папка где лежат UI модули
+     * @param cdnPath Папка где лежат cdn модули
+     */
+    // @ts-ignore
+    globalEnv.initRequire = (root, resourcesRoot, cdnPath) => {
+        var _a, _b, _c, _d, _e;
+        const modules = ((_a = globalEnv.contents) === null || _a === void 0 ? void 0 : _a.modules) || {};
+        const reactVersion = ((_d = (_c = (_b = globalEnv.contents) === null || _b === void 0 ? void 0 : _b.modules) === null || _c === void 0 ? void 0 : _c.React) === null || _d === void 0 ? void 0 : _d.version) || 17;
+        const localRequire = new ServerRequire({
+            root,
+            modules,
+            resourcesRoot,
+            cdnPath,
+            buildMode: (_e = globalEnv.contents) === null || _e === void 0 ? void 0 : _e.buildMode,
+            staticsRoot: globalEnv.wsConfig.resourceRoot,
+            metaRoot: globalEnv.wsConfig.metaRoot || globalEnv.metaRoot,
+            cdnRoot: globalEnv.wsConfig.cdnRoot,
+            loadingTimeout: 0,
+            pagexPackages: globalEnv.wsConfig.pagexPackages,
+            contents: globalEnv.contents,
+            modulesResolution: getModuleResolution(reactVersion),
+            isDebugReact: globalEnv.wsConfig.isDebugReact,
+        });
+        globalEnv.requirejs = globalEnv.require = localRequire.cache.get('require');
+        // TODO совместимость со старым require. Используем этот флаг, чтобы отрубить патч define-а в config.ts.
+        //  Удалить когда перепишем config.ts, а сделаем мы это, когда включим новый require и на сервере.
+        globalEnv.requirejs.isNewRequire = true;
+        // @ts-ignore
+        globalEnv.requirejs.instance = localRequire;
+        // @ts-ignore
+        globalEnv.define = localRequire.define.bind(localRequire);
+        globalEnv.define.amd = true;
+        globalEnv.requirejs.defined = localRequire.defined.bind(localRequire);
+        globalEnv.requirejs.undef = (name) => {
+            const { defineName } = localRequire.parseName(name);
+            const module = localRequire.modules.get(defineName);
+            if (!module) {
+                return;
+            }
+            localRequire.modules.delete(defineName);
+            localRequire.cache.delete(defineName);
+        };
+        // TODO совместимость со старым require. Удалить когда переедм везде на новый.
+        globalEnv.requirejs.toUrl = (name) => {
+            const splitName = name.split('.');
+            const ext = splitName.pop();
+            const path = splitName.join('.');
+            const [moduleName] = path.split('/');
+            const moduleInfo = localRequire.modulesInfo.get(moduleName) ||
+                localRequire.modulesInfo.get('$default$');
+            return moduleInfo.buildUrl(path, ext);
+        };
+        // TODO совместимость со старым require. Удалить когда переедм везде на новый.
+        globalEnv.requirejs.config = () => {
+            return globalEnv.requirejs;
+        };
+        // TODO совместимость со старым require. Удалить когда переедм везде на новый.
+        globalEnv.requirejs.onError = (err) => {
+            throw err;
+        };
+    };
+
+})();
