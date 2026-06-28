@@ -1,0 +1,458 @@
+/**
+ * Серверная версия require.js. Испольуется в сервисе представления, демо-стенде wasaby-cli
+ * @author Кудрявцев И.С.
+ */
+import RequireBase, { IRequire, NO_CACHE } from './main/BaseRequire';
+import type { IConfigRequire } from './main/BaseRequire';
+import RequireError from './main/RequireError';
+import Module from './server/Module';
+import getModuleResolution from './main/getModuleResolution';
+import getStaticsDomain from './main/getStaticsDomain';
+import getShardDomain from './main/getShardDomain';
+import { IContents } from 'RequireJsLoader/wasaby';
+import ModuleInfo from './main/ModuleInfo';
+
+//TODO надо это вывернут ьв обратну сторону, списко тог очто надо минифицировать куда меньше,
+// плюс убрать в констаны, чтобын не дублировать между web и server
+const EXTENSION_WITHOUT_MIN = new Set([
+    'txt',
+    'woff2',
+    'webp',
+    'jpg',
+    'jpeg',
+    'png',
+    'svg',
+    'xsl',
+    'gif',
+    'ico',
+]);
+
+let loadingModule: string;
+
+/**
+ * Класс реальзует Require.js с сервой логикой. Полностью синхроный.
+ */
+class ServerRequire extends RequireBase<Module> implements IRequire<Module> {
+    constructor(config: IConfigRequire) {
+        super(config);
+
+        if (config.buildMode === 'debug') {
+            this.debugModules = new Set(Object.keys(config.modules));
+        }
+
+        if (config.isDebugReact) {
+            //this.debugModules.add('React');
+        }
+
+        this.buildConfig(config);
+
+        this.cache.set('require', this.require.bind(this));
+    }
+
+    /**
+     * Получить список дебажный модулей.
+     */
+    currentDebugModule() {
+        if (this.debugModules.size !== 0) {
+            return this.debugModules;
+        }
+
+        // @ts-ignore
+        const debug = process?.domain?.req?.cookies?.s3debug || null;
+
+        if (debug && debug !== 'false') {
+            if (debug === 'true') {
+                return new Set(this.modulesInfo.keys());
+            }
+
+            return new Set([...debug.split(','), 'React']);
+        }
+
+        return new Set();
+    }
+
+    /**
+     * Собирает кофиги для UI-модулей, заранее вычисляя всё, что статично.
+     * @param root Папка для всех ресурсов
+     * @param resourcesRoot Папка где лежат UI модули
+     * @param cdnPath Папка где лежат cdn модули
+     * @param modules Список UI модулей
+     * @param staticsRoot URL путь до UI модулей
+     * @param metaRoot URL путь до метафайлов(Сервис представления)
+     * @param cdnRoot URL путь до CDN модулей
+     * @param contents Оглавление, которое доставляеться через contents.js
+     */
+    // 1) мы не можем использовать cdn-домены для svg. Svg <use> элементы имеют ограничения на кросс-доменные
+    // запросы, допускается только same-origin
+    // https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Element/use#usage_notes
+    // есть решение данной проблемы через тег <feImage>
+    // https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Element/use#usage_notes
+    // но внедрить его пока не можем из-за того, что данная технология работает только начиная с
+    // Chrome 118, Safari 17.2 и тд, данный костыль и переход сможем сделать после поднятия в Тензоре
+    // минимально поддерживаемых версий браузеров
+    // 2) we can't use domains for contents/router meta requests, cdn domain may contain contents/router
+    // meta from another application.
+    // 3) we can't use domains for manifest.json requests because manifest uses relative urls
+    // and with cdn-domain there will be cross domain request for this manifest, but cross domain
+    buildConfig({
+        root = '',
+        resourcesRoot = '/',
+        modules,
+        staticsRoot = '/resources/',
+        metaRoot = '',
+        cdnPath = '/cdn',
+        cdnRoot = '/cdn/',
+        contents,
+    }: IConfigRequire): void {
+        const {
+            extensionForTemplate: templateExtension = '',
+            buildnumber: defaultVersion = '99.9999-1',
+            ESVersion: defaultESVersions = 0,
+        } = contents as IContents;
+
+        for (const [name, moduleConfig] of Object.entries(modules)) {
+            const {
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                from_ps,
+                buildnumber,
+                path,
+                hasTailwind = false,
+                ESVersion,
+                mode = 'release',
+            } = moduleConfig;
+            const rootUrl = path ? path.slice(0, path.lastIndexOf('/') + 1) : staticsRoot;
+            const rootPath = path
+                ? path.slice(0, path.lastIndexOf('/') + 1)
+                : `${root}${resourcesRoot}`;
+            const queryParams = `?x_module=${buildnumber || defaultVersion}`;
+            const serverQueryParams = path ? queryParams : '';
+
+            const enableDebug = () => {
+                return this.currentDebugModule().has(name);
+            };
+
+            const getDirection = () => {
+                //@ts-ignore
+                return this.require('I18n/i18n:controller').currentLocaleConfig.directionality;
+            };
+
+            const info = new ModuleInfo();
+
+            info.buildUrl = (filePath: string, extension: string): string => {
+                const postfixForMinVersion = enableDebug() ? '' : '.min';
+                const domain = from_ps === 'true' ? '' : getStaticsDomain();
+
+                if (extension === 'svg') {
+                    return `${rootUrl}${filePath}.${extension}${queryParams}`;
+                }
+
+                if (EXTENSION_WITHOUT_MIN.has(extension)) {
+                    return `${domain}${rootUrl}${filePath}.${extension}${queryParams}`;
+                }
+
+                if (extension === 'css' && !filePath.endsWith('.rtl')) {
+                    const rtl = getDirection() === 'rtl' ? '.rtl' : '';
+
+                    return `${domain}${rootUrl}${filePath}${rtl}${postfixForMinVersion}.${extension}${queryParams}`;
+                }
+
+                return `${domain}${rootUrl}${filePath}${postfixForMinVersion}.${extension}${queryParams}`;
+            };
+            info.buildPath = (filePath: string, extension: string) => {
+                return `${rootPath}${filePath}.${extension}${serverQueryParams}`;
+            };
+            info.hasTailwind = hasTailwind;
+            info.templateExtension = templateExtension;
+            info.ESVersion = ESVersion || defaultESVersions;
+
+            // На серваке мы должны использовать релизный(продакшен) React, потому что дебажный работает в разы медленее.
+            if (name === 'React' && mode === 'release') {
+                info.buildPath = (filePath: string, extension: string) => {
+                    return `${rootPath}${filePath}.min.${extension}${serverQueryParams}`;
+                };
+            }
+
+            this.modulesInfo.set(name, info);
+        }
+
+        const CDNDirPath = cdnPath || '/cdn';
+
+        const cdnInfo = new ModuleInfo();
+
+        cdnInfo.buildUrl = (moduleName: string, extension: string) => {
+            const cdnFilePath = moduleName.replace('cdn/', '');
+            let domainForStatics = '';
+
+            if (extension !== 'svg' && !moduleName.endsWith('manifest.json')) {
+                domainForStatics = getStaticsDomain();
+            }
+
+            if (cdnFilePath.endsWith(extension)) {
+                return `${domainForStatics}${cdnRoot}${cdnFilePath}`;
+            }
+
+            return `${domainForStatics}${cdnRoot}${cdnFilePath}.${extension}`;
+        };
+        cdnInfo.buildPath = (filePath: string, extension: string) => {
+            const cdnFilePath = filePath.replace('cdn/', '');
+
+            if (filePath.endsWith(extension)) {
+                return `${CDNDirPath}/${cdnFilePath}`;
+            }
+
+            return `${CDNDirPath}/${cdnFilePath}.${extension}`;
+        };
+        cdnInfo.ESVersion = defaultESVersions;
+
+        this.modulesInfo.set('cdn', cdnInfo);
+
+        const postfixForMinVersion = this.debugModules.size === 0 ? '.min' : '';
+
+        const defaultInfo = new ModuleInfo();
+
+        defaultInfo.buildUrl = (filePath: string, extension: string): string => {
+            return `${getShardDomain()}${metaRoot}${filePath}${postfixForMinVersion}.${extension}?x_module=${defaultVersion}`;
+        };
+        defaultInfo.buildPath = (filePath: string, extension: string): string => {
+            if (filePath.startsWith('resources/')) {
+                return `${root}${resourcesRoot}${filePath.replace('resources/', '')}.${extension}`;
+            }
+
+            return `${root}${resourcesRoot}${filePath}.${extension}`;
+        };
+
+        this.modulesInfo.set('$default$', defaultInfo);
+    }
+
+    /**
+     * Создает серверный модуль.
+     * @param name
+     */
+    createModule(name: string): Module {
+        return new Module(name, this);
+    }
+
+    /**
+     * Грузит модуль.
+     * @param fileInfo Информация о модуле
+     */
+    loadModule(name: string): unknown {
+        const fileInfo = this.parseName(name);
+        const { defineName, extension, filePath, rootDir, ignoreError } = fileInfo;
+
+        loadingModule = defineName;
+
+        const module = this.getModule(defineName, this);
+
+        module.path = filePath;
+        module.rootDir = rootDir;
+        module.extension = extension;
+
+        if (!module.defined) {
+            try {
+                module.load();
+            } catch (err) {
+                this.loadableModules.delete(defineName);
+                this.modules.delete(defineName);
+
+                return this.injectCache(defineName, err, ignoreError);
+            }
+        }
+
+        try {
+            const exports = module.getExports();
+
+            for (const callback of this.listenerOnLoad) {
+                callback(defineName, exports);
+            }
+
+            this.cache.set(defineName, exports);
+
+            return this.extractChain(exports as Record<string, any>, fileInfo);
+        } catch (err) {
+            this.errorsCache.set(defineName, err as RequireError);
+
+            throw err;
+        } finally {
+            this.loadableModules.delete(defineName);
+            this.modules.delete(defineName);
+        }
+    }
+
+    /**
+     * Функция реализует API глоабной функции requirejs
+     */
+    require(moduleNames: string): unknown;
+    require(moduleNames: string[]): Promise<unknown[]>;
+    require(
+        moduleNames: string[],
+        successCallback: (...args: unknown[]) => void,
+        errorCallback: (err: RequireError) => void
+    ): void;
+    require(
+        moduleNames: string | string[],
+        successCallback?: (...args: unknown[]) => void,
+        errorCallback?: (err: RequireError) => void
+    ): void | unknown {
+        // Если передали только имя модуля, то пытемся извлечь, его из кеша, если не получиться выкидываем ошмбку.
+        if (typeof moduleNames === 'string') {
+            const value = this.extractCache(moduleNames);
+
+            if (value !== NO_CACHE) {
+                return value;
+            }
+
+            const err = this.extractErrorCache(moduleNames);
+
+            if (err) {
+                throw err;
+            }
+
+            return this.loadModule(moduleNames);
+        }
+
+        const results = [];
+        const errors: RequireError[] = [];
+
+        for (const moduleName of moduleNames || []) {
+            // TODO Это полный дурдом, но оригинальый require умеет обрабатывать [''] и [undefined] и [function].
+            //  Пока что такой кейс всплалыл moduleStub и в старых демках, но фиг знает где оно ещё всплывёт,
+            //  поэтому придёться поддержать сия кейс. Но надо будет это спиливать.
+            if (!(moduleName && typeof moduleName === 'string')) {
+                results.push(undefined);
+
+                continue;
+            }
+
+            try {
+                const value = this.extractCache(moduleName);
+
+                if (value !== NO_CACHE) {
+                    results.push(value);
+
+                    continue;
+                }
+            } catch (cacheError) {
+                errors.push(cacheError as RequireError);
+
+                continue;
+            }
+
+            const err = this.extractErrorCache(moduleName);
+
+            if (err) {
+                errors.push(err);
+
+                continue;
+            }
+
+            results.push(this.loadModule(moduleName));
+        }
+
+        if (typeof successCallback === 'function') {
+            return this.fireCallbacks(results, errors, successCallback, errorCallback);
+        }
+
+        return this.firePromise(results, errors);
+    }
+
+    /**
+     * Функция реализует API глоабной функции define
+     */
+    define(callback: () => unknown): void;
+    define(deps: string | string[], callback: () => unknown): void;
+    define(name: string, deps: string[], callback: () => unknown): void;
+    define(
+        name: string | string[] | (() => unknown),
+        deps?: string[] | (() => unknown),
+        callback?: () => unknown
+    ): void {
+        let defineName = name;
+        let dependencies = deps;
+        let callbackFn = callback;
+
+        // Если модуль анонимный будем искать его по url.
+        if (typeof name !== 'string') {
+            defineName = loadingModule;
+            dependencies = name;
+            callbackFn = deps as () => unknown;
+        }
+
+        if (this.cache.has(defineName as string)) {
+            return;
+        }
+
+        const module = this.getModule(defineName as string, this);
+
+        //@ts-ignore
+        module.define(dependencies, callbackFn);
+    }
+}
+
+// @ts-ignore
+const globalEnv: IPatchedGlobal = globalThis;
+
+/**
+ * Глоабльаня функция для иницилизации сервеного require в глобальном окружение.
+ * @param root Папка для всех ресурсов
+ * @param resourcesRoot Папка где лежат UI модули
+ * @param cdnPath Папка где лежат cdn модули
+ */
+// @ts-ignore
+globalEnv.initRequire = (root?: string, resourcesRoot?: string, cdnPath?: string) => {
+    const modules = globalEnv.contents?.modules || {};
+    const reactVersion = globalEnv.contents?.modules?.React?.version || 17;
+
+    const localRequire = new ServerRequire({
+        root,
+        modules,
+        resourcesRoot,
+        cdnPath,
+        buildMode: globalEnv.contents?.buildMode,
+        staticsRoot: globalEnv.wsConfig.resourceRoot,
+        metaRoot: globalEnv.wsConfig.metaRoot || globalEnv.metaRoot,
+        cdnRoot: globalEnv.wsConfig.cdnRoot,
+        loadingTimeout: 0,
+        pagexPackages: globalEnv.wsConfig.pagexPackages,
+        contents: globalEnv.contents,
+        modulesResolution: getModuleResolution(reactVersion),
+        isDebugReact: globalEnv.wsConfig.isDebugReact,
+    });
+
+    globalEnv.requirejs = globalEnv.require = localRequire.cache.get('require');
+    // TODO совместимость со старым require. Используем этот флаг, чтобы отрубить патч define-а в config.ts.
+    //  Удалить когда перепишем config.ts, а сделаем мы это, когда включим новый require и на сервере.
+    globalEnv.requirejs.isNewRequire = true;
+    // @ts-ignore
+    globalEnv.requirejs.instance = localRequire;
+    // @ts-ignore
+    globalEnv.define = localRequire.define.bind(localRequire);
+    globalEnv.define.amd = true;
+
+    globalEnv.requirejs.defined = localRequire.defined.bind(localRequire);
+
+    globalEnv.requirejs.undef = localRequire.undef.bind(localRequire);
+
+    // TODO совместимость со старым require. Удалить когда переедм везде на новый.
+    globalEnv.requirejs.toUrl = (name: string): string => {
+        const splitName = name.split('.');
+        const ext = splitName.pop() as string;
+        const path = splitName.join('.');
+        const [moduleName] = path.split('/');
+        const moduleInfo =
+            localRequire.modulesInfo.get(moduleName) ||
+            (localRequire.modulesInfo.get('$default$') as ModuleInfo);
+
+        return moduleInfo.buildUrl(path, ext);
+    };
+
+    // TODO совместимость со старым require. Удалить когда переедм везде на новый.
+    globalEnv.requirejs.config = (): any => {
+        return globalEnv.requirejs;
+    };
+
+    // TODO совместимость со старым require. Удалить когда переедм везде на новый.
+    globalEnv.requirejs.onError = (err: unknown): any => {
+        throw err;
+    };
+};
