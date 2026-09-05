@@ -1,0 +1,541 @@
+/**
+ * Веб версия require.js
+ * @author Кудрявцев И.С.
+ */
+import RequireBase, {
+    IRequire,
+    NO_CACHE,
+    TLoader,
+    type availableLoaders,
+    DEFINE_MODULE,
+} from './main/BaseRequire';
+import { IPatchedGlobal } from 'RequireJsLoader/wasaby';
+import RequireError from './main/RequireError';
+
+import injectModuleName from './main/injectModuleName';
+
+import css from './web/loaders/css';
+import wml from './web/loaders/wml';
+import js from './web/loaders/js';
+import tmpl from './web/loaders/tmpl';
+import i18n from './web/loaders/i18n';
+import json from './web/loaders/json';
+import text from './web/loaders/text';
+import html from './web/loaders/html';
+import bundleLoader from './web/loaders/bundle';
+import Loader from './web/Loader';
+
+// @ts-ignore
+const globalEnv: IPatchedGlobal = globalThis;
+const DEFAULT_TIMEOUT = 30_000;
+const loaders: Record<availableLoaders, TLoader<Promise<unknown>, WebRequire>> = {
+    wml,
+    js,
+    tmpl,
+    css,
+    i18n,
+    json,
+    text,
+    html,
+};
+
+/**
+ * Проверяет, что экспорт это объект
+ * @param exports
+ */
+function isObject(exports: object): boolean {
+    return Object.getPrototypeOf(exports) === Object.prototype;
+}
+
+function enableBundles(): boolean {
+    const cookie = document.cookie.match(/(?:^|;)\s*disableBundles\s*=\s*([^;]+)/)?.[1] || '';
+
+    return !(cookie && cookie === 'true');
+}
+
+class WebRequire extends RequireBase implements IRequire {
+    loadableModules: Map<string, Promise<unknown>>;
+
+    processableModules: Map<string, Promise<unknown>>;
+
+    debugModules: Set<string>;
+
+    currentNumberDomain: number;
+
+    loadingTimeout: number;
+
+    packedFilesRemoved: boolean;
+
+    enableBundles: boolean;
+
+    loader: Loader;
+
+    downloadBlocked: string;
+
+    constructor() {
+        super();
+
+        const contents = globalEnv.contents || {};
+
+        this.packedFilesRemoved = contents.packedFilesRemoved || false;
+        this.loadableModules = new Map();
+        this.processableModules = new Map();
+        this.debugModules = this.buildDebugModules(
+            document.cookie.match(/(?:^|;)\s*s3debug\s*=\s*([^;]+)/)?.[1] || ''
+        );
+        this.currentNumberDomain = Number(
+            document.cookie.match(/(?:^|;)\s*res_loader_cdn_idx\s*=\s*([^;]+)/)?.[1] || 0
+        );
+
+        if (globalEnv.wsConfig.isDebugReact) {
+            this.debugModules.add('React');
+        }
+
+        this.enableBundles = enableBundles();
+
+        this.loadingTimeout = this.fixLoadingTimeoutForDebug(
+            Object.keys(this.modules).length,
+            globalEnv.wsConfig.moduleLoadingTimeout || DEFAULT_TIMEOUT
+        );
+
+        this.loader = new Loader(this.loadingTimeout);
+
+        this.cache.set('require', this.require.bind(this));
+
+        // TODO В старом биллинге сия штука true. Не понятно, действительно нужно ли оно там.
+        this.compatibleMode =
+            window.location.href.indexOf('withoutLayout') === -1 &&
+            globalEnv.wsConfig.compatible !== false;
+    }
+
+    /**
+     * Увеличивает базовый таймаует по количеству дебажных модулей.
+     * @param modules Количество всех модулей
+     */
+    fixLoadingTimeoutForDebug(modules: number, timeout: number): number {
+        if (this.debugModules.size === 0) {
+            return timeout;
+        }
+
+        if (this.debugModules.size === modules) {
+            return timeout * 2;
+        }
+
+        const half = Math.floor(modules / 2);
+
+        if (this.debugModules.size < half) {
+            return timeout;
+        }
+
+        const oneModuleTime = timeout / half;
+        const dbgModules = this.debugModules.size - half;
+
+        return Math.floor(timeout + oneModuleTime * dbgModules);
+    }
+
+    getDebugModules(): Set<string> {
+        return this.debugModules;
+    }
+
+    getNumberStaticDomain(): number {
+        return this.currentNumberDomain;
+    }
+
+    enableRtlDirection() {
+        return document.body?.dir === 'rtl';
+    }
+
+    /**
+     * Загрузить модули по имени дефайна
+     * @param fileInfo Информация о модуле.
+     */
+    async loadModuleByDefineName(fullName: string, defineName: string): Promise<unknown> {
+        const loaderName = this.getLoaderName(defineName);
+        let exports: unknown = DEFINE_MODULE;
+
+        if (!this.definedMap.has(defineName)) {
+            try {
+                const modulePath = this.getModulePath(defineName);
+
+                exports = await this.loadModule(defineName, loaderName, modulePath);
+            } catch (err) {
+                this.processableModules.delete(defineName);
+                this.definedMap.delete(defineName);
+
+                return this.injectCache(defineName, err, this.ignoreLoadError(fullName));
+            } finally {
+                this.loadableModules.delete(defineName);
+            }
+        }
+
+        try {
+            if (exports === DEFINE_MODULE) {
+                exports = await this.getExportsFromDefine(defineName);
+            }
+
+            if (loaderName === 'js' && exports) {
+                injectModuleName(exports, defineName, isObject);
+            }
+
+            for (const callback of this.listenerOnLoad) {
+                callback(defineName, exports);
+            }
+
+            this.cache.set(defineName, exports);
+
+            return exports;
+        } catch (err) {
+            this.errorsCache.set(defineName, err as RequireError);
+
+            throw err;
+        } finally {
+            this.processableModules.delete(defineName);
+            this.definedMap.delete(defineName);
+        }
+    }
+
+    /**
+     * Обработать запрашиваемый модуль
+     * @param fullName Полное имя запрашиваемого модуля
+     * @param defineName
+     */
+    async loadModuleByFullName(fullName: string, defineName: string): Promise<unknown> {
+        let getExports = this.processableModules.get(defineName);
+
+        if (!getExports) {
+            getExports = this.loadModuleByDefineName(fullName, defineName);
+
+            this.processableModules.set(defineName, getExports);
+        }
+
+        try {
+            const exports = await getExports;
+
+            return this.extractChain(exports as Record<string, any>, fullName);
+        } catch (err) {
+            throw err;
+        } finally {
+            this.processableModules.delete(fullName);
+        }
+    }
+
+    loadModule(
+        defineName: string,
+        loaderName: availableLoaders,
+        modulePath: string
+    ): Promise<unknown> {
+        let loadPromise = this.loadableModules.get(defineName);
+
+        if (!loadPromise) {
+            const moduleInfo = this.modules[this.getRootDir(modulePath)];
+
+            if (this.enableBundles && moduleInfo && moduleInfo.hasBundles) {
+                loadPromise = bundleLoader(
+                    defineName,
+                    modulePath,
+                    loaderName,
+                    this,
+                    loaders[loaderName]
+                );
+            } else {
+                loadPromise = loaders[loaderName](defineName, modulePath, this);
+            }
+
+            this.loadableModules.set(defineName, loadPromise);
+        }
+
+        return loadPromise;
+    }
+
+    /**
+     * Получения экпорта модуля
+     */
+    async getExportsFromDefine(defineName: string): Promise<unknown> {
+        try {
+            //@ts-ignore
+            const [deps, callback] = this.definedMap.get(defineName);
+
+            if (deps.length === 0) {
+                return this.executeCallback(defineName, callback);
+            }
+
+            // Необходма для того чтобы require смог разрещить относительные пути.
+            this.currentModule = defineName;
+
+            return this.executeCallback(
+                defineName,
+                callback,
+                await this.require(deps as string[]),
+                deps
+            );
+        } catch (err) {
+            if (RequireError.isRequireError(err)) {
+                throw err;
+            }
+
+            throw new RequireError(
+                `Failed to execute  callback function for module "${defineName}".`,
+                {
+                    cause: err as Error,
+                    type: 'Executing callback',
+                }
+            );
+        }
+    }
+
+    load(fullName: string): Promise<unknown> | unknown {
+        let promise = this.processableModules.get(fullName);
+
+        if (promise) {
+            return promise;
+        }
+
+        const defineName = this.getDefineName(fullName);
+
+        promise =
+            fullName === defineName
+                ? this.loadModuleByDefineName(fullName, defineName)
+                : this.loadModuleByFullName(fullName, defineName);
+
+        this.processableModules.set(fullName, promise);
+
+        return promise;
+    }
+
+    /**
+     * Функция реализует API глоабной функции requirejs
+     */
+    require(moduleNames: string): unknown;
+    require(moduleNames: string[]): Promise<unknown[]>;
+    require(
+        moduleNames: string[],
+        successCallback: (...args: unknown[]) => void,
+        errorCallback: (err: RequireError) => void
+    ): void;
+    require(
+        moduleNames: string | string[],
+        successCallback?: (...args: unknown[]) => void,
+        errorCallback?: (err: RequireError) => void
+    ): void | unknown {
+        // Если передали только имя модуля, то пытемся извлечь, его из кеша, если не получиться выкидываем ошмбку.
+        if (typeof moduleNames === 'string') {
+            const normalizeName = this.normalizeName(moduleNames);
+            const value = this.extractCache(normalizeName);
+
+            if (value !== NO_CACHE) {
+                return value;
+            }
+
+            const err = this.extractErrorCache(normalizeName);
+
+            if (err) {
+                throw err;
+            }
+
+            throw new RequireError(`Module ${normalizeName} has not been loaded. Use require([])`);
+        }
+
+        const promises = [];
+        const errors: RequireError[] = [];
+        let allGotFromCache = true;
+
+        for (const moduleName of moduleNames || []) {
+            // TODO Это полный дурдом, но оригинальый require умеет обрабатывать [''] и [undefined] и [function].
+            //  Пока что такой кейс всплалыл moduleStub и в старых демках, но фиг знает где оно ещё всплывёт,
+            //  поэтому придёться поддержать сия кейс. Но надо будет это спиливать.
+            if (!(moduleName && typeof moduleName === 'string')) {
+                promises.push(undefined);
+
+                continue;
+            }
+
+            const normalizeName = this.normalizeName(moduleName);
+
+            try {
+                const value = this.extractCache(normalizeName);
+
+                if (value !== NO_CACHE) {
+                    promises.push(value);
+
+                    continue;
+                }
+            } catch (cacheError) {
+                errors.push(cacheError as RequireError);
+
+                continue;
+            }
+
+            const err = this.extractErrorCache(normalizeName);
+
+            if (err) {
+                errors.push(err);
+
+                continue;
+            }
+
+            allGotFromCache = false;
+
+            if (this.downloadBlocked) {
+                errors.push(new RequireError(this.downloadBlocked));
+            } else {
+                promises.push(this.load(normalizeName));
+            }
+        }
+
+        // Если все запрашиваемые модули были извелечены из кеша,
+        // вызываем синхроно колбеки, чтобы отдать модули, как можно быстрее.
+        if (allGotFromCache) {
+            if (typeof successCallback === 'function') {
+                return this.fireCallbacks(promises, errors, successCallback, errorCallback);
+            }
+
+            return this.firePromise(promises, errors);
+        }
+
+        if (typeof successCallback === 'function') {
+            this.processLoadingPromises(promises, errors)
+                .then(([returnValues, returnErrors]) => {
+                    this.fireCallbacks(returnValues, returnErrors, successCallback, errorCallback);
+                })
+                .catch((err) => {
+                    errorCallback?.(err);
+                });
+        } else {
+            return this.processLoadingPromises(promises, errors).then(
+                ([returnValues, returnErrors]) => {
+                    return this.firePromise(returnValues, returnErrors);
+                }
+            );
+        }
+    }
+
+    /**
+     * Обрабатывает промисы по загрузке модулей.
+     * @param promises Список промисов
+     * @param errors Список ошибок
+     */
+    async processLoadingPromises(
+        promises: unknown[],
+        errors: RequireError[]
+    ): Promise<[unknown[], RequireError[]]> {
+        const result = await Promise.allSettled(promises);
+        const returnValues = [];
+        const returnErrors = [...errors];
+
+        for (const res of result) {
+            if (res.status === 'fulfilled') {
+                returnValues.push(res.value);
+            } else {
+                returnErrors.push(res.reason);
+            }
+        }
+
+        return [returnValues, returnErrors];
+    }
+
+    defineLoadedLink(link: HTMLLinkElement) {
+        const url = new URL(link.href);
+        const path = url.pathname;
+
+        // Есть css который запрашиваются с БЛ GET запросом, например темы. Их надо игнорировать. Нас интересует только статика.
+        if (
+            path.endsWith('.css') &&
+            (path.startsWith(this.staticsRoot) || path.startsWith(this.cdnRoot))
+        ) {
+            const defineName = `css!${this.getModulePathFromUrl(url)}`;
+
+            this.define(defineName, [], () => null);
+        }
+    }
+
+    detectAnonymousModule(): string {
+        const src = (document.currentScript as HTMLScriptElement)?.src;
+
+        if (src) {
+            return this.getModulePathFromUrl(new URL(src, location.href));
+        }
+
+        throw Error('Unable to identify anonymous module');
+    }
+}
+
+/**
+ * Глоабльаня функция для иницилизации веб require в глобальном окружение.
+ */
+// @ts-ignore
+globalEnv.initRequire = () => {
+    const localRequire = new WebRequire();
+
+    globalEnv.requirejs = globalEnv.require = localRequire.cache.get('require');
+    // TODO совместимость со старым require. Используем этот флаг, чтобы отрубить патч define-а в config.ts.
+    //  Удалить когда перепишем config.ts, а сделаем мы это, когда включим новый require и на сервере.
+    globalEnv.requirejs.isNewRequire = true;
+    // @ts-ignore
+    globalEnv.requirejs.instance = localRequire;
+    // @ts-ignore
+    globalEnv.define = localRequire.define.bind(localRequire);
+    globalEnv.define.amd = true;
+
+    // @ts-ignore
+    globalEnv.defineFeature = localRequire.defineFeature.bind(localRequire);
+
+    globalEnv.requirejs.defined = localRequire.defined.bind(localRequire);
+
+    globalEnv.requirejs.undef = localRequire.undef.bind(localRequire);
+
+    // TODO совместимость со старым require. Удалить когда переедм везде на новый.
+    globalEnv.requirejs.toUrl = (url: string): string => {
+        const resourceRoot = globalEnv.wsConfig.resourceRoot || '/resources/';
+        const name = url.startsWith(resourceRoot) ? url.replace(resourceRoot, '') : url;
+        const splitName = name.split('.');
+        const ext = splitName.pop() as string;
+        const path = splitName.join('.');
+
+        return localRequire.buildUrl(path, ext);
+    };
+
+    // TODO совместимость со старым require. Удалить когда переедм везде на новый.
+    globalEnv.requirejs.config = (): any => {
+        return globalEnv.requirejs;
+    };
+
+    // TODO совместимость со старым require. Удалить когда переедм везде на новый.
+    globalEnv.requirejs.onError = (err: unknown): any => {
+        throw err;
+    };
+
+    if (globalEnv.preRequiredFeatures) {
+        for (const defineArgs of globalEnv.preRequiredFeatures) {
+            localRequire.defineFeature(...defineArgs);
+        }
+
+        globalEnv.preRequiredFeatures.clear();
+    }
+
+    if (globalEnv.preDefineModules) {
+        for (const defineArgs of globalEnv.preDefineModules) {
+            localRequire.define(...defineArgs);
+        }
+
+        globalEnv.preDefineModules.clear();
+    }
+
+    localRequire.loader.detectLinks(localRequire.defineLoadedLink.bind(localRequire));
+
+    if (globalEnv.preRequiredModules) {
+        for (const argsRequire of globalEnv.preRequiredModules) {
+            localRequire.require(...argsRequire);
+        }
+
+        globalEnv.preRequiredModules.clear();
+    }
+
+    const hotReloadCookies =
+        document.cookie.match(/(?:^|;)\s*s3HotReload\s*=\s*([^;]+)/)?.[1] || '';
+    // если задана кука s3HotReload, нам необходимо загрузить клиентский hot reload на страницу.
+    if (hotReloadCookies) {
+        localRequire.require(['HotReload/eventStream/client/runner']);
+    }
+};
+
+export default WebRequire;
