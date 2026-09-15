@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ui_module for_cdn="0" id="7e8aabad-d60f-4c48-aa74-f29d78fd8be2" name="RequireJsLoader" kaizen_zone="5017257c-1747-4764-aaf4-b5a7bfa8014e" required="1" package="Wasaby" responsible="Колбешин Ф.А." responsible_uuid="a433a212-4d92-4900-bc18-dca37052b171" autodoc="1" version="1.00">
+
+  <description/>
+
+  <depends>
+    <module id="323fd54f-1fab-42a6-8aea-6726d6392d53" name="Application"/>
+    <module id="0e6a9dbb-14e5-4382-9430-b6e73a53dc79" name="Typescript"/>
+  </depends>
+
+
+  <load_after/>
+
+  <parameters/>
+
+  <resources/>
+
+  <preload/>
+
+  <typescript>
+    <arg key="typecheck" value="1"/>
+  </typescript>
+</ui_module>
