@@ -1,0 +1,58 @@
+<div>
+    RequireJsLoader
+    <div id="contentsInfo"></div>
+    <script>
+       function showContentsInfo() {
+          const infoElement = document.getElementById('contentsInfo');
+          let countModule = 0;
+          let moduleDict = 0;
+          let moduleHasBundle = 0;
+          let moduleHasTailwind = 0;
+          let moduleFeature = 0;
+          let countFeature = 0;
+
+          for (const module of Object.values(contents.modules)) {
+             countModule++;
+
+             if (module.dict) {
+                moduleDict++;
+             }
+
+             if (module.hasBundles) {
+                moduleHasBundle++;
+             }
+
+             if (module.hasTailwind) {
+                moduleHasTailwind++;
+             }
+
+             if (module.features) {
+                moduleFeature++;
+
+                countFeature += Object.keys(module.features).length;
+             }
+          }
+
+          infoElement.innerHTML =
+             `<div>Количество модулей: ${countModule}</div>` +
+             `<div>Количество модулей c словарями: ${moduleDict}</div>` +
+             `<div>Количество модулей c кастомными пакетами: ${moduleHasBundle}</div>` +
+             `<div>Количество модулей c персональным Tailwind стилями: ${moduleHasTailwind}</div>` +
+             `<div>Количество модулей c фичами(featureProvide/featureRequired): ${moduleFeature}</div>` +
+             `<div>Количество фич(featureProvide/featureRequired): ${countFeature}</div>`;
+       }
+
+       const scripts = document.querySelectorAll('script[src]');
+       for (const script of scripts) {
+          if (script.src.includes('/contents.')) {
+             if (typeof contents === 'string') {
+                showContentsInfo();
+             } else {
+                script.addEventListener('load', showContentsInfo);
+             }
+
+             break;
+          }
+       }
+    </script>
+</div>
